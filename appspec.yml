@@ -1,0 +1,29 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /home/ubuntu/remotion-api
+    overwrite: yes
+
+permissions:
+  - object: /
+    owner: ubuntu
+    group: ubuntu
+
+hooks:
+  BeforeInstall:
+    - location: scripts/before_install.sh
+      timeout: 60
+      runas: ubuntu
+  AfterInstall:
+    - location: scripts/install.sh
+      timeout: 60
+      runas: ubuntu
+  ApplicationStart:
+    - location: scripts/start.sh
+      timeout: 60
+      runas: ubuntu
+  ApplicationStop:
+    - location: scripts/stop.sh
+      timeout: 60
+      runas: ubuntu
