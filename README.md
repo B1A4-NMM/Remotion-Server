@@ -1,5 +1,5 @@
 # api-server
-http://3.36.95.160:3000/
+https://api.remotion.online/
 # How to Use
 `git clone https://github.com/B1A4-NMM/Remotion-Server.git`<br>
 `npm install`<br>
