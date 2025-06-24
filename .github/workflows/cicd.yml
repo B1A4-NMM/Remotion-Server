@@ -23,6 +23,7 @@ jobs:
       #빌드 결과물 S3 버킷에 업로드
       - name: Upload to AWS S3
         run: |
+          echo "s3://${{ secrets.AWS_S3_BUCKET_NAME }}/$GITHUB_SHA.zip"
           aws deploy push \
           --application-name ${{ secrets.AWS_CODE_DEPLOY_APPLICATION_NAME }} \
           --ignore-hidden-files \
