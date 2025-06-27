@@ -4,12 +4,14 @@ import { QdrantService } from './qdrant.service';
 import { EmbeddingService } from './embedding.service';
 import { CreateVectorDto } from './dto/create-vector.dto';
 import axios from 'axios';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class VectorService {
   constructor(
     private readonly qdrant: QdrantService,
     private readonly embedder: EmbeddingService,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(dto: CreateVectorDto) {
@@ -36,8 +38,10 @@ export class VectorService {
         raw: h, // 점수와 id 등 원본 보존
       }));
 
+    const rerank_url = this.configService.get('RERANK_MODEL_URL');
+
     // 3. rerank 서버로 POST
-    const rerankRes = await axios.post('http://localhost:5002/rerank', {
+    const rerankRes = await axios.post(rerank_url, {
       query: query,
       candidates: candidates.map((c) => c.text),
     });
