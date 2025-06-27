@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { ClaudeModule } from './claude/claude.module';
 import { VectorModule } from './vector/vector.module';
+import { GraphModule } from './graph/graph.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { VectorModule } from './vector/vector.module';
     AuthModule,
     ClaudeModule,
     VectorModule,
+    GraphModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -2,6 +2,8 @@
 import { Controller, Get, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
+import { CurrentUser } from './user.decorator';
+import { use } from 'passport';
 
 @Controller('auth')
 export class AuthController {
@@ -21,9 +23,10 @@ export class AuthController {
 
   @Get('test')
   @UseGuards(AuthGuard('jwt')) // JWT가 없으면 401 Unauthorized
-  async testJwt(@Req() req: Request) {
+  async testJwt(@CurrentUser() user) {
     return {
       message: 'JWT 인증이 성공적으로 완료되었습니다.',
+      user, // JWT에서 파싱된 user 정보
     };
   }
 
@@ -36,11 +39,13 @@ export class AuthController {
 
   // 카카오 로그인 콜백 엔드포인트
   @Get('kakao/redirect')
-  async kakaoCallback(@Query('code') kakaoAuthResCode: string) {  // Authorization Code 받기
-    console.log("kakaoAuthResCode : ", kakaoAuthResCode, "")
-    const { jwtToken } = await this.authService.signInWithKakao(kakaoAuthResCode);
+  async kakaoCallback(@Query('code') kakaoAuthResCode: string) {
+    // Authorization Code 받기
+    console.log('kakaoAuthResCode : ', kakaoAuthResCode, '');
+    const { jwtToken } =
+      await this.authService.signInWithKakao(kakaoAuthResCode);
 
-    console.log("complete kakao")
+    console.log('complete kakao');
     return jwtToken.access_token;
   }
 }

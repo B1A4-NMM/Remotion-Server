@@ -13,11 +13,12 @@ export class AuthService {
     private httpService: HttpService,
   ) {}
 
-  async validateOAuthLogin(oauthUser: any): Promise<{ access_token: string }> {
+  async validateOAuthLogin(oauthUser: any) {
     // DB에 유저 있는지 확인하고 없다면 생성
     const payload = { sub: oauthUser.email, email: oauthUser.email };
     return {
       access_token: this.jwtService.sign(payload),
+      user: oauthUser,
     };
   }
 
