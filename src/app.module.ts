@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ClaudeModule } from './claude/claude.module';
 import { VectorModule } from './vector/vector.module';
 import { GraphModule } from './graph/graph.module';
+import { CommonUtilModule } from './util/common-util.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { GraphModule } from './graph/graph.module';
     AuthModule,
     ClaudeModule,
     VectorModule,
-    GraphModule
+    GraphModule,
+    CommonUtilModule
   ],
   controllers: [AppController],
   providers: [AppService],
