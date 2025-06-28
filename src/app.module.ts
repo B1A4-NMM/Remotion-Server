@@ -7,12 +7,16 @@ import { ClaudeModule } from './claude/claude.module';
 import { VectorModule } from './vector/vector.module';
 import { GraphModule } from './graph/graph.module';
 import { CommonUtilModule } from './util/common-util.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import *as typeormconfig from '../typeorm.config';
+
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    TypeOrmModule.forRoot(typeormconfig),
     AuthModule,
     ClaudeModule,
     VectorModule,
