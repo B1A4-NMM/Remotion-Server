@@ -1,0 +1,65 @@
+import { Entity, 
+    PrimaryGeneratedColumn, 
+    Column, 
+    CreateDateColumn, 
+    ManyToOne, 
+    JoinColumn, 
+    ManyToMany,
+    OneToMany} from 'typeorm';
+
+import { ShareGroup } from './ShareGroup.entity';   
+import { User } from './User.entity';
+import { Target } from './Target.entity';
+import { Weather } from '../enums/weather.enum';
+import { DiaryTarget } from './diary-target.entity';
+
+
+
+@Entity()
+export class Diary {
+    @PrimaryGeneratedColumn()
+    id! : number;
+
+    /*
+    ==============================
+    이 부분이 DB에서 실제 외래 키를
+    생성 한다. 
+    ==============================
+    */
+    @ManyToOne(() => User, (user)=>user.diaries,{eager :true})
+    @JoinColumn({ name : 'author_id' })
+    user! : User;
+    
+    //실제 생성시간(자동)
+    @CreateDateColumn()
+    create_date! : Date;
+
+    @Column()
+    written_date! : Date;
+
+    @Column({ type: 'text' })
+    content! : string;
+    
+    //요약한 제목
+    @Column()
+    title! : string;
+
+    @Column({
+        type:'enum',
+        enum: Weather,
+        default : Weather.SUNNY,
+    })
+    weather! : Weather;
+
+    @Column({ nullable : true })
+    photo_path! : string;
+
+    @ManyToOne(() => ShareGroup,(group) => group.diaries, { nullable : true })
+    @JoinColumn({ name: 'group_id' })
+    shareGroup! : ShareGroup;
+
+    @OneToMany(() => DiaryTarget, (dt) => dt.diary)
+    diaryTargets! : DiaryTarget[];
+
+    
+}
