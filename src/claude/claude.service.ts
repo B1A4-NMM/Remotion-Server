@@ -283,7 +283,7 @@ JSON 형식:
 이 체크리스트를 통과하지 못하면 다시 분석하여 강점/약점을 추출하라.
 일기: ${prompt}`;
   }
-
+  //일기 분석 요청 여기로 보내주면됨
   async querySummary(prompt: string): Promise<string> {
     const processedPrompt = this.summaryPrompt(prompt);
 
@@ -329,7 +329,7 @@ JSON 형식:
 
     return parsed?.content?.[0]?.text || 'No response';
   }
-
+  //일기 내용 이 메소드로 보내주기 
   async queryDiaryPatterns(prompt: string): Promise<any> {
     try {
 

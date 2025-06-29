@@ -1,4 +1,5 @@
-import { Entity, 
+import { Entity,
+    Column, 
     PrimaryGeneratedColumn, 
     ManyToOne,
     JoinColumn, 
@@ -19,6 +20,13 @@ export class EmotionTarget {
     @ManyToOne(() => Target, (target) => target.emotionTargets, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'target_id' })
     target! : Target;
+
+    @Column({ type : 'float' , default : 0 })
+    emotion_intensity : number; 
+
+    @Column({ default: 1 }) // 언급 횟수
+    mentions : number ; 
+    
   }
 
 
