@@ -10,6 +10,7 @@ import { DiaryTarget } from 'src/entities/diary-target.entity';
 import { EmotionTarget } from 'src/entities/emotion-target.entity';
 import { UserShareGroup } from 'src/entities/user-share-group.entity';
 import * as process from 'node:process';
+import { Todo } from './src/entities/Todo.entity';
 
 
 //__dirname + '/**/*.entity{.ts,.js}'
@@ -35,6 +36,7 @@ const config:TypeOrmModuleOptions = {
         DiaryTarget,
         EmotionTarget,
         UserShareGroup,
+        Todo
     ],
     synchronize : true, // 한번 true한 뒤로는 무조건 false
     autoLoadEntities:true,

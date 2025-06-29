@@ -1,8 +1,6 @@
 export interface EmotionInteraction {
-  emotion: string;
-  sub_emotions: string[];
-  emotion_intensity: number;
-  mentions: number;
+  emotion: string[];
+  emotion_intensity: number[];
 }
 
 export interface SocialSimilarity {

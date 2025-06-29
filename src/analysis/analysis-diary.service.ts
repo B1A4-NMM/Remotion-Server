@@ -4,7 +4,7 @@ import {
   ActivityAnalysisDto,
   DiaryAnalysisDto,
   EmotionAnalysisDto,
-  PeopleAnalysisDto,
+  PeopleAnalysisDto, TodoResDto,
 } from '../graph/diray/dto/diary-analysis.dto';
 
 @Injectable()
@@ -12,12 +12,12 @@ export class AnalysisDiaryService {
   constructor(private readonly promptService: ClaudeService) {}
 
   async analysisDiary(prompt: string): Promise<DiaryAnalysisDto> {
-    // ✅ 병렬로 실행 시작
     const result = await this.promptService.queryDiaryPatterns(prompt);
 
-    // ✅ 둘 다 끝나기를 기다림 (동시에)
+    // 다이어리 응답 DTO
     let diaryAnalysisDto = new DiaryAnalysisDto();
     const activities = result.activity_analysis;
+    const reflection = result.reflection;
 
     for (const activity of activities) {
       let activityAnalysisDto = new ActivityAnalysisDto();
@@ -28,21 +28,28 @@ export class AnalysisDiaryService {
 
       for (const person of activity.peoples) {
         let peopleAnalysisDto = new PeopleAnalysisDto();
-        // console.log(`person name = ${person.name}`)
         peopleAnalysisDto.name = person.name;
 
-        let emotionAnalysisDto = new EmotionAnalysisDto();
-        emotionAnalysisDto.emotion = person.interactions.emotion
-        emotionAnalysisDto.subEmotion = person.interactions.sub_emotions
-        emotionAnalysisDto.intensity = person.interactions.emotion_intensity
+        const raw = person.interactions
+        for (let i = 0; i < raw.emotion.length; i++) {
+          let emotionAnalysisDto = new EmotionAnalysisDto();
+          emotionAnalysisDto.type = raw.emotion[i]
+          emotionAnalysisDto.intensity = raw.emotion_intensity[i]
+          peopleAnalysisDto.feel.push( emotionAnalysisDto )
+        }
 
-        peopleAnalysisDto.feel = emotionAnalysisDto;
         diaryAnalysisDto.people.push(peopleAnalysisDto);
       }
     }
 
     diaryAnalysisDto.title = '[가제] 오늘의 일기'
     diaryAnalysisDto.content = prompt
+
+    for (const todo of reflection.todo) {
+      let todoResDto = new TodoResDto()
+      todoResDto.content = todo
+      diaryAnalysisDto.todos.push(todoResDto)
+    }
 
     return diaryAnalysisDto
   }

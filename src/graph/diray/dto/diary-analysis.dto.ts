@@ -5,11 +5,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class EmotionAnalysisDto {
   @ApiProperty({example: "기쁨"})
   @IsString()
-  emotion:string
-
-  @ApiProperty({example: ["애정", "분노"]})
-  @IsString()
-  subEmotion:string[] = []
+  type:string
 
   @ApiProperty({example: 7})
   @IsNumber()
@@ -21,16 +17,22 @@ export class PeopleAnalysisDto {
   @IsString()
   name:string
 
-  @ApiProperty({type: EmotionAnalysisDto})
-  @ValidateNested()
+  @ApiProperty({type: [EmotionAnalysisDto]})
+  @ValidateNested({each: true})
   @Type(() => EmotionAnalysisDto)
-  feel:EmotionAnalysisDto
+  feel:EmotionAnalysisDto[] = []
 }
 
 export class ActivityAnalysisDto {
   @ApiProperty({example: "프로젝트 작업"})
   @IsString()
   activityTitle:string
+}
+
+export class TodoResDto {
+  @ApiProperty({example: "빨래하기"})
+  @IsString()
+  content:string
 }
 
 export class DiaryAnalysisDto {
@@ -51,5 +53,10 @@ export class DiaryAnalysisDto {
   @ValidateNested()
   @Type(() => ActivityAnalysisDto)
   activity: ActivityAnalysisDto[] = []
+
+  @ApiProperty({type: [TodoResDto]})
+  @ValidateNested()
+  @Type(() => TodoResDto)
+  todos: TodoResDto[] = []
 
 }
