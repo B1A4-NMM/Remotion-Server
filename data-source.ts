@@ -10,6 +10,7 @@ import { Alias } from './src/entities/Alias.entity'; // 수정 필요
 import { DiaryTarget } from './src/entities/diary-target.entity';
 import { EmotionTarget } from './src/entities/emotion-target.entity';
 import { UserShareGroup } from './src/entities/user-share-group.entity';
+import { Todo } from './src/entities/Todo.entity';
 
 config();
 
@@ -30,6 +31,7 @@ export const AppDataSource = new DataSource({
     DiaryTarget,
     EmotionTarget,
     UserShareGroup,
+    Todo,
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,

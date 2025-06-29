@@ -3,7 +3,7 @@ import { Diary } from './Diary.entity';
 import { ShareGroup } from './ShareGroup.entity';
 import { Target } from './Target.entity';
 import { UserShareGroup } from './user-share-group.entity';
-
+import { Todo } from './Todo.entity';
 
 
 @Entity()
@@ -36,5 +36,7 @@ export class User {
     @OneToMany(() => Target,(target) => target.user)
     Targets! : Target[];
 
+    @OneToMany( () => Todo, (todo) => todo.user)
+    todos: Todo[];
 
 }
