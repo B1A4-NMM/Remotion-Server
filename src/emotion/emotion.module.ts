@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [TypeOrmModule.forFeature([EmotionTarget])],
-  providers: [EmotionService]
+  providers: [EmotionService],
+  exports: [EmotionService]
 })
 export class EmotionModule {}

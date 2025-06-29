@@ -6,6 +6,7 @@ import { Entity,
     } from 'typeorm';
 import { Target } from './Target.entity';
 import { EmotionType } from '../enums/emotion-type.enum';
+import { count } from 'rxjs';
 
 
 @Entity('emotion_target')
@@ -28,8 +29,14 @@ export class EmotionTarget {
     emotion_intensity : number; 
 
     @Column({ default: 1 }) // 감정을 느낀 횟수
-    count : number ; 
-    
+    count : number ;
+
+  constructor(emotion: EmotionType, target: Target, emotion_intensity: number, count: number) {
+    this.emotion = emotion;
+    this.target = target;
+    this.emotion_intensity = emotion_intensity;
+    this.count = count;
   }
+}
 
 

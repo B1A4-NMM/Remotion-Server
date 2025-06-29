@@ -7,11 +7,16 @@ import {
   PeopleAnalysisDto,
   TodoResDto,
 } from '../graph/diray/dto/diary-analysis.dto';
-import { ActivityAnalysis, EmotionInteraction, Person } from '../util/json.parser';
+import {  EmotionInteraction, Person } from '../util/json.parser';
+import { CommonUtilService } from '../util/common-util.service';
+import { EmotionType } from '../enums/emotion-type.enum';
 
 @Injectable()
 export class AnalysisDiaryService {
-  constructor(private readonly promptService: ClaudeService) {}
+  constructor(
+    private readonly promptService: ClaudeService,
+    private readonly util: CommonUtilService,
+  ) {}
 
   async analysisDiary(prompt: string): Promise<DiaryAnalysisDto> {
     const result = await this.promptService.queryDiaryPatterns(prompt);
@@ -69,7 +74,7 @@ export class AnalysisDiaryService {
 
     for (let i = 0; i < emotion.emotion.length; i++) {
       const dto = new EmotionAnalysisDto();
-      dto.type = emotion.emotion[i];
+      dto.emotionType = this.util.parseEnumValue(EmotionType,emotion.emotion[i]);
       dto.intensity = emotion.emotion_intensity[i];
       dtos.push(dto);
     }

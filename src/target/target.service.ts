@@ -8,6 +8,8 @@ import { MemberService } from '../member/member.service';
 import { CommonUtilService } from '../util/common-util.service';
 import { TargetRelation } from '../enums/target.enum';
 import { DiaryTarget } from '../entities/diary-target.entity';
+import * as process from 'node:process';
+import { EmotionService } from '../emotion/emotion.service';
 
 @Injectable()
 export class TargetService {
@@ -18,6 +20,7 @@ export class TargetService {
     private readonly diaryTargetRepository: Repository<DiaryTarget>,
     private readonly memberService: MemberService,
     private readonly util: CommonUtilService,
+    private readonly emotionService : EmotionService
   ) {}
 
   async createByDiary(dto: DiaryAnalysisDto, diary: Diary, memberId: string) {
@@ -34,9 +37,11 @@ export class TargetService {
           0,
           member
         );
+
       const saveTarget = await this.targetRepository.save(newTarget);
       const diaryTarget = new DiaryTarget(diary, saveTarget);
       await this.diaryTargetRepository.save(diaryTarget);
+      await this.emotionService.createByTarget(saveTarget, person.feel);
       } else { // 있으면 갱신
         target.count += 1;
         target.recent_date = this.util.getCurrentDateToISOString();

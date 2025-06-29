@@ -20,4 +20,18 @@ export class CommonUtilService {
     // 시간 성분은 무시하고 ‘오늘’만 쓰고 싶다면…
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
+
+  parseEnumValue<E extends { [K in keyof E]: string }>(
+    enumObj: E,
+    value: string,
+  ): E[keyof E] {
+    // enumObj의 값들만 뽑아서 string[]으로 만든 뒤 includes 검사
+    const enumValues = Object.values(enumObj) as string[];
+    if (enumValues.includes(value)) {
+      // value가 enum 값 중 하나이므로, 타입 단언을 통해 반환
+      return value as E[keyof E];
+    }
+    // @ts-ignore
+    return "DEFAULT"
+  }
 }

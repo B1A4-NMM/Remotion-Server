@@ -42,4 +42,4 @@ export enum EmotionType {
 export function isEmotionType(value: string): value is EmotionType {
   return (Object.values(EmotionType) as string[]).includes(value);
 }
-  
+
