@@ -27,8 +27,8 @@ export class EmotionTarget {
     @Column({ type : 'float' , default : 0 })
     emotion_intensity : number; 
 
-    @Column({ default: 1 }) // 언급 횟수
-    mentions : number ; 
+    @Column({ default: 1 }) // 감정을 느낀 횟수
+    count : number ; 
     
   }
 

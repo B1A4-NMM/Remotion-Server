@@ -38,4 +38,8 @@ export enum EmotionType {
   불편 = '불편',
   단절 = '단절',
 }
+
+export function isEmotionType(value: string): value is EmotionType {
+  return (Object.values(EmotionType) as string[]).includes(value);
+}
   
