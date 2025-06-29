@@ -7,7 +7,7 @@ import{
     JoinColumn,
 }from 'typeorm';
 
-import { User } from './User.entity';
+import { Member } from './Member.entity';
 import { Alias } from './Alias.entity';
 import { TargetRelation } from '../enums/target.enum';
 import { TargetType } from '../enums/target.enum';
@@ -51,9 +51,9 @@ export class Target {
 
 
     // 1 : N 관계 User와 감정객체
-    @ManyToOne(() => User, (user) => user.Targets)
+    @ManyToOne(() => Member, (user) => user.Targets)
     @JoinColumn({ name: 'member_id'})
-    user!: User;
+    member!: Member;
 
     @OneToMany(() => DiaryTarget, (dt) => dt.target)
     diaryTargets!: DiaryTarget[];

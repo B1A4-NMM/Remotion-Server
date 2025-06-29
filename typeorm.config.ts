@@ -1,6 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import *as dotenv from 'dotenv';
-import { User } from './src/entities/User.entity'; 
+import { Member } from './src/entities/Member.entity';
 import { Diary } from './src/entities/Diary.entity';
 import { Emotion } from './src/entities/Emotion.entity';
 import { Target } from './src/entities/Target.entity';
@@ -11,6 +11,7 @@ import { EmotionTarget } from 'src/entities/emotion-target.entity';
 import { UserShareGroup } from 'src/entities/user-share-group.entity';
 import * as process from 'node:process';
 import { Todo } from './src/entities/Todo.entity';
+import { Activity } from './src/entities/Activity.entity';
 
 
 //__dirname + '/**/*.entity{.ts,.js}'
@@ -27,7 +28,7 @@ const config:TypeOrmModuleOptions = {
     password:process.env.DB_PASSWORD,
     database:process.env.DB_NAME,
     entities:[
-        User,
+        Member,
         Diary,
         Emotion,
         Target,
@@ -36,7 +37,8 @@ const config:TypeOrmModuleOptions = {
         DiaryTarget,
         EmotionTarget,
         UserShareGroup,
-        Todo
+        Todo,
+        Activity
     ],
     synchronize : true, // 한번 true한 뒤로는 무조건 false
     autoLoadEntities:true,

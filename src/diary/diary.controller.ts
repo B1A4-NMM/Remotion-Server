@@ -1,7 +1,9 @@
-import { Body, Controller, Injectable, Post } from '@nestjs/common';
+import { Body, Controller, Injectable, Post, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DiaryAnalysisDto } from '../graph/diray/dto/diary-analysis.dto';
 import { DiaryService } from './diary.service';
+import { AuthGuard } from '@nestjs/passport';
+import { CurrentUser } from '../auth/user.decorator';
 
 @Controller('diary')
 @ApiTags('일기')
@@ -27,9 +29,10 @@ export class DiaryController {
       },
     },
   })
-  async create(@Body('content') content: string) {
+  @UseGuards(AuthGuard('jwt'))
+  async create(@Body('content') content: string, @CurrentUser() user) {
     try {
-      const response = await this.diaryService.createDiary(content);
+      const response = await this.diaryService.createDiary(user.id, content);
       return { response };
     } catch (error) {
       throw new Error(`Detail analysis failed: ${error.message}`);

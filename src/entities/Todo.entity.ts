@@ -8,7 +8,7 @@ import{
     JoinColumn,
 }from 'typeorm'
 
-import { User } from './User.entity';
+import { Member } from './Member.entity';
 
 @Entity()
 export class Todo {
@@ -27,8 +27,8 @@ export class Todo {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.todos)
+  @ManyToOne(() => Member, (user) => user.todos)
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  owner: Member;
   
 }

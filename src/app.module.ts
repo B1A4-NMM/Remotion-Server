@@ -11,6 +11,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import *as typeormconfig from '../typeorm.config';
 import { AnalysisModule } from './analysis/analysis.module';
 import { Neo4jModule } from './neo4j/neo4j.module';
+import { MemberModule } from './member/member.module';
 
 
 @Module({
@@ -25,7 +26,8 @@ import { Neo4jModule } from './neo4j/neo4j.module';
     GraphModule,
     CommonUtilModule,
     AnalysisModule,
-    Neo4jModule
+    Neo4jModule,
+    MemberModule
   ],
   controllers: [AppController],
   providers: [AppService],

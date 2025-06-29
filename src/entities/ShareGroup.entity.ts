@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToMany, JoinTable } from 'typeorm';
 import { Diary } from './Diary.entity';
-import { User } from './User.entity';
+import { Member } from './Member.entity';
 import { UserShareGroup } from './user-share-group.entity';
 
 

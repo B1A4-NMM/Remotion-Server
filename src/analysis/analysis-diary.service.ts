@@ -6,6 +6,8 @@ import {
   EmotionAnalysisDto,
   PeopleAnalysisDto, TodoResDto,
 } from '../graph/diray/dto/diary-analysis.dto';
+import { Emotion } from '../entities/Emotion.entity';
+import { EmotionInteraction } from '../util/json.parser';
 
 @Injectable()
 export class AnalysisDiaryService {
@@ -22,7 +24,6 @@ export class AnalysisDiaryService {
     for (const activity of activities) {
       let activityAnalysisDto = new ActivityAnalysisDto();
       activityAnalysisDto.activityTitle = activity.activity;
-      // console.log(`activity name = ${activity.activity}`)
 
       diaryAnalysisDto.activity.push(activityAnalysisDto);
 
@@ -52,5 +53,16 @@ export class AnalysisDiaryService {
     }
 
     return diaryAnalysisDto
+  }
+
+  private emotionAnalysis(emotion: EmotionInteraction) {
+    let dto = new EmotionAnalysisDto();
+
+    for (let i = 0; i < emotion.emotion.length; i++) {
+      dto.type = emotion.emotion[i]
+      dto.intensity = emotion.emotion_intensity[i]
+    }
+
+    return dto
   }
 }

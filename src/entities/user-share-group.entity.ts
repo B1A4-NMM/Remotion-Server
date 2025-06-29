@@ -2,7 +2,7 @@ import { Entity,
     PrimaryGeneratedColumn, 
     ManyToOne,
     JoinColumn } from 'typeorm';
-import { User } from './User.entity';
+import { Member } from './Member.entity';
 import { ShareGroup } from './ShareGroup.entity';
 
 
@@ -14,9 +14,9 @@ export class UserShareGroup {
   @PrimaryGeneratedColumn()
   id! : number;
 
-  @ManyToOne(() => User, (user) => user.userShareGroups, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Member, (user) => user.userShareGroups, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user! : User;
+  user! : Member;
 
   @ManyToOne(() => ShareGroup, (group) => group.userShareGroups, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'group_id' })

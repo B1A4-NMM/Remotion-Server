@@ -4,6 +4,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './user.decorator';
 import { use } from 'passport';
+import { SocialType } from '../enums/social-type.enum';
 
 @Controller('auth')
 export class AuthController {
@@ -18,7 +19,13 @@ export class AuthController {
   @Get('google/redirect')
   @UseGuards(AuthGuard('google'))
   async googleCallback(@Req() req) {
-    return this.authService.validateOAuthLogin(req.user); // JWT 반환
+    const user = req.user;
+    return this.authService.validateOAuthLogin({
+      id: user.id,
+      email: user.email,
+      nickname: user.name,
+      type: SocialType.GOOGLE,
+    }); // JWT 반환
   }
 
   @Get('test')
@@ -41,11 +48,9 @@ export class AuthController {
   @Get('kakao/redirect')
   async kakaoCallback(@Query('code') kakaoAuthResCode: string) {
     // Authorization Code 받기
-    console.log('kakaoAuthResCode : ', kakaoAuthResCode, '');
     const { jwtToken } =
       await this.authService.signInWithKakao(kakaoAuthResCode);
 
-    console.log('complete kakao');
     return jwtToken.access_token;
   }
 }

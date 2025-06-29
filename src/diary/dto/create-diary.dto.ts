@@ -1,8 +1,17 @@
 // src/diary/dto/create-diary.dto.ts
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsDate } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateDiaryDto {
   @IsString()
   @IsNotEmpty()
-  text: string; // 줄글 일기
+  content: string;
+
+  @Type(() => Date)
+  @IsDate()
+  writtenDate: Date;
+
+
+
+
 }

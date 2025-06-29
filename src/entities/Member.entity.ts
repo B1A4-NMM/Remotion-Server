@@ -1,27 +1,34 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToMany, PrimaryColumn } from 'typeorm';
 import { Diary } from './Diary.entity';
 import { ShareGroup } from './ShareGroup.entity';
 import { Target } from './Target.entity';
 import { UserShareGroup } from './user-share-group.entity';
 import { Todo } from './Todo.entity';
+import { SocialType } from '../enums/social-type.enum';
 
 
 @Entity()
-export class User {
+export class Member {
 
-    @PrimaryGeneratedColumn()
-    id! : number;
+    @PrimaryColumn()
+    id! : string;
+
+    @Column()
+    email! : string;
 
     @Column()
     nickname! : string;
 
-    @Column()
+    @Column({
+      type : 'enum',
+      enum: SocialType
+    })
     social_type! : string;
 
     @Column()
     daily_limit! :number;
 
-    @OneToMany(() => Diary, (diary) => diary.user)
+    @OneToMany(() => Diary, (diary) => diary.author)
     diaries! : Diary[];
     
 
@@ -33,10 +40,10 @@ export class User {
     userShareGroups! : UserShareGroup[];
 
 
-    @OneToMany(() => Target,(target) => target.user)
+    @OneToMany(() => Target,(target) => target.member)
     Targets! : Target[];
 
-    @OneToMany( () => Todo, (todo) => todo.user)
+    @OneToMany( () => Todo, (todo) => todo.owner)
     todos: Todo[];
 
 }
