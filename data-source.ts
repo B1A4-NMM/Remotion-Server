@@ -3,7 +3,6 @@ import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { Member } from './src/entities/Member.entity';
 import { Diary } from './src/entities/Diary.entity';
-import { Emotion } from './src/entities/Emotion.entity';
 import { Target } from './src/entities/Target.entity';
 import { ShareGroup } from './src/entities/ShareGroup.entity';
 import { Alias } from './src/entities/Alias.entity'; // 수정 필요
@@ -24,7 +23,6 @@ export const AppDataSource = new DataSource({
   entities: [
     Member,
     Diary,
-    Emotion,
     Target,
     ShareGroup,
     Alias,

@@ -2,7 +2,6 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import *as dotenv from 'dotenv';
 import { Member } from './src/entities/Member.entity';
 import { Diary } from './src/entities/Diary.entity';
-import { Emotion } from './src/entities/Emotion.entity';
 import { Target } from './src/entities/Target.entity';
 import { ShareGroup } from './src/entities/ShareGroup.entity';
 import { Alias } from './src/entities/Alias.entity';
@@ -30,7 +29,6 @@ const config:TypeOrmModuleOptions = {
     entities:[
         Member,
         Diary,
-        Emotion,
         Target,
         ShareGroup,
         Alias,
