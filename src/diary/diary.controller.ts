@@ -4,6 +4,7 @@ import { DiaryAnalysisDto } from '../graph/diray/dto/diary-analysis.dto';
 import { DiaryService } from './diary.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
+import { CreateDiaryDto } from './dto/create-diary.dto';
 
 @Controller('diary')
 @ApiTags('일기')
@@ -30,9 +31,10 @@ export class DiaryController {
     },
   })
   @UseGuards(AuthGuard('jwt'))
-  async create(@Body('content') content: string, @CurrentUser() user) {
+  async create(@Body() body: CreateDiaryDto, @CurrentUser() user) {
+    console.log("controller on")
     try {
-      const response = await this.diaryService.createDiary(user.id, content);
+      const response = await this.diaryService.createDiary(user.id, body);
       return { response };
     } catch (error) {
       throw new Error(`Detail analysis failed: ${error.message}`);

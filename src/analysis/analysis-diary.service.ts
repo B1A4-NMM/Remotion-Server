@@ -4,10 +4,10 @@ import {
   ActivityAnalysisDto,
   DiaryAnalysisDto,
   EmotionAnalysisDto,
-  PeopleAnalysisDto, TodoResDto,
+  PeopleAnalysisDto,
+  TodoResDto,
 } from '../graph/diray/dto/diary-analysis.dto';
-import { Emotion } from '../entities/Emotion.entity';
-import { EmotionInteraction } from '../util/json.parser';
+import { ActivityAnalysis, EmotionInteraction, Person } from '../util/json.parser';
 
 @Injectable()
 export class AnalysisDiaryService {
@@ -27,42 +27,53 @@ export class AnalysisDiaryService {
 
       diaryAnalysisDto.activity.push(activityAnalysisDto);
 
-      for (const person of activity.peoples) {
-        let peopleAnalysisDto = new PeopleAnalysisDto();
-        peopleAnalysisDto.name = person.name;
-
-        const raw = person.interactions
-        for (let i = 0; i < raw.emotion.length; i++) {
-          let emotionAnalysisDto = new EmotionAnalysisDto();
-          emotionAnalysisDto.type = raw.emotion[i]
-          emotionAnalysisDto.intensity = raw.emotion_intensity[i]
-          peopleAnalysisDto.feel.push( emotionAnalysisDto )
-        }
-
-        diaryAnalysisDto.people.push(peopleAnalysisDto);
-      }
+      diaryAnalysisDto.people.push(...this.peopleAnalysis(activity.peoples));
     }
 
-    diaryAnalysisDto.title = '[가제] 오늘의 일기'
-    diaryAnalysisDto.content = prompt
+    diaryAnalysisDto.title = '[가제] 오늘의 일기'; // 일기 타이틀
+    diaryAnalysisDto.content = prompt; // 일기 내용
 
-    for (const todo of reflection.todo) {
-      let todoResDto = new TodoResDto()
-      todoResDto.content = todo
-      diaryAnalysisDto.todos.push(todoResDto)
+    diaryAnalysisDto.todos = this.todoAnalysis(reflection.todo)
+
+    return diaryAnalysisDto;
+  }
+
+  private todoAnalysis(todos: string[]) {
+    let dtos: TodoResDto[] = [];
+
+    for (const todo of todos) {
+      let todoResDto = new TodoResDto();
+      todoResDto.content = todo;
+      dtos.push(todoResDto);
     }
 
-    return diaryAnalysisDto
+    return dtos
+  }
+
+  private peopleAnalysis(people: Person[]) {
+    let dtos: PeopleAnalysisDto[] = [];
+
+    for (const person of people) {
+      let peopleAnalysisDto = new PeopleAnalysisDto();
+      peopleAnalysisDto.name = person.name;
+      const emotionInteraction = person.interactions;
+      peopleAnalysisDto.feel = this.emotionAnalysis(emotionInteraction);
+      dtos.push(peopleAnalysisDto);
+    }
+
+    return dtos;
   }
 
   private emotionAnalysis(emotion: EmotionInteraction) {
-    let dto = new EmotionAnalysisDto();
+    let dtos: EmotionAnalysisDto[] = [];
 
     for (let i = 0; i < emotion.emotion.length; i++) {
-      dto.type = emotion.emotion[i]
-      dto.intensity = emotion.emotion_intensity[i]
+      const dto = new EmotionAnalysisDto();
+      dto.type = emotion.emotion[i];
+      dto.intensity = emotion.emotion_intensity[i];
+      dtos.push(dto);
     }
 
-    return dto
+    return dtos;
   }
 }

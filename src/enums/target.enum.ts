@@ -3,9 +3,9 @@ export enum TargetRelation {
     FAMILY = 'FAMILY',
     FRIEND = 'FRIEND',
     LOVER = 'LOVER',
-    PET = 'PET',
+    SUPERIOR = 'SUPERIOR',
     COLLEAGUE = 'COLLEAGUE',
-    STRANGER = 'STRANGER',
+    ACQUAINTANCE = 'ACQUAINTANCE',
     ETC = 'ETC',
 
 }

@@ -12,6 +12,11 @@ import *as typeormconfig from '../typeorm.config';
 import { AnalysisModule } from './analysis/analysis.module';
 import { Neo4jModule } from './neo4j/neo4j.module';
 import { MemberModule } from './member/member.module';
+import { ActivityService } from './activity/activity.service';
+import { ActivityModule } from './activity/activity.module';
+import { TargetModule } from './target/target.module';
+import { DiaryModule } from './diary/diary.module';
+import { EmotionModule } from './emotion/emotion.module';
 
 
 @Module({
@@ -27,7 +32,11 @@ import { MemberModule } from './member/member.module';
     CommonUtilModule,
     AnalysisModule,
     Neo4jModule,
-    MemberModule
+    MemberModule,
+    ActivityModule,
+    TargetModule,
+    DiaryModule,
+    EmotionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

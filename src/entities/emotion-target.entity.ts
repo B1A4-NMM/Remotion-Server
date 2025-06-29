@@ -4,18 +4,21 @@ import { Entity,
     ManyToOne,
     JoinColumn, 
     } from 'typeorm';
-import { Emotion } from './Emotion.entity';
 import { Target } from './Target.entity';
+import { EmotionType } from '../enums/emotion-type.enum';
 
 
 @Entity('emotion_target')
 export class EmotionTarget {
     @PrimaryGeneratedColumn()
     id! : number;
-  
-    @ManyToOne(() => Emotion, (emotion) => emotion.emotionTargets, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'emotion_id' })
-    emotion! : Emotion;
+
+    @Column({
+      type: 'enum',
+      enum: EmotionType,
+      default : EmotionType.행복,
+    })
+    emotion! : EmotionType;
   
     @ManyToOne(() => Target, (target) => target.emotionTargets, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'target_id' })

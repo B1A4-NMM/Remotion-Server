@@ -11,7 +11,4 @@ export class CreateDiaryDto {
   @IsDate()
   writtenDate: Date;
 
-
-
-
 }
