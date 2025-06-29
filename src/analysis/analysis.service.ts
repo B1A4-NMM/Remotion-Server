@@ -1,8 +1,8 @@
-import { Neo4jService } from './neo4j.service';
 import { ClaudeService } from '../claude/claude.service';
 import { Injectable } from '@nestjs/common';
 import { Person, ProblemAnalysis, Reflection } from '../util/json.parser';
 import { RelationType } from '../enums/relation-type.enum';
+import { Neo4jService } from '../neo4j/neo4j.service';
 
 @Injectable()
 export class AnalysisService {
@@ -25,8 +25,6 @@ export class AnalysisService {
 
       this.analysisProblem(problem)
       this.analysisPeople(peoples)
-
-
     })
 
     await this.analysisReflection(reflection);

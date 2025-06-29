@@ -4,6 +4,7 @@ import {
   InvokeModelCommand,
 } from '@aws-sdk/client-bedrock-runtime';
 import { ConfigService } from '@nestjs/config';
+import { DiaryAnalysis } from '../util/json.parser';
 
 @Injectable()
 export class ClaudeService {
@@ -26,7 +27,7 @@ export class ClaudeService {
     rule2: '2. 답변 예시는 {"민수":["분노"], "영희":["행복","기쁨]} 식으로',
     rule3: '3. json 형식을 그대로 사용할 것이기 때문에 예시 이외의 답변이나 추가 질문은 절대 하지 말 것',
     rule4: '4. 나타나는 감정은 다음 25가지 감정 리스트 중 선택해줘, 이외의 감정은 절대 있으면 안되고, 오타가 나서도 안돼: [행복, 기쁨, 신남, 설렘, 기대, 자신감, 분노, 짜증, 불안, 초조, 슬픔, 당황, 지루, 속상, 무기력, 우울, 공허, 외로움, 지침, 평온, 안정, 차분, 편안, 감사, 무난]',
-    rule5: '20자 내외로 일기를 요약해줘'
+    rule5: '30자 내외로 일기를 요약해줘'
   };
 
   private preprocessPrompt(prompt: string): string {
@@ -36,7 +37,16 @@ export class ClaudeService {
   }
 
   private summaryPrompt(prompt: string): string{
-    return `${this.promptRules.rules} ${this.promptRules.rule5} 일기 : ${prompt}`
+    return `
+     다음 기준을 엄격히 적용하라.
+     1. 다음 일기를 읽고, 최대한 한줄로 요약하라.
+     2. 일기에서 나타난 중요한 활동을 기준으로 요약하라. 이 때 모든 활동을 사용할 필요는 없고, 가장 두드러지게 나타난 활동 또는 감정을 기준으로 하라.
+     3. 가능하면 중요한 활동을 통해 일기에서 나타난 감정을 기준으로 요약하라.
+     4. 20자 내외로 요약하라.
+     5. "오늘은" 으로 일기처럼 시작하지 말라. 제목으로 사용할만하게 요약하라
+     6. 예시는 "카페에서 친구들과 수다를 떨던 여유로운 하루", "피드백을 세게 받아 하루종일 우울한 날", "애인과 싸워서 화가 머리끝까지 난 하루"
+     
+     일기 : ${prompt}`
   }
 
   private patternAnalysisPrompt(prompt: string): string {
@@ -284,19 +294,89 @@ JSON 형식:
 일기: ${prompt}`;
   }
 
+  private resultAnalysis(result: string): string {
+    return `
+# 당신은 일기 분석 결과를 검증하고 규칙에 맞게 수정하는 검증자이다.
+# JSON 형태를 유지하며 다음 순서로 검증하고 잘못된 부분을 수정하라.
+
+## 1순위: 카테고리 검증 (절대 준수)
+
+### 감정 검증
+- 39개 카테고리만 사용: 행복, 기쁨, 신남, 설렘, 유대, 신뢰, 존경, 시기, 친밀, 자신감, 서운, 평온, 안정, 편안, 소외, 불안, 실망, 기대, 속상, 상처, 감사, 무난, 차분, 긴장, 화남, 짜증, 무기력, 지침, 지루, 억울, 외로움, 우울, 공허, 초조, 부담, 어색, 불편, 불쾌
+- 금지 감정("그리움", "사랑", "미움", "관찰" 등) 사용 시 → 자동 변환:
+  * "그리움" → "외로움", "사랑" → "친밀", "흥미" → "기대"
+
+### 강점(strength) 검증  
+강점 필드는 반드시 다음 중 하나만 입력:
+창의성 | 호기심 | 판단력 | 학습애 | 통찰력 | 용감함 | 끈기 | 정직함 | 활력 | 사랑 | 친절함 | 사회적 지능 | 팀워크 | 공정함 | 리더십 | 용서 | 겸손 | 신중함 | 자기조절 | 미적감상 | 감사 | 희망 | 유머 | 영성
+**다른 값 절대 금지. 위 9개 + None 외 입력시 오류로 간주**
+
+### 약점(weakness) 검증
+weakness 필드는 반드시 다음 중 하나만 입력:
+충동성 | 집중력부족 | 미루기 | 계획성부족 | 건망증 | 소통부족 | 회피성향 | 공감부족 | 내향성과다 | 방어적 | 우유부단함 | 경직성 | 의존성향 | 무책임 | 완벽주의 
+**다른 값 절대 금지. 위 15개 + None 외 입력시 오류로 간주**
+
+## 2순위: 문제 식별 검증
+
+### 문제 상황 검증
+- 다음 키워드 없으면 무조건 "None": 어려웠다, 힘들었다, 문제가 생겼다, 갈등이, 싸웠다, 실패했다, 막혔다, 고민이다, 걱정이다, 답답했다
+- 단순 사실("못했다", "안됐다")이나 감정 기복은 문제가 아님
+
+### 문제-해결책 연결
+- situation이 "None"이면 approach도 "None"
+- approach는 문제 해결 행동만 추출 (원인 제외)
+
+## 3순위: 강점/약점 누락 검증
+
+### 강점 추출 확인
+다음 표현 있을 시 강점 추출 필수:
+- 긍정적 행동: 도움을 주다, 친절하게, 차분하게 → "친절함", "자기조절"
+- 성공적 대처: 잘 해결하다, 극복하다, 꾸준히 → "끈기", "용감함"  
+- 학습/성장: 배우다, 성찰하다, 호기심 → "학습애", "통찰력", "호기심"
+
+### 약점 추출 확인
+다음 표현 있을 시 약점 추출 고려:
+- 충동적 행동: 갑자기, 참지 못해서 → "충동성"
+- 이기적 행동: 나만 생각해서 → "이기주의"
+
+## 4순위: 기타 검증
+
+### 인물 추출
+- 호칭어 제거: "민수형" → "민수"
+- 애칭 원형 추정: "윤석쓰" → "윤석"
+- 동일 인물 통합 확인
+
+### 출력 형식 통일
+- 모든 텍스트 필드를 간결한 명사구로 변경
+- 문장, 접속사 사용 금지
+- activity, problem 관련 필드, reflection 모두 키워드 형태
+
+
+# 최종검증
+  - 감정이 39개 카테고리 중 하나인가?
+  - strength가 24개 카테고리 중 하나인가?
+  - weakness가 15개 카테고리 중 하나인가?
+
+일기 분석 결과: ${result}
+`
+  }
+
   async querySummary(prompt: string): Promise<string> {
     const processedPrompt = this.summaryPrompt(prompt);
 
     const command = new InvokeModelCommand({
-      modelId: 'apac.anthropic.claude-sonnet-4-20250514-v1:0',
+      modelId: 'apac.amazon.nova-lite-v1:0',
       contentType: 'application/json',
       accept: 'application/json',
       body: JSON.stringify({
-        anthropic_version: 'bedrock-2023-05-31',
         messages: [
-          { role: 'user', content: processedPrompt },
+          { role: 'user', content: [{ text: processedPrompt }] }
         ],
-        max_tokens: 4000,
+        inferenceConfig: {
+          maxTokens: 4000,
+          temperature: 0.7,
+          topP: 0.9
+        }
       }),
     });
 
@@ -304,7 +384,7 @@ JSON 형식:
     const body = await response.body.transformToString();
     const parsed = JSON.parse(body);
 
-    return parsed?.content?.[0]?.text || 'No response';
+    return parsed?.output?.message?.content?.[0]?.text || 'No response';
   }
 
   async queryClaude(prompt: string): Promise<string> {
@@ -330,7 +410,8 @@ JSON 형식:
     return parsed?.content?.[0]?.text || 'No response';
   }
 
-  async queryDiaryPatterns(prompt: string): Promise<any> {
+  async queryDiaryPatterns(prompt: string): Promise<DiaryAnalysis> {
+    console.log("query start")
     try {
 
       const processedPrompt = this.patternAnalysisPrompt(prompt);
@@ -362,7 +443,6 @@ JSON 형식:
         throw new Error('No response text received');
       }
 
-      console.log('Raw response:', responseText);
       // 마크다운 형식 제거
       responseText = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
@@ -420,6 +500,7 @@ JSON 형식:
         return emotion_weights[emotion] || 0.1; // 직접 접근으로 수정
       }
 
+      console.log(responseText)
       let parsedResponse;
       try {
         parsedResponse = JSON.parse(responseText);
@@ -480,9 +561,8 @@ JSON 형식:
         });
       }
 
+      // console.log(parsedResponse)
       return parsedResponse;
-      return responseText;
-
 
     } catch (error) {
       console.error('Error in queryDiaryPatterns:', error);

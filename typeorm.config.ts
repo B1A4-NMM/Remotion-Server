@@ -9,6 +9,7 @@ import { Alias } from './src/entities/Alias.entity';
 import { DiaryTarget } from 'src/entities/diary-target.entity';
 import { EmotionTarget } from 'src/entities/emotion-target.entity';
 import { UserShareGroup } from 'src/entities/user-share-group.entity';
+import * as process from 'node:process';
 
 
 //__dirname + '/**/*.entity{.ts,.js}'
@@ -16,10 +17,11 @@ import { UserShareGroup } from 'src/entities/user-share-group.entity';
 
 
 dotenv.config();
+// @ts-ignore
 const config:TypeOrmModuleOptions = {
     type:'mysql',
-    host:'localhost',
-    port:3306,
+    host:process.env.DB_HOST,
+    port:parseInt(process.env.DB_PORT ?? '3306', 10),
     username:process.env.DB_USERNAME,
     password:process.env.DB_PASSWORD,
     database:process.env.DB_NAME,
