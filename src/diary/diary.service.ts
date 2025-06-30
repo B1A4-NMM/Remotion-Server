@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ActivityService } from '../activity/activity.service';
 import { TargetService } from '../target/target.service';
+import { TodoService } from '../todo/todo.service';
 
 @Injectable()
 export class DiaryService {
@@ -17,6 +18,7 @@ export class DiaryService {
     @InjectRepository(Diary) private readonly diaryRepository: Repository<Diary>,
     private readonly activityService: ActivityService,
     private readonly targetService: TargetService,
+    private readonly todoService: TodoService
   ) {
   }
 
@@ -32,7 +34,9 @@ export class DiaryService {
 
     console.log(`diary create, diary ${diary}`)
     const saveDiary = await this.diaryRepository.save(diary);
+    
 
+    //activity & target 은 여러개라서 따로 처리
     await this.activityService.createByDiary(result, saveDiary)
     await this.targetService.createByDiary(result, saveDiary, memberId)
 

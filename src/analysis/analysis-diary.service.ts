@@ -6,7 +6,7 @@ import {
   EmotionAnalysisDto,
   PeopleAnalysisDto,
   TodoResDto,
-} from '../graph/diray/dto/diary-analysis.dto';
+} from './dto/diary-analysis.dto';
 import {  EmotionInteraction, Person } from '../util/json.parser';
 import { CommonUtilService } from '../util/common-util.service';
 import { EmotionType } from '../enums/emotion-type.enum';

@@ -1,6 +1,6 @@
 import { Body, Controller, Injectable, Post, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { DiaryAnalysisDto } from '../graph/diray/dto/diary-analysis.dto';
+import { DiaryAnalysisDto } from '../analysis/dto/diary-analysis.dto';
 import { DiaryService } from './diary.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';

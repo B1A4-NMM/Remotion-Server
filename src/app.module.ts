@@ -17,7 +17,7 @@ import { ActivityModule } from './activity/activity.module';
 import { TargetModule } from './target/target.module';
 import { DiaryModule } from './diary/diary.module';
 import { EmotionModule } from './emotion/emotion.module';
-
+import { TodoModule } from './todo/todo.module';
 
 @Module({
   imports: [
@@ -37,6 +37,8 @@ import { EmotionModule } from './emotion/emotion.module';
     TargetModule,
     DiaryModule,
     EmotionModule,
+    TodoModule,
+    
   ],
   controllers: [AppController],
   providers: [AppService],
