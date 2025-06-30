@@ -15,7 +15,7 @@ export class ActivityService {
     dto.activity.forEach(activity => {
       let entity = new Activity();
       entity.diary = diary
-      entity.content = activity.activityTitle
+      entity.content = activity.activityContent
       this.repo.save(entity)
     })
 

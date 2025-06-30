@@ -17,6 +17,8 @@ import { ActivityModule } from './activity/activity.module';
 import { TargetModule } from './target/target.module';
 import { DiaryModule } from './diary/diary.module';
 import { EmotionModule } from './emotion/emotion.module';
+import { RelationController } from './relation/relation.controller';
+import { RelationModule } from './relation/relation.module';
 import { TodoModule } from './todo/todo.module';
 
 @Module({
@@ -37,6 +39,7 @@ import { TodoModule } from './todo/todo.module';
     TargetModule,
     DiaryModule,
     EmotionModule,
+    RelationModule,
     TodoModule,
     
   ],

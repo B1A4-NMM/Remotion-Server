@@ -146,7 +146,7 @@ export const PROMPT_ANALYZE =`
 {
   "activity_analysis": [
   {
-    "activity": "활동 키워드",
+    "activity": "활동 키워드(1개씩)",
     "problem": [{
       "situation": "발생한 문제 상황을 명확히 서술. 없으면 None",
       "cause": "문제의 원인이나 배경. 사용자가 인식한 원인. 없으면 None",

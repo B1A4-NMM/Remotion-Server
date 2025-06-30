@@ -7,9 +7,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Diary } from '../entities/Diary.entity';
 import { ActivityModule } from '../activity/activity.module';
 import { TargetModule } from '../target/target.module';
+import { EmotionModule } from '../emotion/emotion.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Diary]) ,AnalysisModule, MemberModule, ActivityModule, TargetModule],
+  imports: [
+    TypeOrmModule.forFeature([Diary]),
+    AnalysisModule,
+    MemberModule,
+    ActivityModule,
+    TargetModule,
+    EmotionModule
+  ],
   controllers: [DiaryController],
   providers: [DiaryService],
 })

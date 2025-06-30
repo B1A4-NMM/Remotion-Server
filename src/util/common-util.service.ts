@@ -17,7 +17,6 @@ export class CommonUtilService {
 
   getCurrentDateToISOString(): Date {
     const now = new Date();
-    // 시간 성분은 무시하고 ‘오늘’만 쓰고 싶다면…
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
 
