@@ -31,7 +31,7 @@ export class AuthController {
       nickname: user.name,
       type: SocialType.GOOGLE,
     }); // JWT 반환
-    const url = this.configService.get('FRONTEND_URL') + `/access?=${jwt.access_token}`
+    const url = this.configService.get('FRONTEND_URL') + `?access=${jwt.access_token}`
 
     return res.redirect(url)
   }
@@ -62,7 +62,7 @@ export class AuthController {
     const { jwtToken } =
       await this.authService.signInWithKakao(kakaoAuthResCode);
 
-    const url = this.configService.get('FRONTEND_URL') + `/access?=${jwtToken.access_token}`
+    const url = this.configService.get('FRONTEND_URL') + `?access?=${jwtToken.access_token}`
 
     return res.redirect(url)
   }
