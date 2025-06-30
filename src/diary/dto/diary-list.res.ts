@@ -1,13 +1,33 @@
 import { EmotionType } from '../../enums/emotion-type.enum';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class DiaryRes {
-  diaryId:number
-  title:string
-  writtenDate:Date
-  emotions:EmotionType[] = []
-  targets:string[] = []
+  @ApiProperty({ example: 1, description: '일기 ID' })
+  diaryId: number;
+
+  @ApiProperty({ example: '커피를 마시며 여유로웠던 하루', description: '일기 제목' })
+  title: string;
+
+  @ApiProperty({ example: '2023-12-25', description: '일기 작성일' })
+  writtenDate: Date;
+
+  @ApiProperty({
+    type: [String],
+    enum: EmotionType,
+    example: ['행복', '기쁨'],
+    description: '일기에 포함된 감정들',
+  })
+  emotions: EmotionType[] = [];
+
+  @ApiProperty({
+    type: [String],
+    example: ['김민수', '이영희'],
+    description: '일기에 포함된 대상들',
+  })
+  targets: string[] = [];
 }
 
-export class DiaryListRes{
-  diaries:DiaryRes[] = []
+export class DiaryListRes {
+  @ApiProperty({ type: [DiaryRes], description: '일기 목록' })
+  diaries: DiaryRes[] = [];
 }

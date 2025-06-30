@@ -56,6 +56,7 @@ export class DiaryController {
     summary: '홈 화면',
     description:'오늘 작성한 일기와 그에 나타난 감정들을 보여줍니다'
   })
+  @ApiBody({ type: DiaryHomeRes }) 
   @Get('/today')
   @UseGuards(AuthGuard('jwt'))
   async getTodayDiary(@CurrentUser() user): Promise<DiaryHomeRes> {

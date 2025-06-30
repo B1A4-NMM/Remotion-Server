@@ -73,6 +73,9 @@ export class DiaryService {
     return res;
   }
 
+  /**
+   *
+   */
   async getHomeDiaries(memberId: string): Promise<DiaryHomeRes> {
     const diaries = await this.getTodayDiaries(memberId);
     const todayEmotions = await this.emotionService.getTodayEmotions(memberId);
@@ -87,6 +90,10 @@ export class DiaryService {
     return this.getDiariesByDate(memberId, date);
   }
 
+  /**
+   * 멤버의 일기 중 날짜에 해당하는 일기들을 반환합니다
+   * RETURN DiaryListRes
+   */
   async getDiariesByDate(memberId: string, date: Date) {
     const member = await this.memberService.findOne(memberId);
     const diaries = await this.diaryRepository.find({
@@ -98,6 +105,11 @@ export class DiaryService {
     return res;
   }
 
+  /**
+   * 다이어리 엔티티 배열을 인자로 받아 DTO로 변환합니다
+   * 그 과정에서 연관된 감정, 대상들도 같이 가져옵니다
+   * RETURN DiaryListRes
+   */
   private buildDiaryList(diaries: Diary[]) {
     const res: DiaryListRes = new DiaryListRes();
     for (const diary of diaries) {
