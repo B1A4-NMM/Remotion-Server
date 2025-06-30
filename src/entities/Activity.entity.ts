@@ -10,7 +10,7 @@ export class Activity {
   @Column()
   content: string;
 
-  @ManyToOne(() => Diary, (diary) => diary.activities)
+  @ManyToOne(() => Diary, (diary) => diary.activities, {onDelete: 'CASCADE'} )
   diary: Diary;
 
 }

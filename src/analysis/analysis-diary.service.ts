@@ -74,7 +74,12 @@ export class AnalysisDiaryService {
 
     for (let i = 0; i < emotion.emotion.length; i++) {
       const dto = new EmotionAnalysisDto();
-      dto.emotionType = this.util.parseEnumValue(EmotionType,emotion.emotion[i]);
+      let emotionType = this.util.parseEnumValue(EmotionType,emotion.emotion[i]);
+      // @ts-ignore
+      if (emotionType === "DEFAULT") {
+        emotionType = EmotionType.무난
+      }
+      dto.emotionType = emotionType;
       dto.intensity = emotion.emotion_intensity[i];
       dtos.push(dto);
     }

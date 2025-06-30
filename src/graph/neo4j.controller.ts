@@ -7,10 +7,12 @@ import { MemberGraphService } from './member/member.graph.service';
 import { SubjectGraphService } from 'src/graph/subject/subject.graph.service';
 import { CreateMemberGraphDto } from './member/dto/create-member.graph.dto';
 import { CreateSubjectDto } from './subject/dto/create-subject.dto';
+import { ApiExcludeController } from '@nestjs/swagger';
 
 /**
  * 테스트용 컨트롤러, 추후 삭제할것
  */
+@ApiExcludeController()
 @Controller()
 export class Neo4jController {
   constructor(

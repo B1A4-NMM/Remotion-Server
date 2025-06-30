@@ -7,36 +7,44 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ActivityService } from '../activity/activity.service';
 import { TargetService } from '../target/target.service';
+import { EmotionService } from '../emotion/emotion.service';
+import { CommonUtilService } from '../util/common-util.service';
 
 @Injectable()
 export class DiaryService {
-
   constructor(
     private readonly analysisDiaryService: AnalysisDiaryService,
     private readonly memberService: MemberService,
-    @InjectRepository(Diary) private readonly diaryRepository: Repository<Diary>,
+    @InjectRepository(Diary)
+    private readonly diaryRepository: Repository<Diary>,
     private readonly activityService: ActivityService,
     private readonly targetService: TargetService,
-  ) {
-  }
+    private readonly utilService: CommonUtilService,
+  ) {}
 
-  async createDiary(memberId:string ,dto: CreateDiaryDto) {
-    const result = await this.analysisDiaryService.analysisDiary(dto.content)
+  async createDiary(memberId: string, dto: CreateDiaryDto) {
+    const result = await this.analysisDiaryService.analysisDiary(dto.content);
 
-    const member = await this.memberService.findOne(memberId)
-    const diary = new Diary()
-    diary.author = member
-    diary.written_date = dto.writtenDate
-    diary.content = dto.content
-    diary.title = "demo"
+    const member = await this.memberService.findOne(memberId);
+    const diary = new Diary();
+    diary.author = member;
+    diary.written_date = dto.writtenDate;
+    diary.content = dto.content;
+    diary.title = 'demo';
 
-    console.log(`diary create, diary ${diary}`)
     const saveDiary = await this.diaryRepository.save(diary);
 
-    await this.activityService.createByDiary(result, saveDiary)
-    await this.targetService.createByDiary(result, saveDiary, memberId)
+    await this.activityService.createByDiary(result, saveDiary);
+    await this.targetService.createByDiary(result, saveDiary, memberId);
 
     return result;
   }
+
+  async findDiaryByDate(memberId: string, date: Date) {
+
+  }
+
+
+
 
 }

@@ -13,6 +13,7 @@ import { Target } from './Target.entity';
 import { Weather } from '../enums/weather.enum';
 import { DiaryTarget } from './diary-target.entity';
 import { Activity } from './Activity.entity';
+import { DiaryEmotion } from './diary-emotion.entity';
 
 
 
@@ -66,6 +67,8 @@ export class Diary {
     @OneToMany(() => Activity, (activity) => activity.diary)
     activities! : Activity[];
 
+    @OneToMany(() => DiaryEmotion, (emotion) => emotion.diary)
+    diaryEmotions! : DiaryEmotion[];
 
 
     

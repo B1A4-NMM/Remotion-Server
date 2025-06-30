@@ -1,7 +1,9 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { VectorService } from './vector.service';
 import { CreateVectorDto } from './dto/create-vector.dto';
+import { ApiExcludeController } from '@nestjs/swagger';
 
+@ApiExcludeController()
 @Controller('vector')
 export class VectorController {
   constructor(private readonly service: VectorService) {}
