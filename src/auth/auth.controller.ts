@@ -2,10 +2,18 @@
 import { Controller, Get, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
+import { CurrentUser } from './user.decorator';
+import { use } from 'passport';
+import { SocialType } from '../enums/social-type.enum';
+import { ConfigService } from '@nestjs/config';
+import { Request, Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+    ) {}
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
@@ -15,15 +23,25 @@ export class AuthController {
 
   @Get('google/redirect')
   @UseGuards(AuthGuard('google'))
-  async googleCallback(@Req() req) {
-    return this.authService.validateOAuthLogin(req.user); // JWT 반환
+  async googleCallback(@Req() req:any, @Res() res:Response) {
+    const user = req.user;
+    const jwt = await this.authService.validateOAuthLogin({
+      id: user.id,
+      email: user.email,
+      nickname: user.name,
+      type: SocialType.GOOGLE,
+    }); // JWT 반환
+    const url = this.configService.get('FRONTEND_URL') + `?access=${jwt.access_token}`
+
+    return res.redirect(url)
   }
 
   @Get('test')
   @UseGuards(AuthGuard('jwt')) // JWT가 없으면 401 Unauthorized
-  async testJwt(@Req() req: Request) {
+  async testJwt(@CurrentUser() user) {
     return {
       message: 'JWT 인증이 성공적으로 완료되었습니다.',
+      user, // JWT에서 파싱된 user 정보
     };
   }
 
@@ -36,11 +54,16 @@ export class AuthController {
 
   // 카카오 로그인 콜백 엔드포인트
   @Get('kakao/redirect')
-  async kakaoCallback(@Query('code') kakaoAuthResCode: string) {  // Authorization Code 받기
-    console.log("kakaoAuthResCode : ", kakaoAuthResCode, "")
-    const { jwtToken } = await this.authService.signInWithKakao(kakaoAuthResCode);
+  async kakaoCallback(
+    @Query('code') kakaoAuthResCode: string,
+    @Res() res: Response,
+    ) {
+    // Authorization Code 받기
+    const { jwtToken } =
+      await this.authService.signInWithKakao(kakaoAuthResCode);
 
-    console.log("complete kakao")
-    return jwtToken.access_token;
+    const url = this.configService.get('FRONTEND_URL') + `?access?=${jwtToken.access_token}`
+
+    return res.redirect(url)
   }
 }

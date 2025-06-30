@@ -9,6 +9,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 // @ts-ignore
 import { KakaoStrategy } from './kakao.strategy';
 import { HttpModule } from '@nestjs/axios';
+import { MemberModule } from '../member/member.module';
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { HttpModule } from '@nestjs/axios';
         signOptions: { expiresIn: '500h' },
       }),
     }),
-    HttpModule
+    HttpModule,
+    MemberModule
   ],
   providers: [AuthService, GoogleStrategy, JwtStrategy, KakaoStrategy],
   controllers: [AuthController],

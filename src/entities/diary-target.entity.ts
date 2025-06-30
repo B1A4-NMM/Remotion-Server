@@ -17,4 +17,10 @@ export class DiaryTarget {
   @ManyToOne(() => Target, (target) => target.diaryTargets, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'target_id' })
   target!: Target;
+
+
+  constructor(diary: Diary, target: Target) {
+    this.diary = diary;
+    this.target = target;
+  }
 }

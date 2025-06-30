@@ -1,15 +1,15 @@
 // data-source.ts
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
-import { User } from './src/entities/User.entity';
+import { Member } from './src/entities/Member.entity';
 import { Diary } from './src/entities/Diary.entity';
-import { Emotion } from './src/entities/Emotion.entity';
 import { Target } from './src/entities/Target.entity';
 import { ShareGroup } from './src/entities/ShareGroup.entity';
 import { Alias } from './src/entities/Alias.entity'; // 수정 필요
 import { DiaryTarget } from './src/entities/diary-target.entity';
 import { EmotionTarget } from './src/entities/emotion-target.entity';
 import { UserShareGroup } from './src/entities/user-share-group.entity';
+import { Todo } from './src/entities/Todo.entity';
 
 config();
 
@@ -21,15 +21,15 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   entities: [
-    User,
+    Member,
     Diary,
-    Emotion,
     Target,
     ShareGroup,
     Alias,
     DiaryTarget,
     EmotionTarget,
     UserShareGroup,
+    Todo,
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,

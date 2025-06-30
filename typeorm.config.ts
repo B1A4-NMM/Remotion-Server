@@ -1,14 +1,16 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import *as dotenv from 'dotenv';
-import { User } from './src/entities/User.entity'; 
+import { Member } from './src/entities/Member.entity';
 import { Diary } from './src/entities/Diary.entity';
-import { Emotion } from './src/entities/Emotion.entity';
 import { Target } from './src/entities/Target.entity';
 import { ShareGroup } from './src/entities/ShareGroup.entity';
 import { Alias } from './src/entities/Alias.entity';
 import { DiaryTarget } from 'src/entities/diary-target.entity';
 import { EmotionTarget } from 'src/entities/emotion-target.entity';
 import { UserShareGroup } from 'src/entities/user-share-group.entity';
+import * as process from 'node:process';
+import { Todo } from './src/entities/Todo.entity';
+import { Activity } from './src/entities/Activity.entity';
 
 
 //__dirname + '/**/*.entity{.ts,.js}'
@@ -16,23 +18,25 @@ import { UserShareGroup } from 'src/entities/user-share-group.entity';
 
 
 dotenv.config();
+// @ts-ignore
 const config:TypeOrmModuleOptions = {
     type:'mysql',
-    host:'localhost',
-    port:3306,
+    host:process.env.DB_HOST,
+    port:parseInt(process.env.DB_PORT ?? '3306', 10),
     username:process.env.DB_USERNAME,
     password:process.env.DB_PASSWORD,
     database:process.env.DB_NAME,
     entities:[
-        User,
+        Member,
         Diary,
-        Emotion,
         Target,
         ShareGroup,
         Alias,
         DiaryTarget,
         EmotionTarget,
         UserShareGroup,
+        Todo,
+        Activity
     ],
     synchronize : true, // 한번 true한 뒤로는 무조건 false
     autoLoadEntities:true,

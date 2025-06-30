@@ -5,5 +5,6 @@ import { ClaudeController } from './claude.controller';
 @Module({
   controllers: [ClaudeController],
   providers: [ClaudeService],
+  exports: [ClaudeService]
 })
 export class ClaudeModule {}
