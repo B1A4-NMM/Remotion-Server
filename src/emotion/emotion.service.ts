@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { EmotionTarget } from '../entities/emotion-target.entity';
 import { Target } from '../entities/Target.entity';
 import { EmotionType, isEmotionType } from '../enums/emotion-type.enum';
-import { EmotionAnalysisDto } from '../graph/diray/dto/diary-analysis.dto';
+import { EmotionAnalysisDto } from '../analysis/dto/diary-analysis.dto';
 import { CommonUtilService } from '../util/common-util.service';
 
 @Injectable()

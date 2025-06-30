@@ -5,10 +5,15 @@ import { AuthService } from './auth.service';
 import { CurrentUser } from './user.decorator';
 import { use } from 'passport';
 import { SocialType } from '../enums/social-type.enum';
+import { ConfigService } from '@nestjs/config';
+import { Request, Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+    ) {}
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
@@ -18,14 +23,17 @@ export class AuthController {
 
   @Get('google/redirect')
   @UseGuards(AuthGuard('google'))
-  async googleCallback(@Req() req) {
+  async googleCallback(@Req() req:any, @Res() res:Response) {
     const user = req.user;
-    return this.authService.validateOAuthLogin({
+    const jwt = await this.authService.validateOAuthLogin({
       id: user.id,
       email: user.email,
       nickname: user.name,
       type: SocialType.GOOGLE,
     }); // JWT 반환
+    const url = this.configService.get('FRONTEND_URL') + `/access?=${jwt.access_token}`
+
+    return res.redirect(url)
   }
 
   @Get('test')
@@ -46,11 +54,16 @@ export class AuthController {
 
   // 카카오 로그인 콜백 엔드포인트
   @Get('kakao/redirect')
-  async kakaoCallback(@Query('code') kakaoAuthResCode: string) {
+  async kakaoCallback(
+    @Query('code') kakaoAuthResCode: string,
+    @Res() res: Response,
+    ) {
     // Authorization Code 받기
     const { jwtToken } =
       await this.authService.signInWithKakao(kakaoAuthResCode);
 
-    return jwtToken.access_token;
+    const url = this.configService.get('FRONTEND_URL') + `/access?=${jwtToken.access_token}`
+
+    return res.redirect(url)
   }
 }

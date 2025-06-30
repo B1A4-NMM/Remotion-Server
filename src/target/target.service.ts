@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Target } from '../entities/Target.entity';
 import { Repository } from 'typeorm';
-import { DiaryAnalysisDto } from '../graph/diray/dto/diary-analysis.dto';
+import { DiaryAnalysisDto } from '../analysis/dto/diary-analysis.dto';
 import { Diary } from '../entities/Diary.entity';
 import { MemberService } from '../member/member.service';
 import { CommonUtilService } from '../util/common-util.service';

@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { EmotionType } from '../../../enums/emotion-type.enum';
+import { EmotionType } from '../../enums/emotion-type.enum';
 
 export class EmotionAnalysisDto {
   @ApiProperty({example: "기쁨"})
