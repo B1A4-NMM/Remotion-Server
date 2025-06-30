@@ -43,8 +43,8 @@ export class DiaryAnalysisDto {
 
   @ApiProperty({example: '오늘은 출근하고 개발하다가 커피 마셨다'})
   @IsString()
-  content: string;
-
+  content: string; 
+  
   @ApiProperty({type: [PeopleAnalysisDto]})
   @ValidateNested()
   @Type(() => PeopleAnalysisDto)
@@ -58,6 +58,6 @@ export class DiaryAnalysisDto {
   @ApiProperty({type: [TodoResDto]})
   @ValidateNested()
   @Type(() => TodoResDto)
-  todo: TodoResDto[] = []
+  todos: TodoResDto[] = []
 
 }

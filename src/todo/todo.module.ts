@@ -10,6 +10,7 @@ import { Todo } from 'src/entities/Todo.entity';
   imports: [TypeOrmModule.forFeature([Todo]) , MemberModule ],
   controllers: [TodoController],
   providers: [TodoService],
+  exports: [TodoService],
 
 
 })

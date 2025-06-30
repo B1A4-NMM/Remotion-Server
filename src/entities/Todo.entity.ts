@@ -6,9 +6,12 @@ import{
     CreateDateColumn,
     UpdateDateColumn,
     JoinColumn,
+    OneToMany,
 }from 'typeorm'
 
 import { Member } from './Member.entity';
+//import { DiaryTodo } from './diary-todo.entity';
+//diary-todo와의 관계 필요없음 
 
 @Entity()
 export class Todo {
@@ -32,5 +35,10 @@ export class Todo {
   @ManyToOne(() => Member, (member) => member.todos)
   @JoinColumn({ name: 'user_id' })
   owner: Member;
+
+  // // 💡 DiaryTodo와 양방향 설정
+  // @OneToMany(() => DiaryTodo, (diaryTodo) => diaryTodo.todo)
+  // diaryTodos: DiaryTodo[];
+
   
 }
