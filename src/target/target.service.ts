@@ -46,7 +46,7 @@ export class TargetService {
         const saveTarget = await this.targetRepository.save(newTarget);
         const diaryTarget = new DiaryTarget(diary, saveTarget);
         await this.diaryTargetRepository.save(diaryTarget);
-        await this.emotionService.createByTarget(saveTarget, person.feel);
+        await this.emotionService.createEmotionTarget(saveTarget, person.feel);
       } else {
         // 있으면 갱신
         target.count += await this.calculateAffection(person.feel);
@@ -54,6 +54,8 @@ export class TargetService {
         target.affection += 1;
         await this.targetRepository.save(target);
       }
+
+      await this.emotionService.createDiaryEmotion(person.feel, diary)
     }
   }
 
@@ -136,7 +138,6 @@ export class TargetService {
           break;
       }
     }
-    console.log("affection = " + affection)
     return affection;
   }
 }

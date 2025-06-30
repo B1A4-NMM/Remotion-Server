@@ -22,7 +22,6 @@ export class DiaryController {
   @ApiBody({ type: CreateDiaryDto })
   @UseGuards(AuthGuard('jwt'))
   async create(@Body() body: CreateDiaryDto, @CurrentUser() user) {
-    console.log('controller on');
     try {
       const response = await this.diaryService.createDiary(user.id, body);
       return { response };

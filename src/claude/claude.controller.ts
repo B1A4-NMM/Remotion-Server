@@ -1,7 +1,9 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { ClaudeService } from './claude.service';
+import { ApiExcludeController } from '@nestjs/swagger';
 
 @Controller('claude')
+@ApiExcludeController()
 export class ClaudeController {
   constructor(private readonly claudeService: ClaudeService) {}
 
