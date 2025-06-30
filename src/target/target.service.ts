@@ -27,6 +27,12 @@ export class TargetService {
     private readonly emotionService: EmotionService,
   ) {}
 
+  /**
+   * 일기에 나타난 대상을 저장하는 함수
+   * 대상이 없다면 생성하고, 있다면 심적 거리나 최근 언급 일자를 갱신
+   * 대상을 저장한 후, 대상에 나타난 감정을 같이 저장
+   * 이후 다이어리-감정 엔티티도 같이 저장함 -> 수정이 필요할지도?
+   */
   async createByDiary(dto: DiaryAnalysisDto, diary: Diary, memberId: string) {
     const member = await this.memberService.findOne(memberId);
 
@@ -81,6 +87,10 @@ export class TargetService {
     return result;
   }
 
+  /**
+   * 감정에 따라 심적거리를 계산하는 함수
+   * 해당 감정에 나타난 강도를 나누어 더하는 식으로 계산함
+   */
   async calculateAffection(emotions: EmotionAnalysisDto[]) {
     let affection = 0;
     for (const emotion of emotions) {

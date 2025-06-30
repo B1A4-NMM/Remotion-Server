@@ -9,16 +9,15 @@ import { GraphRes } from './dto/graph.res';
 export class RelationService {
   constructor(
     private readonly targetService: TargetService,
-    private readonly utilService: CommonUtilService,
     private readonly emotionService: EmotionService,
   ) {}
 
   async getGraph(memberId: string) {
     const relation = await this.getRelation(memberId);
-    const emotions = await this.getTodayEmotions(memberId);
+    const emotions = await this.emotionService.getTodayEmotions(memberId);
     const result = new GraphRes()
     result.relations = relation
-    result.TodayMyEmotions = emotions
+    result.todayMyEmotions = emotions
 
     return result;
   }
@@ -27,11 +26,11 @@ export class RelationService {
     const result = await this.targetService.findAll(memberId);
     let res = new RelationGraphDto();
 
-    for (const t of result) {
-      let emotion = await this.emotionService.highestEmotionToTarget(t);
+    for (const target of result) {
+      let emotion = await this.emotionService.highestEmotionToTarget(target);
       res.relations.push({
-        name: t.name,
-        affection: t.affection,
+        name: target.name,
+        affection: target.affection,
         highestEmotion: emotion
       });
     }
@@ -39,18 +38,4 @@ export class RelationService {
     return res;
   }
 
-  async getTodayEmotions(memberId: string) {
-    const date = this.utilService.getCurrentDate()
-    const emotions =
-      await this.emotionService.sumIntensityByEmotionForDateAndOwner(
-        date,
-        memberId,
-      );
-    const result: any[] = []
-    for (const r of emotions) {
-      result.push({emotion: r.emotion, intensity: parseFloat(r.totalIntensity)})
-    }
-
-    return result;
-  }
 }

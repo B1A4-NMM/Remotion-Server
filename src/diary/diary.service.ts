@@ -15,6 +15,8 @@ import {
   EmotionAnalysisDto,
   PeopleAnalysisDto,
 } from '../analysis/dto/diary-analysis.dto';
+import { DiaryHomeRes } from './dto/diary-home.res';
+import { EmotionService } from '../emotion/emotion.service';
 
 @Injectable()
 export class DiaryService {
@@ -26,8 +28,14 @@ export class DiaryService {
     private readonly activityService: ActivityService,
     private readonly targetService: TargetService,
     private readonly utilService: CommonUtilService,
+    private readonly emotionService: EmotionService,
   ) {}
 
+  /**
+   * 다이어리 생성 함수
+   * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장
+   * 연관된 엔티티 : [ Activity, Target, DiaryTarget, DiaryEmotion ]
+   */
   async createDiary(memberId: string, dto: CreateDiaryDto) {
     const result = await this.analysisDiaryService.analysisDiary(dto.content);
 
@@ -46,6 +54,10 @@ export class DiaryService {
     return result;
   }
 
+  /**
+   * 사용자가 작성한 모든 일기들을 목록으로 보여줌
+   * 페이징이 필요할지도?
+   */
   async getDiaryList(memberId: string) {
     const member = await this.memberService.findOne(memberId);
     const diaries = await this.diaryRepository.find({
@@ -53,30 +65,64 @@ export class DiaryService {
       order: {
         written_date: 'DESC',
       },
-      relations: ['diaryTargets','diaryTargets.target', 'diaryEmotions'],
+      relations: ['diaryTargets', 'diaryTargets.target', 'diaryEmotions'],
     });
 
+    const res = this.buildDiaryList(diaries);
+
+    return res;
+  }
+
+  async getHomeDiaries(memberId: string): Promise<DiaryHomeRes> {
+    const diaries = await this.getTodayDiaries(memberId);
+    const todayEmotions = await this.emotionService.getTodayEmotions(memberId);
+    const result = new DiaryHomeRes();
+    result.todayDiaries = diaries.diaries;
+    result.todayEmotions = todayEmotions;
+    return result;
+  }
+
+  private async getTodayDiaries(memberId: string) {
+    const date = this.utilService.getCurrentDateToISOString();
+    return this.getDiariesByDate(memberId, date);
+  }
+
+  async getDiariesByDate(memberId: string, date: Date) {
+    const member = await this.memberService.findOne(memberId);
+    const diaries = await this.diaryRepository.find({
+      where: { author: member, written_date: date },
+      relations: ['diaryTargets', 'diaryTargets.target', 'diaryEmotions'],
+    });
+
+    const res = this.buildDiaryList(diaries);
+    return res;
+  }
+
+  private buildDiaryList(diaries: Diary[]) {
     const res: DiaryListRes = new DiaryListRes();
     for (const diary of diaries) {
       let diaryRes = new DiaryRes();
-      diaryRes.diaryId = diary.id
-      diaryRes.title = diary.title
-      diaryRes.writtenDate = diary.written_date
+      diaryRes.diaryId = diary.id;
+      diaryRes.title = diary.title;
+      diaryRes.writtenDate = diary.written_date;
 
-      diary.diaryEmotions.forEach(emotion => {
-        diaryRes.emotions.push(emotion.emotion)
-      })
+      diary.diaryEmotions.forEach((emotion) => {
+        diaryRes.emotions.push(emotion.emotion);
+      });
 
-      diary.diaryTargets.forEach(target => {
-        diaryRes.targets.push(target.target.name)
-      })
+      diary.diaryTargets.forEach((target) => {
+        diaryRes.targets.push(target.target.name);
+      });
 
-      res.diaries.push(diaryRes)
+      res.diaries.push(diaryRes);
     }
-
-    return res
+    return res;
   }
 
+  /**
+   * id로 작성한 일기 하나를 보여줌.
+   * 분석한 결과도 같이 dto로 전달
+   */
   async getDiary(memberId: string, id: number) {
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
@@ -84,41 +130,90 @@ export class DiaryService {
         'diaryTargets',
         'diaryTargets.target',
         'diaryTargets.target.emotionTargets',
-        'activities'
-      ]
+        'activities',
+      ],
     });
 
     if (diary === null || diary.author.id !== memberId) {
-      throw new NotFoundException('해당 일기가 없습니다')
+      throw new NotFoundException('해당 일기가 없습니다');
     }
 
-    return this.createDiaryAnalysis(diary)
+    return this.createDiaryAnalysis(diary);
   }
 
+  /**
+   * 일기를 인자로 받아 일기에 연관된 엔티티들을 같이 보여줌
+   * [ 대상, 감정, 사건 ]
+   * RETURN: DiaryAnalysisDto
+   */
   async createDiaryAnalysis(diary: Diary) {
-    const result = new DiaryAnalysisDto()
-    const activityDto = new ActivityAnalysisDto()
+    const result = new DiaryAnalysisDto();
 
-    diary.activities.forEach(activity => {
-      activityDto.activityContent = activity.content
-    })
-    result.activity.push(activityDto)
+    diary.activities.forEach((activity) => {
+      const activityDto = new ActivityAnalysisDto();
+      console.log(`activity content : ${activity.content}`)
+      activityDto.activityContent = activity.content;
+      result.activity.push(activityDto);
+    });
 
-    diary.diaryTargets.forEach(target => {
-      const peopleDto = new PeopleAnalysisDto()
-      target.target.emotionTargets.forEach(emotionTarget => {
-        const peopleEmotionsDto = new EmotionAnalysisDto()
-        peopleEmotionsDto.emotionType = emotionTarget.emotion
-        peopleEmotionsDto.intensity = emotionTarget.emotion_intensity
-        peopleDto.feel.push(peopleEmotionsDto)
-      })
+    diary.diaryTargets.forEach((target) => {
+      const peopleDto = new PeopleAnalysisDto();
+      target.target.emotionTargets.forEach((emotionTarget) => {
+        const peopleEmotionsDto = new EmotionAnalysisDto();
+        peopleEmotionsDto.emotionType = emotionTarget.emotion;
+        peopleEmotionsDto.intensity = emotionTarget.emotion_intensity;
+        peopleDto.feel.push(peopleEmotionsDto);
+      });
 
-      peopleDto.name = target.target.name
-      result.people.push(peopleDto)
-    })
+      peopleDto.name = target.target.name;
+      result.people.push(peopleDto);
+    });
 
-    return result
+    return result;
   }
 
+  /**
+   * 커서를 통해 일기를 가져옴
+   * 연관된 감정이나 사건, 대상은 가져오지 않음
+   */
+  async getDiariesInfinite(
+    memberId: string,
+    limit: number,
+    cursor?: { id: number },
+  ): Promise<{
+    items: Diary[];
+    hasMore: boolean;
+    nextCursor: { writtenDate: Date; id: number } | null;
+  }> {
+    // 요청마다 limit+1 개 가져와서 hasMore 판별
+    const take = limit + 1;
 
+    // QueryBuilder 셋업
+    const qb = this.diaryRepository
+      .createQueryBuilder('d')
+      .where('d.author_id = :memberId', { memberId })
+      .orderBy('d.written_date', 'DESC')
+      .addOrderBy('d.id', 'DESC')
+      .take(take);
+
+    // cursor가 있으면 이후(더 아래) 데이터만
+    if (cursor) {
+      qb.andWhere(`(d.id < :id)`, { id: cursor.id });
+    }
+
+    const rows = await qb.getMany();
+
+    // hasMore, nextCursor 계산
+    const hasMore = rows.length === take;
+    const items = hasMore ? rows.slice(0, -1) : rows;
+
+    const nextCursor: { writtenDate: Date; id: number } | null = hasMore
+      ? {
+          writtenDate: items[items.length - 1].written_date,
+          id: items[items.length - 1].id,
+        }
+      : null;
+
+    return { items, hasMore, nextCursor };
+  }
 }

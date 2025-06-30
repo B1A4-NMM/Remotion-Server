@@ -21,7 +21,7 @@ export class GraphRes {
     type: [GraphEmotionRes],
     description: '오늘의 감정 목록',
   })
-  TodayMyEmotions: GraphEmotionRes[] = [];
+  todayMyEmotions: GraphEmotionRes[] = [];
 
   @ApiProperty({
     type: RelationGraphDto,

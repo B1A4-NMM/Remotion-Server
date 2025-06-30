@@ -140,4 +140,26 @@ export class EmotionService {
     // 없으면 null, 있으면 emotion 코드만 반환
     return row ? (row.emotion as EmotionType) : null;
   }
+
+  async getTodayEmotions(memberId: string) {
+    const date = this.util.getCurrentDate()
+    return this.getEmotionsByDate(memberId, date)
+  }
+
+  private async getEmotionsByDate(memberId: string, date:string) {
+    const emotions =
+      await this.sumIntensityByEmotionForDateAndOwner(
+        date,
+        memberId,
+      );
+    const result: any[] = [];
+    for (const r of emotions) {
+      result.push({
+        emotion: r.emotion,
+        intensity: parseFloat(r.totalIntensity),
+      });
+    }
+
+    return result;
+  }
 }
