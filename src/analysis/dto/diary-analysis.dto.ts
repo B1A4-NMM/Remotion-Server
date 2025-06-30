@@ -27,7 +27,7 @@ export class PeopleAnalysisDto {
 export class ActivityAnalysisDto {
   @ApiProperty({example: "프로젝트 작업"})
   @IsString()
-  activityTitle:string
+  activityContent:string
 }
 
 export class TodoResDto {
