@@ -59,7 +59,6 @@ export class DiaryController {
   @Get('/today')
   @UseGuards(AuthGuard('jwt'))
   async getTodayDiary(@CurrentUser() user): Promise<DiaryHomeRes> {
-    console.log("=================controller on=================")
     const memberId = user.id;
     return this.diaryService.getHomeDiaries(memberId);
   }
