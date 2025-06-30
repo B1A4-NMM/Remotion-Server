@@ -7,8 +7,8 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ActivityService } from '../activity/activity.service';
 import { TargetService } from '../target/target.service';
-import { EmotionService } from '../emotion/emotion.service';
 import { CommonUtilService } from '../util/common-util.service';
+import { DiaryListRes, DiaryRes } from './dto/diary-list.res';
 
 @Injectable()
 export class DiaryService {
@@ -40,11 +40,36 @@ export class DiaryService {
     return result;
   }
 
-  async findDiaryByDate(memberId: string, date: Date) {
+  async getDiaryList(memberId: string) {
+    const member = await this.memberService.findOne(memberId);
+    const diaries = await this.diaryRepository.find({
+      where: { author: member },
+      order: {
+        written_date: 'DESC',
+      },
+      relations: ['diaryTargets','diaryTargets.target', 'diaryEmotions'],
+    });
 
+    const res: DiaryListRes = new DiaryListRes();
+    for (const diary of diaries) {
+      let diaryRes = new DiaryRes();
+      diaryRes.diaryId = diary.id
+      diaryRes.title = diary.title
+      diaryRes.writtenDate = diary.written_date
+
+      diary.diaryEmotions.forEach(emotion => {
+        diaryRes.emotions.push(emotion.emotion)
+      })
+
+      diary.diaryTargets.forEach(target => {
+        diaryRes.targets.push(target.target.name)
+      })
+
+      res.diaries.push(diaryRes)
+    }
+
+    return res
   }
-
-
 
 
 }

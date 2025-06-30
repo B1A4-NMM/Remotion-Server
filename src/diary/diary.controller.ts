@@ -1,4 +1,4 @@
-import { Body, Controller, Injectable, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Injectable, Post, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DiaryAnalysisDto } from '../analysis/dto/diary-analysis.dto';
 import { DiaryService } from './diary.service';
@@ -28,5 +28,12 @@ export class DiaryController {
     } catch (error) {
       throw new Error(`Detail analysis failed: ${error.message}`);
     }
+  }
+
+  @Get()
+  @UseGuards(AuthGuard('jwt'))
+  async allDiaries(@CurrentUser() user) {
+    const memberId = user.id;
+    return await this.diaryService.getDiaryList(memberId);
   }
 }
