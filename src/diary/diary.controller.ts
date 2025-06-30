@@ -19,20 +19,10 @@ export class DiaryController {
     type: DiaryAnalysisDto,
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiBody({
-    schema: {
-      properties: {
-        content: {
-          type: 'string',
-          description: '일기 내용',
-          example: '오늘은 라면을 먹었다...',
-        },
-      },
-    },
-  })
+  @ApiBody({ type: CreateDiaryDto })
   @UseGuards(AuthGuard('jwt'))
   async create(@Body() body: CreateDiaryDto, @CurrentUser() user) {
-    console.log("controller on")
+    console.log('controller on');
     try {
       const response = await this.diaryService.createDiary(user.id, body);
       return { response };

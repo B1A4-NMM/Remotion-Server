@@ -62,7 +62,7 @@ export class AuthController {
     const { jwtToken } =
       await this.authService.signInWithKakao(kakaoAuthResCode);
 
-    const url = this.configService.get('FRONTEND_URL') + `?access?=${jwtToken.access_token}`
+    const url = this.configService.get('FRONTEND_URL') + `?access=${jwtToken.access_token}`
 
     return res.redirect(url)
   }
