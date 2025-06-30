@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
 import { Diary } from '../entities/Diary.entity';
@@ -9,6 +9,12 @@ import { ActivityService } from '../activity/activity.service';
 import { TargetService } from '../target/target.service';
 import { CommonUtilService } from '../util/common-util.service';
 import { DiaryListRes, DiaryRes } from './dto/diary-list.res';
+import {
+  ActivityAnalysisDto,
+  DiaryAnalysisDto,
+  EmotionAnalysisDto,
+  PeopleAnalysisDto,
+} from '../analysis/dto/diary-analysis.dto';
 
 @Injectable()
 export class DiaryService {
@@ -69,6 +75,49 @@ export class DiaryService {
     }
 
     return res
+  }
+
+  async getDiary(memberId: string, id: number) {
+    const diary = await this.diaryRepository.findOne({
+      where: { id: id },
+      relations: [
+        'diaryTargets',
+        'diaryTargets.target',
+        'diaryTargets.target.emotionTargets',
+        'activities'
+      ]
+    });
+
+    if (diary === null || diary.author.id !== memberId) {
+      throw new NotFoundException('해당 일기가 없습니다')
+    }
+
+    return this.createDiaryAnalysis(diary)
+  }
+
+  async createDiaryAnalysis(diary: Diary) {
+    const result = new DiaryAnalysisDto()
+    const activityDto = new ActivityAnalysisDto()
+
+    diary.activities.forEach(activity => {
+      activityDto.activityContent = activity.content
+    })
+    result.activity.push(activityDto)
+
+    diary.diaryTargets.forEach(target => {
+      const peopleDto = new PeopleAnalysisDto()
+      target.target.emotionTargets.forEach(emotionTarget => {
+        const peopleEmotionsDto = new EmotionAnalysisDto()
+        peopleEmotionsDto.emotionType = emotionTarget.emotion
+        peopleEmotionsDto.intensity = emotionTarget.emotion_intensity
+        peopleDto.feel.push(peopleEmotionsDto)
+      })
+
+      peopleDto.name = target.target.name
+      result.people.push(peopleDto)
+    })
+
+    return result
   }
 
 

@@ -28,7 +28,7 @@ export class AnalysisDiaryService {
 
     for (const activity of activities) {
       let activityAnalysisDto = new ActivityAnalysisDto();
-      activityAnalysisDto.activityTitle = activity.activity;
+      activityAnalysisDto.activityContent = activity.activity;
 
       diaryAnalysisDto.activity.push(activityAnalysisDto);
 
