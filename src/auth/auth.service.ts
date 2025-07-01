@@ -1,5 +1,5 @@
 // auth.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
@@ -10,6 +10,9 @@ import { CreateMemberDto } from '../member/dto/create-member.dto';
 
 @Injectable()
 export class AuthService {
+
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
@@ -19,11 +22,12 @@ export class AuthService {
 
   async validateOAuthLogin(oauthUser: any) {
     // DB에 유저 있는지 확인하고 없다면 생성
-    const id = oauthUser.id
+    const id:string = oauthUser.id
     const nickname = oauthUser.nickname
     const email = oauthUser.email
     const socialType = oauthUser.type
     if (!await this.memberService.findSocialMember(id, socialType)){ // DB에 유저가 없다면
+      this.logger.log(`회원가입 id : ${oauthUser.id}, nickname : ${oauthUser.nickname}, email : ${oauthUser.email}, socialType : ${oauthUser.type}`)
       await this.memberService.create({
         id, nickname, email, socialType
       })
