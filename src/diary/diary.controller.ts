@@ -69,7 +69,7 @@ export class DiaryController {
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
   async getDiary(@CurrentUser() user, @Param('id') id: string) {
-    const memberId = user.id;
+    const memberId:string = user.id;
     return await this.diaryService.getDiary(memberId, +id);
   }
 

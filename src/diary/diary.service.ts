@@ -161,7 +161,7 @@ export class DiaryService {
       throw new NotFoundException('해당 일기가 없습니다');
     }
 
-    if (diary.author.id !== memberId) {
+    if (diary.author.id != memberId) {
       throw new NotFoundException('해당 일기의 주인이 아닙니다');
     }
 
