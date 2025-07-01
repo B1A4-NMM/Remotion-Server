@@ -5,6 +5,7 @@ import { Target } from './Target.entity';
 import { UserShareGroup } from './user-share-group.entity';
 import { Todo } from './Todo.entity';
 import { SocialType } from '../enums/social-type.enum';
+import { MemberSummary } from './member-summary.entity';
 
 
 @Entity()
@@ -45,5 +46,8 @@ export class Member {
 
     @OneToMany( () => Todo, (todo) => todo.owner)
     todos: Todo[];
+
+    @OneToMany(() => MemberSummary, (summary) => summary.member)
+    memberSummaries!: MemberSummary[];
 
 }
