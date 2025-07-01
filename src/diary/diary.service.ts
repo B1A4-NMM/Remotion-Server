@@ -22,7 +22,7 @@ import {
   DiaryAnalysisDto,
   EmotionAnalysisDto,
   PeopleAnalysisDto,
-  TodoResDto,
+  TodoAnalysisDto,
 } from '../analysis/dto/diary-analysis.dto';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 
@@ -169,6 +169,7 @@ export class DiaryService {
         'diaryTargets.target',
         'diaryTargets.target.emotionTargets',
         'activities',
+        'diaryTodos',
       ],
     });
 
@@ -207,6 +208,14 @@ export class DiaryService {
       peopleDto.name = target.target.name;
       result.people.push(peopleDto);
     });
+
+    //diaryTodo => TodoResDto로 매핑 (응답 주고 받을 때 통일 형식)
+    diary.diaryTodos.forEach((diaryTodo) =>{
+      const todoDto = new TodoAnalysisDto;
+      console.log('todo 조회중')
+      todoDto.Todocontent =diaryTodo.content;
+      result.todos.push(todoDto);
+    })
 
     return result;
   }

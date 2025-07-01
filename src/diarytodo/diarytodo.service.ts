@@ -19,7 +19,7 @@ import {
   DiaryAnalysisDto,
   EmotionAnalysisDto,
   PeopleAnalysisDto,
-  TodoResDto,
+  TodoAnalysisDto,
 } from '../analysis/dto/diary-analysis.dto';
 
 @Injectable()
@@ -34,7 +34,7 @@ export class DiarytodoService {
 
         const diaryTodos = result.todos.map(todoResDto =>{
             const dt = new DiaryTodo();
-            dt.content =todoResDto.content;
+            dt.content =todoResDto.Todocontent;
 
             //어떤 회원의 일기에 의해 생성된 todo인지 저장해야함
 
@@ -43,7 +43,7 @@ export class DiarytodoService {
             return dt;
     
           });
-          
+
           await this.diaryTodoRepository.save(diaryTodos);
 
     }
