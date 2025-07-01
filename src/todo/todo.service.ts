@@ -1,7 +1,7 @@
 //새로운 Todo를 생성하는 로직
 //실제로 Todo 테이블을 다루는 주체
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -17,6 +17,8 @@ import { DiaryTodo } from '../entities/diary-todo.entity';
 
 @Injectable()
 export class TodoService {
+
+    private readonly logger = new Logger(TodoService.name);
 
     constructor(
         private readonly memberService : MemberService,
@@ -34,6 +36,7 @@ export class TodoService {
     */
     async createTodos(memberId:string ,dto : CreateTodoDto){
 
+        this.logger.log("Todo 생성 요청 시작")
         const member = await this.memberService.findOne(memberId)
 
 
@@ -48,8 +51,9 @@ export class TodoService {
           });
 
         
-        
-        return await this.todoRepository.save(todo);
+        const saved=await this.todoRepository.save(todo);
+        this.logger.log(`Todo 저장 완료:${JSON.stringify(saved)}`);
+        return saved;
 
     }
 
