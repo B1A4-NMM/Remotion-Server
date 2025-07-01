@@ -51,7 +51,7 @@ export class DiaryService {
     await this.activityService.createByDiary(result, saveDiary);
     await this.targetService.createByDiary(result, saveDiary, memberId);
 
-    return result;
+    return this.getDiary(memberId, saveDiary.id);
   }
 
   /**
@@ -74,7 +74,8 @@ export class DiaryService {
   }
 
   /**
-   *
+   *  홈 화면에서 보여질 정보들을 추출
+   *  RETURN [ 오늘의 감정 , 오늘 작성한 일기 (감정, 대상) ] 
    */
   async getHomeDiaries(memberId: string): Promise<DiaryHomeRes> {
     const diaries = await this.getTodayDiaries(memberId);
@@ -85,6 +86,9 @@ export class DiaryService {
     return result;
   }
 
+  /**
+   * 오늘 작성한 일기 가져오기
+   */
   private async getTodayDiaries(memberId: string) {
     const date = this.utilService.getCurrentDateToISOString();
     return this.getDiariesByDate(memberId, date);
@@ -119,7 +123,8 @@ export class DiaryService {
       diaryRes.writtenDate = diary.written_date;
 
       diary.diaryEmotions.forEach((emotion) => {
-        diaryRes.emotions.push(emotion.emotion);
+        if (!diaryRes.emotions.includes(emotion.emotion)) // 중복 방지
+          diaryRes.emotions.push(emotion.emotion);
       });
 
       diary.diaryTargets.forEach((target) => {
@@ -164,7 +169,6 @@ export class DiaryService {
 
     diary.activities.forEach((activity) => {
       const activityDto = new ActivityAnalysisDto();
-      console.log(`activity content : ${activity.content}`)
       activityDto.activityContent = activity.content;
       result.activity.push(activityDto);
     });

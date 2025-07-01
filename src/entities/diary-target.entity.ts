@@ -5,7 +5,7 @@ import { Entity,
 import { Diary } from './Diary.entity';
 import { Target } from './Target.entity';
 
-@Entity('diary_emotion_target')
+@Entity('diary_target')
 export class DiaryTarget {
   @PrimaryGeneratedColumn()
   id!: number;
