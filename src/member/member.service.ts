@@ -12,9 +12,7 @@ import { MemberSummary } from '../entities/member-summary.entity';
 @Injectable()
 export class MemberService {
   constructor(
-    private readonly neo4jService: Neo4jService,
     @InjectRepository(Member) private readonly repo: Repository<Member>,
-    @InjectRepository(MemberSummary) private readonly memberSummaryRepo: Repository<MemberSummary>,
   ) {}
 
   create(dto: CreateMemberDto) {

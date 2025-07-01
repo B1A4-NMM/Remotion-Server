@@ -20,8 +20,6 @@ import {
   PeopleAnalysisDto,
   TodoAnalysisDto,
 } from '../analysis/dto/diary-analysis.dto';
-import { DiaryHomeRes } from './dto/diary-home.res';
-import { EmotionService } from '../emotion/emotion.service';
 import { MemberSummaryService } from '../member-summary/member-summary.service';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 
@@ -35,10 +33,9 @@ export class DiaryService {
     private readonly memberService: MemberService,
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
-
     @InjectRepository(DiaryTodo)
     private readonly diaryTodoRepository: Repository<DiaryTodo>,
-
+    private readonly memberSummaryService: MemberSummaryService,
     private readonly activityService: ActivityService,
     private readonly targetService: TargetService,
     private readonly todoService: TodoService,
