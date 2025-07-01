@@ -1,5 +1,6 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Member } from './Member.entity';
+import { EmotionSummaryScore } from './emotion-summary-score.entity';
 
 @Entity()
 export class MemberSummary {
@@ -10,20 +11,10 @@ export class MemberSummary {
   @ManyToOne(() => Member, (member) => member.memberSummaries)
   member!: Member;
 
-  @Column()
+  @Column({type: 'date'})
   date!: Date;
 
-  @Column()
-  vitality: number; // 활력
-  @Column()
-  calmness: number; // 안정
-  @Column()
-  bonding: number; // 유대
-  @Column()
-  stress: number; // 스트레스
-  @Column()
-  anxiety: number; // 불안
-  @Column()
-  depression: number; // 우울
+  @OneToMany(() => EmotionSummaryScore, (score) => score.summary, { cascade: true })
+  emotionScores: EmotionSummaryScore[];
 
 }

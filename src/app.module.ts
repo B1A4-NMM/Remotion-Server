@@ -19,6 +19,7 @@ import { DiaryModule } from './diary/diary.module';
 import { EmotionModule } from './emotion/emotion.module';
 import { RelationController } from './relation/relation.controller';
 import { RelationModule } from './relation/relation.module';
+import { MemberSummaryModule } from './member-summary/member-summary.module';
 
 
 @Module({
@@ -40,6 +41,7 @@ import { RelationModule } from './relation/relation.module';
     DiaryModule,
     EmotionModule,
     RelationModule,
+    MemberSummaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
