@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
 import { Diary } from '../entities/Diary.entity';
@@ -20,6 +20,9 @@ import { EmotionService } from '../emotion/emotion.service';
 
 @Injectable()
 export class DiaryService {
+
+  private readonly logger= new Logger(DiaryService.name);
+
   constructor(
     private readonly analysisDiaryService: AnalysisDiaryService,
     private readonly memberService: MemberService,
@@ -37,6 +40,7 @@ export class DiaryService {
    * 연관된 엔티티 : [ Activity, Target, DiaryTarget, DiaryEmotion ]
    */
   async createDiary(memberId: string, dto: CreateDiaryDto) {
+    this.logger.log('다이어리 생성')
     const result = await this.analysisDiaryService.analysisDiary(dto.content);
 
     const member = await this.memberService.findOne(memberId);
@@ -50,6 +54,7 @@ export class DiaryService {
 
     await this.activityService.createByDiary(result, saveDiary);
     await this.targetService.createByDiary(result, saveDiary, memberId);
+    this.logger.log(`생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`)
 
     return this.getDiary(memberId, saveDiary.id);
   }
@@ -141,6 +146,7 @@ export class DiaryService {
    * 분석한 결과도 같이 dto로 전달
    */
   async getDiary(memberId: string, id: number) {
+    this.logger.log('일기 단일 조회')
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
       relations: [

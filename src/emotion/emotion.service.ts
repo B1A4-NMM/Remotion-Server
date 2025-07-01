@@ -48,7 +48,6 @@ export class EmotionService {
    */
   async createDiaryEmotion(dtos: EmotionAnalysisDto[], diary: Diary) {
     for (const dto of dtos) {
-      console.log(`diary emotion intensity = ${dto.intensity}`);
       let entity = await this.findOneDiaryEmotion(diary, dto.emotionType);
       if (entity === null) {
         entity = new DiaryEmotion(diary, dto.emotionType, dto.intensity);
