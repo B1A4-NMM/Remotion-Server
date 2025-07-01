@@ -191,7 +191,7 @@ export class DiaryService {
       target.target.emotionTargets.forEach((emotionTarget) => {
         const peopleEmotionsDto = new EmotionAnalysisDto();
         peopleEmotionsDto.emotionType = emotionTarget.emotion;
-        peopleEmotionsDto.intensity = emotionTarget.emotion_intensity;
+        peopleEmotionsDto.intensity = emotionTarget.emotion_intensity / emotionTarget.count;
         peopleDto.feel.push(peopleEmotionsDto);
       });
 

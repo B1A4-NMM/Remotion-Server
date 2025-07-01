@@ -40,7 +40,6 @@ export class TargetService {
 
     for (const person of dto.people) {
       let target = await this.findOne(memberId, person.name);
-      let diaryTarget;
       if (target === null) {
         // 대상이 없다면 생성
         target = new Target(
@@ -51,6 +50,7 @@ export class TargetService {
           await this.calculateAffection(person.feel),
           member,
         );
+
       } else {
         // 있으면 갱신
         target.affection += await this.calculateAffection(person.feel);
@@ -60,9 +60,20 @@ export class TargetService {
       }
 
       target = await this.targetRepository.save(target);
+      await this.createDiaryTarget(target, diary);
+      await this.emotionService.createDiaryEmotion(person.feel, diary);
+      await this.emotionService.createOrUpdateEmotionTarget(target, person.feel);
+    }
+  }
+
+  async createDiaryTarget(target: Target, diary: Diary) {
+    let diaryTarget = await this.diaryTargetRepository.findOneBy({
+      diary: diary,
+      target: target,
+    });
+    if (diaryTarget === null) {
       diaryTarget = new DiaryTarget(diary, target);
       await this.diaryTargetRepository.save(diaryTarget);
-      await this.emotionService.createDiaryEmotion(person.feel, diary);
     }
   }
 

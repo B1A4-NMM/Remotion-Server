@@ -22,7 +22,7 @@ export class EmotionService {
   /**
    * emotion-target 엔티티 생성 함수
    */
-  async createEmotionTarget(target: Target, dtos: EmotionAnalysisDto[]) {
+  async createOrUpdateEmotionTarget(target: Target, dtos: EmotionAnalysisDto[]) {
     for (const dto of dtos) {
       const emotion = dto.emotionType; // 감정 타입
       const emotionIntensity = dto.intensity; // 감정 강도
@@ -74,14 +74,13 @@ export class EmotionService {
   /**
    * emotion-target 엔티티 찾는 함수
    */
-  findOneEmotionTarget(target: Target, emotion: string) {
+  findOneEmotionTarget(target: Target, emotion: EmotionType) {
     if (!isEmotionType(emotion)) {
       throw new NotFoundException('emotion type is not valid');
     }
 
-    return this.emotionTargetRepository.findOneBy({
-      target: target,
-      emotion: emotion,
+    return this.emotionTargetRepository.findOne({
+      where: {target: target, emotion: emotion},
     });
   }
 
