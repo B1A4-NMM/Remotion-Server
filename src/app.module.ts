@@ -19,7 +19,8 @@ import { DiaryModule } from './diary/diary.module';
 import { EmotionModule } from './emotion/emotion.module';
 import { RelationController } from './relation/relation.controller';
 import { RelationModule } from './relation/relation.module';
-
+import { TodoModule } from './todo/todo.module';
+import { DiarytodoModule } from './diarytodo/diarytodo.module';
 
 @Module({
   imports: [
@@ -29,17 +30,20 @@ import { RelationModule } from './relation/relation.module';
     TypeOrmModule.forRoot(typeormconfig),
     AuthModule,
     ClaudeModule,
-    VectorModule,
-    GraphModule,
+    //VectorModule,
+    //GraphModule,
     CommonUtilModule,
     AnalysisModule,
-    Neo4jModule,
+    //Neo4jModule,
     MemberModule,
     ActivityModule,
     TargetModule,
     DiaryModule,
     EmotionModule,
     RelationModule,
+    TodoModule,
+    DiarytodoModule,
+    
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -14,6 +14,7 @@ import { Weather } from '../enums/weather.enum';
 import { DiaryTarget } from './diary-target.entity';
 import { Activity } from './Activity.entity';
 import { DiaryEmotion } from './diary-emotion.entity';
+import { DiaryTodo } from './diary-todo.entity';
 
 
 
@@ -69,6 +70,10 @@ export class Diary {
 
     @OneToMany(() => DiaryEmotion, (emotion) => emotion.diary)
     diaryEmotions! : DiaryEmotion[];
+
+    // 💡 DiaryTodo와 양방향 설정
+    @OneToMany(() => DiaryTodo, (diaryTodo) => diaryTodo.diary, { cascade: true })
+    diaryTodos: DiaryTodo[];
 
 
     

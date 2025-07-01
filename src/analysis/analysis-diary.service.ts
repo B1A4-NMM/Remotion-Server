@@ -5,7 +5,7 @@ import {
   DiaryAnalysisDto,
   EmotionAnalysisDto,
   PeopleAnalysisDto,
-  TodoResDto,
+  TodoAnalysisDto,
 } from './dto/diary-analysis.dto';
 import {  EmotionInteraction, Person } from '../util/json.parser';
 import { CommonUtilService } from '../util/common-util.service';
@@ -44,11 +44,11 @@ export class AnalysisDiaryService {
   }
 
   private todoAnalysis(todos: string[]) {
-    let dtos: TodoResDto[] = [];
+    let dtos: TodoAnalysisDto[] = [];
 
     for (const todo of todos) {
-      let todoResDto = new TodoResDto();
-      todoResDto.content = todo;
+      let todoResDto = new TodoAnalysisDto();
+      todoResDto.Todocontent = todo;
       dtos.push(todoResDto);
     }
 

@@ -30,10 +30,10 @@ export class ActivityAnalysisDto {
   activityContent:string
 }
 
-export class TodoResDto {
+export class TodoAnalysisDto {
   @ApiProperty({example: "빨래하기"})
   @IsString()
-  content:string
+  Todocontent:string
 }
 
 export class DiaryAnalysisDto {
@@ -43,8 +43,8 @@ export class DiaryAnalysisDto {
 
   @ApiProperty({example: '오늘은 출근하고 개발하다가 커피 마셨다'})
   @IsString()
-  content: string;
-
+  content: string; 
+  
   @ApiProperty({type: [PeopleAnalysisDto]})
   @ValidateNested()
   @Type(() => PeopleAnalysisDto)
@@ -55,9 +55,9 @@ export class DiaryAnalysisDto {
   @Type(() => ActivityAnalysisDto)
   activity: ActivityAnalysisDto[] = []
 
-  @ApiProperty({type: [TodoResDto]})
+  @ApiProperty({type: [TodoAnalysisDto]})
   @ValidateNested()
-  @Type(() => TodoResDto)
-  todos: TodoResDto[] = []
+  @Type(() => TodoAnalysisDto)
+  todos: TodoAnalysisDto[] = []
 
 }

@@ -8,15 +8,23 @@ import { Diary } from '../entities/Diary.entity';
 import { ActivityModule } from '../activity/activity.module';
 import { TargetModule } from '../target/target.module';
 import { EmotionModule } from '../emotion/emotion.module';
+import { TodoModule } from '../todo/todo.module';
+import { DiaryTodo } from '../entities/diary-todo.entity'; // ✅ 추가
+import { Member } from '../entities/Member.entity';
+import { TodoService } from '../todo/todo.service';
+import { Todo } from '../entities/Todo.entity';
+import { DiarytodoModule } from '../diarytodo/diarytodo.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Diary]),
+    TypeOrmModule.forFeature([Diary,DiaryTodo,Member,Todo]),
     AnalysisModule,
     MemberModule,
     ActivityModule,
     TargetModule,
-    EmotionModule
+    EmotionModule,
+    TodoModule,
+    DiarytodoModule
   ],
   controllers: [DiaryController],
   providers: [DiaryService],

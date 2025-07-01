@@ -1,37 +1,52 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
-import { MemberService } from '../member/member.service';
-import { Diary } from '../entities/Diary.entity';
-import { CreateDiaryDto } from './dto/create-diary.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+
+import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
+import { MemberService } from '../member/member.service';
+import { EmotionService } from '../emotion/emotion.service';
+import { TodoService } from '../todo/todo.service';
 import { ActivityService } from '../activity/activity.service';
 import { TargetService } from '../target/target.service';
 import { CommonUtilService } from '../util/common-util.service';
+import { DiarytodoService } from '../diarytodo/diarytodo.service';
+
 import { DiaryListRes, DiaryRes } from './dto/diary-list.res';
+import { DiaryHomeRes } from './dto/diary-home.res';
+
+import { DiaryTodo } from '../entities/diary-todo.entity';
+import { Diary } from '../entities/Diary.entity';
+
 import {
   ActivityAnalysisDto,
   DiaryAnalysisDto,
   EmotionAnalysisDto,
   PeopleAnalysisDto,
+  TodoAnalysisDto,
 } from '../analysis/dto/diary-analysis.dto';
-import { DiaryHomeRes } from './dto/diary-home.res';
-import { EmotionService } from '../emotion/emotion.service';
+import { CreateDiaryDto } from './dto/create-diary.dto';
+
+
 
 @Injectable()
 export class DiaryService {
-
   private readonly logger= new Logger(DiaryService.name);
-
   constructor(
     private readonly analysisDiaryService: AnalysisDiaryService,
     private readonly memberService: MemberService,
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
+
+    @InjectRepository(DiaryTodo)
+    private readonly diaryTodoRepository: Repository<DiaryTodo>,
+
     private readonly activityService: ActivityService,
     private readonly targetService: TargetService,
+    private readonly todoService: TodoService,
     private readonly utilService: CommonUtilService,
     private readonly emotionService: EmotionService,
+    private readonly diaryTodoService : DiarytodoService,
+    
   ) {}
 
   /**
@@ -51,12 +66,17 @@ export class DiaryService {
     diary.title = 'demo';
 
     const saveDiary = await this.diaryRepository.save(diary);
+    
 
+    //activity & target & todo 은 여러개라서 따로 처리 => 다른 레이어라서 상관없음 
     await this.activityService.createByDiary(result, saveDiary);
     await this.targetService.createByDiary(result, saveDiary, memberId);
+    await this.diaryTodoService.createByDiary(result,saveDiary,member);
+
     this.logger.log(`생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`)
 
     return this.getDiary(memberId, saveDiary.id);
+    
   }
 
   /**
@@ -154,6 +174,7 @@ export class DiaryService {
         'diaryTargets.target',
         'diaryTargets.target.emotionTargets',
         'activities',
+        'diaryTodos',
       ],
     });
 
@@ -191,6 +212,14 @@ export class DiaryService {
       peopleDto.name = target.target.name;
       result.people.push(peopleDto);
     });
+
+    //diaryTodo => TodoResDto로 매핑 (응답 주고 받을 때 통일 형식)
+    diary.diaryTodos.forEach((diaryTodo) =>{
+      const todoDto = new TodoAnalysisDto;
+      console.log('todo 조회중')
+      todoDto.Todocontent =diaryTodo.content;
+      result.todos.push(todoDto);
+    })
 
     return result;
   }
