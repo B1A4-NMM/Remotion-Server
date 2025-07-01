@@ -37,6 +37,10 @@ export class TodoResDto {
 }
 
 export class DiaryAnalysisDto {
+  @ApiProperty({example: 1})
+  @IsNumber()
+  id: number;
+
   @ApiProperty({example: '오늘 하루 회고'})
   @IsString()
   title: string;

@@ -59,6 +59,8 @@ export class TargetService {
         target.recent_date = this.util.getCurrentDateToISOString();
         target.affection += 1;
         await this.targetRepository.save(target);
+        const diaryTarget = new DiaryTarget(diary, target);
+        await this.diaryTargetRepository.save(diaryTarget);
       }
 
       await this.emotionService.createDiaryEmotion(person.feel, diary)

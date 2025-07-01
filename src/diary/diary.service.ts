@@ -176,6 +176,7 @@ export class DiaryService {
   async createDiaryAnalysis(diary: Diary) {
     const result = new DiaryAnalysisDto();
     result.content = diary.content
+    result.id = diary.id
 
     diary.activities.forEach((activity) => {
       const activityDto = new ActivityAnalysisDto();
