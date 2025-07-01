@@ -10,16 +10,25 @@ import { TargetModule } from '../target/target.module';
 import { EmotionModule } from '../emotion/emotion.module';
 import { MemberSummaryService } from '../member-summary/member-summary.service';
 import { MemberSummaryModule } from '../member-summary/member-summary.module';
+import { TodoModule } from '../todo/todo.module';
+import { DiaryTodo } from '../entities/diary-todo.entity'; // ✅ 추가
+import { Member } from '../entities/Member.entity';
+import { TodoService } from '../todo/todo.service';
+import { Todo } from '../entities/Todo.entity';
+import { DiarytodoModule } from '../diarytodo/diarytodo.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Diary]),
+    TypeOrmModule.forFeature([Diary,DiaryTodo,Member,Todo]),
     AnalysisModule,
     MemberModule,
     ActivityModule,
     TargetModule,
     EmotionModule,
-    MemberSummaryModule
+    MemberSummaryModule,
+    EmotionModule,
+    TodoModule,
+    DiarytodoModule
   ],
   controllers: [DiaryController],
   providers: [DiaryService],

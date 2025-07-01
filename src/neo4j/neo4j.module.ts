@@ -8,6 +8,6 @@ import { GraphModule } from '../graph/graph.module';
   imports: [],
   controllers: [],
   providers: [Neo4jService],
-  exports: [Neo4jService]
+  exports: [Neo4jService],
 })
 export class Neo4jModule {}

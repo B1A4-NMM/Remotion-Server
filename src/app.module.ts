@@ -21,6 +21,8 @@ import { RelationController } from './relation/relation.controller';
 import { RelationModule } from './relation/relation.module';
 import { MemberSummaryModule } from './member-summary/member-summary.module';
 
+import { TodoModule } from './todo/todo.module';
+import { DiarytodoModule } from './diarytodo/diarytodo.module';
 
 @Module({
   imports: [
@@ -42,6 +44,9 @@ import { MemberSummaryModule } from './member-summary/member-summary.module';
     EmotionModule,
     RelationModule,
     MemberSummaryModule,
+    TodoModule,
+    DiarytodoModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],
