@@ -12,6 +12,7 @@ import * as process from 'node:process';
 import { Todo } from './src/entities/Todo.entity';
 import { Activity } from './src/entities/Activity.entity';
 import { DiaryEmotion } from './src/entities/diary-emotion.entity';
+import { DiaryTodo } from './src/entities/diary-todo.entity';
 
 //__dirname + '/**/*.entity{.ts,.js}'
 
@@ -38,6 +39,7 @@ const config:TypeOrmModuleOptions = {
         Todo,
         Activity,
         DiaryEmotion,
+        DiaryTodo,
 
     ],
     synchronize : false, // 한번 true한 뒤로는 무조건 false

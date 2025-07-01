@@ -20,6 +20,7 @@ import { EmotionModule } from './emotion/emotion.module';
 import { RelationController } from './relation/relation.controller';
 import { RelationModule } from './relation/relation.module';
 import { TodoModule } from './todo/todo.module';
+import { DiarytodoModule } from './diarytodo/diarytodo.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { TodoModule } from './todo/todo.module';
     EmotionModule,
     RelationModule,
     TodoModule,
+    DiarytodoModule,
     
   ],
   controllers: [AppController],

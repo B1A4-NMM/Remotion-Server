@@ -1,36 +1,52 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
-import { MemberService } from '../member/member.service';
-import { Diary } from '../entities/Diary.entity';
-import { CreateDiaryDto } from './dto/create-diary.dto';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+
+import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
+import { MemberService } from '../member/member.service';
+import { EmotionService } from '../emotion/emotion.service';
+import { TodoService } from '../todo/todo.service';
 import { ActivityService } from '../activity/activity.service';
 import { TargetService } from '../target/target.service';
 import { CommonUtilService } from '../util/common-util.service';
+import { DiarytodoService } from '../diarytodo/diarytodo.service';
+
 import { DiaryListRes, DiaryRes } from './dto/diary-list.res';
+import { DiaryHomeRes } from './dto/diary-home.res';
+
+import { DiaryTodo } from '../entities/diary-todo.entity';
+import { Diary } from '../entities/Diary.entity';
+
 import {
   ActivityAnalysisDto,
   DiaryAnalysisDto,
   EmotionAnalysisDto,
   PeopleAnalysisDto,
+  TodoResDto,
 } from '../analysis/dto/diary-analysis.dto';
-import { DiaryHomeRes } from './dto/diary-home.res';
-import { EmotionService } from '../emotion/emotion.service';
-import { TodoService } from '../todo/todo.service';
+import { CreateDiaryDto } from './dto/create-diary.dto';
+
+
 
 @Injectable()
 export class DiaryService {
+  private readonly logger= new Logger(DiaryService.name);
   constructor(
     private readonly analysisDiaryService: AnalysisDiaryService,
     private readonly memberService: MemberService,
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
+
+    @InjectRepository(DiaryTodo)
+    private readonly diaryTodoRepository: Repository<DiaryTodo>,
+
     private readonly activityService: ActivityService,
     private readonly targetService: TargetService,
     private readonly todoService: TodoService,
     private readonly utilService: CommonUtilService,
     private readonly emotionService: EmotionService,
+    private readonly diaryTodoService : DiarytodoService,
+    
   ) {}
 
   /**
@@ -39,6 +55,7 @@ export class DiaryService {
    * 연관된 엔티티 : [ Activity, Target, DiaryTarget, DiaryEmotion ]
    */
   async createDiary(memberId: string, dto: CreateDiaryDto) {
+    this.logger.log('다이어리 생성')
     const result = await this.analysisDiaryService.analysisDiary(dto.content);
 
     const member = await this.memberService.findOne(memberId);
@@ -51,11 +68,15 @@ export class DiaryService {
     const saveDiary = await this.diaryRepository.save(diary);
     
 
-    //activity & target 은 여러개라서 따로 처리
+    //activity & target & todo 은 여러개라서 따로 처리 => 다른 레이어라서 상관없음 
     await this.activityService.createByDiary(result, saveDiary);
     await this.targetService.createByDiary(result, saveDiary, memberId);
+    await this.diaryTodoService.createByDiary(result,saveDiary,member);
 
-    return result;
+    this.logger.log(`생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`)
+
+    return this.getDiary(memberId, saveDiary.id);
+
   }
 
   /**
@@ -140,6 +161,7 @@ export class DiaryService {
    * 분석한 결과도 같이 dto로 전달
    */
   async getDiary(memberId: string, id: number) {
+    this.logger.log('일기 단일 조회')
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
       relations: [

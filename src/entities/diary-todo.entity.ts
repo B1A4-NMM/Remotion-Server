@@ -30,7 +30,7 @@ export class DiaryTodo {
   
     @ManyToOne(() => Member)
     @JoinColumn({ name: 'user_id' })
-    user: Member;
+    member: Member;
 
     // @ManyToOne(() => Todo, (todo) => todo.diaryTodos, { nullable: true })
     // @JoinColumn({ name: 'todo_id' })

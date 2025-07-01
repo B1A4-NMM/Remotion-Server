@@ -12,6 +12,7 @@ import { UserShareGroup } from './src/entities/user-share-group.entity';
 import { Todo } from './src/entities/Todo.entity';
 import { Activity } from './src/entities/Activity.entity';
 import { DiaryEmotion } from './src/entities/diary-emotion.entity';
+import { DiaryTodo } from './src/entities/diary-todo.entity';
 
 config();
 
@@ -33,7 +34,8 @@ export const AppDataSource = new DataSource({
     UserShareGroup,
     Todo,
     Activity,
-    DiaryEmotion
+    DiaryEmotion,
+    DiaryTodo,
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,
