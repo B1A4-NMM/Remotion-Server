@@ -28,6 +28,14 @@ export class ActivityAnalysisDto {
   @ApiProperty({example: "프로젝트 작업"})
   @IsString()
   activityContent:string
+
+  @ApiProperty({example:'강한 정신력'})
+  @IsString()
+  strength:string | null | undefined
+
+  @ApiProperty({example:'술자리 절제 못함'})
+  @IsString()
+  weakness:string | null | undefined
 }
 
 export class TodoResDto {
@@ -63,5 +71,7 @@ export class DiaryAnalysisDto {
   @ValidateNested()
   @Type(() => TodoResDto)
   todos: TodoResDto[] = []
+
+
 
 }

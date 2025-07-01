@@ -13,4 +13,11 @@ export class Activity {
   @ManyToOne(() => Diary, (diary) => diary.activities, {onDelete: 'CASCADE'} )
   diary: Diary;
 
+  @Column({ type: 'varchar' ,nullable: true})
+  strength?: string | null
+
+  @Column({ type: 'varchar' ,nullable: true})
+  weakness?: string | null
+
+
 }

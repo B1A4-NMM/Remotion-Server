@@ -181,6 +181,8 @@ export class DiaryService {
     diary.activities.forEach((activity) => {
       const activityDto = new ActivityAnalysisDto();
       activityDto.activityContent = activity.content;
+      activityDto.strength = activity.strength
+      activityDto.weakness = activity.weakness
       result.activity.push(activityDto);
     });
 

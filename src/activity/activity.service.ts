@@ -16,6 +16,8 @@ export class ActivityService {
       let entity = new Activity();
       entity.diary = diary
       entity.content = activity.activityContent
+      entity.strength = activity.strength ? activity.strength : null
+      entity.weakness = activity.weakness ? activity.weakness : null
       this.repo.save(entity)
     })
 
