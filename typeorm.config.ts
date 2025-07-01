@@ -11,6 +11,8 @@ import { UserShareGroup } from 'src/entities/user-share-group.entity';
 import * as process from 'node:process';
 import { Todo } from './src/entities/Todo.entity';
 import { Activity } from './src/entities/Activity.entity';
+import { MemberSummary } from './src/entities/member-summary.entity';
+import { EmotionSummaryScore } from './src/entities/emotion-summary-score.entity';
 import { DiaryEmotion } from './src/entities/diary-emotion.entity';
 import { DiaryTodo } from './src/entities/diary-todo.entity';
 
@@ -38,9 +40,10 @@ const config:TypeOrmModuleOptions = {
         UserShareGroup,
         Todo,
         Activity,
+        MemberSummary,
+        EmotionSummaryScore,
         DiaryEmotion,
         DiaryTodo,
-
     ],
     synchronize : true, // 한번 true한 뒤로는 무조건 false
     autoLoadEntities:true,

@@ -29,6 +29,8 @@ export class AnalysisDiaryService {
     for (const activity of activities) {
       let activityAnalysisDto = new ActivityAnalysisDto();
       activityAnalysisDto.activityContent = activity.activity;
+      activityAnalysisDto.strength = activity.strength === 'None' ? null : activity.strength;
+      activityAnalysisDto.weakness = activity.weakness === 'None' ? null : activity.weakness;
 
       diaryAnalysisDto.activity.push(activityAnalysisDto);
 

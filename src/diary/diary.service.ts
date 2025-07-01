@@ -1,7 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
 import { EmotionService } from '../emotion/emotion.service';
@@ -10,13 +9,10 @@ import { ActivityService } from '../activity/activity.service';
 import { TargetService } from '../target/target.service';
 import { CommonUtilService } from '../util/common-util.service';
 import { DiarytodoService } from '../diarytodo/diarytodo.service';
-
 import { DiaryListRes, DiaryRes } from './dto/diary-list.res';
 import { DiaryHomeRes } from './dto/diary-home.res';
-
 import { DiaryTodo } from '../entities/diary-todo.entity';
 import { Diary } from '../entities/Diary.entity';
-
 import {
   ActivityAnalysisDto,
   DiaryAnalysisDto,
@@ -24,6 +20,7 @@ import {
   PeopleAnalysisDto,
   TodoAnalysisDto,
 } from '../analysis/dto/diary-analysis.dto';
+import { MemberSummaryService } from '../member-summary/member-summary.service';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 
 
@@ -36,17 +33,16 @@ export class DiaryService {
     private readonly memberService: MemberService,
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
-
     @InjectRepository(DiaryTodo)
     private readonly diaryTodoRepository: Repository<DiaryTodo>,
-
+    private readonly memberSummaryService: MemberSummaryService,
     private readonly activityService: ActivityService,
     private readonly targetService: TargetService,
     private readonly todoService: TodoService,
     private readonly utilService: CommonUtilService,
     private readonly emotionService: EmotionService,
     private readonly diaryTodoService : DiarytodoService,
-    
+
   ) {}
 
   /**
@@ -55,7 +51,7 @@ export class DiaryService {
    * 연관된 엔티티 : [ Activity, Target, DiaryTarget, DiaryEmotion ]
    */
   async createDiary(memberId: string, dto: CreateDiaryDto) {
-    this.logger.log('다이어리 생성')
+    this.logger.log('다이어리 생성');
     const result = await this.analysisDiaryService.analysisDiary(dto.content);
 
     const member = await this.memberService.findOne(memberId);
@@ -66,17 +62,25 @@ export class DiaryService {
     diary.title = 'demo';
 
     const saveDiary = await this.diaryRepository.save(diary);
-    
 
-    //activity & target & todo 은 여러개라서 따로 처리 => 다른 레이어라서 상관없음 
+
+    //activity & target & todo 은 여러개라서 따로 처리 => 다른 레이어라서 상관없음
     await this.activityService.createByDiary(result, saveDiary);
     await this.targetService.createByDiary(result, saveDiary, memberId);
+    await this.memberSummaryService.updateSummaryFromDiary(
+      result,
+      memberId,
+      dto.writtenDate,
+    );
+    this.logger.log(
+      `생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`,
+    );
     await this.diaryTodoService.createByDiary(result,saveDiary,member);
 
     this.logger.log(`생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`)
 
     return this.getDiary(memberId, saveDiary.id);
-    
+
   }
 
   /**
@@ -100,7 +104,7 @@ export class DiaryService {
 
   /**
    *  홈 화면에서 보여질 정보들을 추출
-   *  RETURN [ 오늘의 감정 , 오늘 작성한 일기 (감정, 대상) ] 
+   *  RETURN [ 오늘의 감정 , 오늘 작성한 일기 (감정, 대상) ]
    */
   async getHomeDiaries(memberId: string): Promise<DiaryHomeRes> {
     const diaries = await this.getTodayDiaries(memberId);
@@ -147,14 +151,15 @@ export class DiaryService {
       diaryRes.title = diary.title;
       diaryRes.writtenDate = diary.written_date;
 
-      diary.diaryEmotions.forEach((emotion) => {
-        if (!diaryRes.emotions.includes(emotion.emotion)) // 중복 방지
+      for (const emotion of diary.diaryEmotions) {
+        if (!diaryRes.emotions.includes(emotion.emotion))
+          // 중복 방지
           diaryRes.emotions.push(emotion.emotion);
-      });
+      }
 
-      diary.diaryTargets.forEach((target) => {
+      for (const target of diary.diaryTargets) {
         diaryRes.targets.push(target.target.name);
-      });
+      }
 
       res.diaries.push(diaryRes);
     }
@@ -166,7 +171,7 @@ export class DiaryService {
    * 분석한 결과도 같이 dto로 전달
    */
   async getDiary(memberId: string, id: number) {
-    this.logger.log('일기 단일 조회')
+    this.logger.log('일기 단일 조회');
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
       relations: [
@@ -196,27 +201,30 @@ export class DiaryService {
    */
   async createDiaryAnalysis(diary: Diary) {
     const result = new DiaryAnalysisDto();
-    result.content = diary.content
-    result.id = diary.id
+    result.content = diary.content;
+    result.id = diary.id;
 
-    diary.activities.forEach((activity) => {
+    for (const activity of diary.activities) {
       const activityDto = new ActivityAnalysisDto();
       activityDto.activityContent = activity.content;
+      activityDto.strength = activity.strength;
+      activityDto.weakness = activity.weakness;
       result.activity.push(activityDto);
-    });
+    }
 
-    diary.diaryTargets.forEach((target) => {
+    for (const target of diary.diaryTargets) {
       const peopleDto = new PeopleAnalysisDto();
-      target.target.emotionTargets.forEach((emotionTarget) => {
+      for (const emotionTarget of target.target.emotionTargets) {
         const peopleEmotionsDto = new EmotionAnalysisDto();
         peopleEmotionsDto.emotionType = emotionTarget.emotion;
-        peopleEmotionsDto.intensity = emotionTarget.emotion_intensity;
+        peopleEmotionsDto.intensity =
+          emotionTarget.emotion_intensity / emotionTarget.count;
         peopleDto.feel.push(peopleEmotionsDto);
-      });
+      }
 
       peopleDto.name = target.target.name;
       result.people.push(peopleDto);
-    });
+    }
 
     //diaryTodo => TodoResDto로 매핑 (응답 주고 받을 때 통일 형식)
     diary.diaryTodos.forEach((diaryTodo) =>{

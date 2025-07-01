@@ -19,6 +19,8 @@ import { DiaryModule } from './diary/diary.module';
 import { EmotionModule } from './emotion/emotion.module';
 import { RelationController } from './relation/relation.controller';
 import { RelationModule } from './relation/relation.module';
+import { MemberSummaryModule } from './member-summary/member-summary.module';
+
 import { TodoModule } from './todo/todo.module';
 import { DiarytodoModule } from './diarytodo/diarytodo.module';
 
@@ -41,9 +43,10 @@ import { DiarytodoModule } from './diarytodo/diarytodo.module';
     DiaryModule,
     EmotionModule,
     RelationModule,
+    MemberSummaryModule,
     TodoModule,
     DiarytodoModule,
-    
+
   ],
   controllers: [AppController],
   providers: [AppService],
