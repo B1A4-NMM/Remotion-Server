@@ -157,8 +157,12 @@ export class DiaryService {
       ],
     });
 
-    if (diary === null || diary.author.id !== memberId) {
+    if (diary === null) {
       throw new NotFoundException('해당 일기가 없습니다');
+    }
+
+    if (diary.author.id !== memberId) {
+      throw new NotFoundException('해당 일기의 주인이 아닙니다');
     }
 
     return this.createDiaryAnalysis(diary);
