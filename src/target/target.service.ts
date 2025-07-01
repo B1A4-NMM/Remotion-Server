@@ -14,6 +14,8 @@ import { DiaryTarget } from '../entities/diary-target.entity';
 import * as process from 'node:process';
 import { EmotionService } from '../emotion/emotion.service';
 import { EmotionType } from '../enums/emotion-type.enum';
+import { MemberSummaryService } from '../member-summary/member-summary.service';
+import { DiaryEmotionGroupingDto } from '../member-summary/dto/diary-emotion-grouping.dto';
 
 @Injectable()
 export class TargetService {
@@ -38,9 +40,10 @@ export class TargetService {
 
     for (const person of dto.people) {
       let target = await this.findOne(memberId, person.name);
+      let diaryTarget;
       if (target === null) {
         // 대상이 없다면 생성
-        const newTarget = new Target(
+        target = new Target(
           person.name,
           1,
           this.util.getCurrentDateToISOString(),
@@ -48,22 +51,18 @@ export class TargetService {
           await this.calculateAffection(person.feel),
           member,
         );
-
-        const saveTarget = await this.targetRepository.save(newTarget);
-        const diaryTarget = new DiaryTarget(diary, saveTarget);
-        await this.diaryTargetRepository.save(diaryTarget);
-        await this.emotionService.createEmotionTarget(saveTarget, person.feel);
       } else {
         // 있으면 갱신
-        target.count += await this.calculateAffection(person.feel);
+        target.affection += await this.calculateAffection(person.feel);
         target.recent_date = this.util.getCurrentDateToISOString();
-        target.affection += 1;
-        await this.targetRepository.save(target);
-        const diaryTarget = new DiaryTarget(diary, target);
-        await this.diaryTargetRepository.save(diaryTarget);
+        target.count += 1;
+        // DONE : emotionTarget도 갱신해야할듯
       }
 
-      await this.emotionService.createDiaryEmotion(person.feel, diary)
+      target = await this.targetRepository.save(target);
+      diaryTarget = new DiaryTarget(diary, target);
+      await this.diaryTargetRepository.save(diaryTarget);
+      await this.emotionService.createDiaryEmotion(person.feel, diary);
     }
   }
 
@@ -84,7 +83,7 @@ export class TargetService {
       order: {
         affection: 'DESC',
       },
-    })
+    });
 
     return result;
   }
@@ -106,7 +105,7 @@ export class TargetService {
         case EmotionType.신뢰:
         case EmotionType.존경:
         case EmotionType.친밀:
-          affection += (emotion.intensity / 3);
+          affection += emotion.intensity / 3;
           break;
         case EmotionType.자신감:
         case EmotionType.편안:
@@ -115,12 +114,12 @@ export class TargetService {
         case EmotionType.감사:
         case EmotionType.차분:
         case EmotionType.기대:
-          affection += (emotion.intensity / 4);
+          affection += emotion.intensity / 4;
           break;
         case EmotionType.무난:
         case EmotionType.지루:
         case EmotionType.긴장:
-          affection += (emotion.intensity / 5);
+          affection += emotion.intensity / 5;
           break;
         case EmotionType.서운:
         case EmotionType.시기:
@@ -132,7 +131,7 @@ export class TargetService {
         case EmotionType.초조:
         case EmotionType.부담:
         case EmotionType.어색:
-          affection += (emotion.intensity / 6);
+          affection += emotion.intensity / 6;
           break;
         case EmotionType.불안:
         case EmotionType.상처:
@@ -144,7 +143,7 @@ export class TargetService {
         case EmotionType.공허:
         case EmotionType.불편:
         case EmotionType.단절:
-          affection += (emotion.intensity / 7);
+          affection += emotion.intensity / 7;
           break;
         default:
           break;
