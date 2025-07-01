@@ -32,21 +32,19 @@ export class AnalysisService {
     return result;
   }
 
-  private async analysisProblem(problem: ProblemAnalysis) {
-    const problemTitle = problem.problem
-    const cause = problem.cause
-    const approach = problem.approach
-    const outcome = problem.outcome
-    const strength = problem.strength
-    const weakness = problem.weakness
+  private async analysisProblem(problems: ProblemAnalysis[]) {
+    problems.forEach(problem => {
+      const problemTitle = problem.situation
+      const cause = problem.cause
+      const approach = problem.approach
+      const outcome = problem.outcome
+    })
   }
 
   private async analysisPeople(people: Person[]) {
     people.forEach(person => {
       const name = person.name
-      const relationType = person.relationship_type
       const emotion = person.interactions
-      const socialSimilarity = person.social_similarity
     })
   }
 

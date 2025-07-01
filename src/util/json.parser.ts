@@ -12,30 +12,28 @@ export interface SocialSimilarity {
 
 export interface Person {
   name: string;
-  relationship_type: string;
   interactions: EmotionInteraction;
-  social_similarity: SocialSimilarity;
+  name_similarity: number;
 }
 
 export interface ProblemAnalysis {
-  problem: string;
+  situation: string;
   cause: string;
   approach: string;
   outcome: string;
-  strength: string;
-  weakness: string;
 }
 
 export interface ActivityAnalysis {
   activity: string;
-  duration: string;
-  problem: ProblemAnalysis;
+  problem: ProblemAnalysis[];
+  strength: string;
+  weakness: string;
   peoples: Person[];
 }
 
 export interface Reflection {
-  achievements: string;
-  shortcomings: string;
+  achievements: string[];
+  shortcomings: string[];
   tomorrow_mindset: string;
   todo: string[];
 }

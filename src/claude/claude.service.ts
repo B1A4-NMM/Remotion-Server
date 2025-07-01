@@ -130,7 +130,7 @@ export class ClaudeService {
           ],
           inferenceConfig: {
             maxTokens: 4000,
-            temperature: 0.7,
+            temperature: 0.05,
             topP: 0.9
           }
         }),
@@ -159,7 +159,7 @@ export class ClaudeService {
           ],
           inferenceConfig: {
             maxTokens: 4000,
-            temperature: 0.1,
+            temperature: 0.05,
             topP: 0.9
           }
         }),

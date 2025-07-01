@@ -59,6 +59,7 @@ export class AnalysisDiaryService {
     let dtos: PeopleAnalysisDto[] = [];
 
     for (const person of people) {
+      if (person.name === undefined || person.name === null || person.name === "없음") continue;
       let peopleAnalysisDto = new PeopleAnalysisDto();
       peopleAnalysisDto.name = person.name;
       const emotionInteraction = person.interactions;
