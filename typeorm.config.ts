@@ -42,7 +42,7 @@ const config:TypeOrmModuleOptions = {
         DiaryTodo,
 
     ],
-    synchronize : false, // 한번 true한 뒤로는 무조건 false
+    synchronize : true, // 한번 true한 뒤로는 무조건 false
     autoLoadEntities:true,
     charset:'utf8mb4',
     logging:true, 

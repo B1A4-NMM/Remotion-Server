@@ -38,7 +38,7 @@ export const AppDataSource = new DataSource({
     DiaryTodo,
   ],
   migrations: ['src/migrations/*.ts'],
-  synchronize: false,
+  synchronize: true,
   logging: true,
   charset: 'utf8mb4',
 });

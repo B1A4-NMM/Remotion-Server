@@ -20,7 +20,7 @@ export class TodoService {
 
     constructor(
         private readonly memberService : MemberService,
-        @InjectRepository(Todo) private readonly TodoRepository : Repository<Todo>,
+        @InjectRepository(Todo) private readonly todoRepository : Repository<Todo>,
 
 
         @InjectRepository(DiaryTodo)
@@ -36,43 +36,27 @@ export class TodoService {
 
         const member = await this.memberService.findOne(memberId)
 
-        const todoEntities = dto.todo.map(content => {
 
-            // db에 새로운 엔티티 생성해서 넣어주기
-            const todo =new Todo(); 
-            todo.owner = member;
-            todo.content = content;
-            todo.isCompleted =false;
-            
-            return todo;
-        });
+        const todo = this.todoRepository.create({
+            title: dto.title,
+            date: dto.date,
+            isRepeat: dto.isRepeat ?? false,
+            repeatRule: dto.repeatRule,
+            repeatEndDate: dto.repeatEndDate,
+            isCompleted: false,
+            owner: member,
+          });
+
         
-        return await this.TodoRepository.save(todoEntities);
+        
+        return await this.todoRepository.save(todo);
 
     }
 
-    /* 
-    2. 분석된 DiaryTodo -> 실제 Todo로 확정할 때
-    분석 결과 중 하나 선택하여 복사 저장
-    */
-
-    async createTodoFromDiary(diaryTodoId : number){
-        const diaryTodo =await this.diaryTodoRepository.findOne({
-            where: { id:diaryTodoId },
-            relations: ['user'], 
+    async getTodoByUserId(memberId : string ){
+        return this.todoRepository.find({
+            where: { owner: { id: memberId} },
+            order: { createdAt: 'DESC'},
         });
-
-        if(!diaryTodo){
-            throw new NotFoundException('해당 분석 Todo를 찾을 수 없습니다.');
-        }
-        const newTodo = this.TodoRepository.create({
-            content : diaryTodo.content,
-            owner : diaryTodo.member,
-            isCompleted : false,
-
-        });
-
-        return await this.TodoRepository.save(newTodo);
     }
-
 }

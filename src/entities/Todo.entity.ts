@@ -15,14 +15,26 @@ import { Member } from './Member.entity';
 
 @Entity()
 export class Todo {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
-  content: string;
+  title: string;
 
   @Column({ default: false })
   isCompleted: boolean;
+
+  @Column({ type: 'date', nullable: true })
+  date: string;
+
+  @Column({ default: false })
+  isRepeat: boolean;
+
+  @Column({ nullable: true })
+  repeatRule: string;
+
+  @Column({ type: 'date', nullable: true })
+  repeatEndDate: string;
   
   //이 entity가 호출되면 이 시간 기준으로 저장해줌 service에서 따로 처리 필요없음
   @CreateDateColumn()

@@ -12,16 +12,19 @@ import { TodoModule } from '../todo/todo.module';
 import { DiaryTodo } from '../entities/diary-todo.entity'; // ✅ 추가
 import { Member } from '../entities/Member.entity';
 import { TodoService } from '../todo/todo.service';
+import { Todo } from '../entities/Todo.entity';
+import { DiarytodoModule } from '../diarytodo/diarytodo.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Diary,DiaryTodo,Member]),
+    TypeOrmModule.forFeature([Diary,DiaryTodo,Member,Todo]),
     AnalysisModule,
     MemberModule,
     ActivityModule,
     TargetModule,
     EmotionModule,
     TodoModule,
+    DiarytodoModule
   ],
   controllers: [DiaryController],
   providers: [DiaryService],
