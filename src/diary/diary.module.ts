@@ -8,6 +8,8 @@ import { Diary } from '../entities/Diary.entity';
 import { ActivityModule } from '../activity/activity.module';
 import { TargetModule } from '../target/target.module';
 import { EmotionModule } from '../emotion/emotion.module';
+import { MemberSummaryService } from '../member-summary/member-summary.service';
+import { MemberSummaryModule } from '../member-summary/member-summary.module';
 
 @Module({
   imports: [
@@ -16,7 +18,8 @@ import { EmotionModule } from '../emotion/emotion.module';
     MemberModule,
     ActivityModule,
     TargetModule,
-    EmotionModule
+    EmotionModule,
+    MemberSummaryModule
   ],
   controllers: [DiaryController],
   providers: [DiaryService],

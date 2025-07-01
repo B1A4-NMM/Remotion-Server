@@ -29,7 +29,7 @@ export class EmotionService {
       let find = await this.findOneEmotionTarget(target, emotion);
       if (find === null) {
         find = new EmotionTarget(
-          this.util.parseEnumValue(EmotionType, emotion),
+          emotion,
           target,
           emotionIntensity,
           1,
@@ -74,13 +74,17 @@ export class EmotionService {
   /**
    * emotion-target 엔티티 찾는 함수
    */
-  findOneEmotionTarget(target: Target, emotion: EmotionType) {
+   async findOneEmotionTarget(target: Target, emotion: EmotionType) {
     if (!isEmotionType(emotion)) {
       throw new NotFoundException('emotion type is not valid');
     }
 
-    return this.emotionTargetRepository.findOne({
-      where: {target: target, emotion: emotion},
+    return await this.emotionTargetRepository.findOne({
+      where: {
+        target: { id: target.id },
+        emotion,
+      },
+      relations: ['target'], // optional
     });
   }
 
