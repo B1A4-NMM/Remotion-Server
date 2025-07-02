@@ -24,7 +24,7 @@ export class DiaryTodo {
     @Column()
     content: string; // 분석된 할 일 텍스트
 
-    @ManyToOne(() => Diary, (diary) => diary.diaryTodos)
+    @ManyToOne(() => Diary, (diary) => diary.diaryTodos, {onDelete: 'CASCADE'})
     @JoinColumn({ name: 'diary_id' })
     diary: Diary;
   
