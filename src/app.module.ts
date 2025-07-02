@@ -23,6 +23,8 @@ import { MemberSummaryModule } from './member-summary/member-summary.module';
 
 import { TodoModule } from './todo/todo.module';
 import { DiarytodoModule } from './diarytodo/diarytodo.module';
+import { S3Service } from './s3/s3.service';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -46,6 +48,7 @@ import { DiarytodoModule } from './diarytodo/diarytodo.module';
     MemberSummaryModule,
     TodoModule,
     DiarytodoModule,
+    UploadModule,
 
   ],
   controllers: [AppController],

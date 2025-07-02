@@ -44,6 +44,10 @@ export class TodoAnalysisDto {
   Todocontent:string
 }
 
+/**
+ * 일기 조회 시 결과들을 보내주는 DTO
+ * RETURN id, title, content, people, photo_path, activity, todos
+ */
 export class DiaryAnalysisDto {
   @ApiProperty({example: 1})
   @IsNumber()
@@ -52,6 +56,10 @@ export class DiaryAnalysisDto {
   @ApiProperty({example: '오늘 하루 회고'})
   @IsString()
   title: string;
+
+  @ApiProperty({example: 'https://remotion-photo.s3.ap-northeast-2.amazonaws.com/bcdc2b34-a81e-4d51-be65-d14c4423e193.jpg'})
+  @IsString()
+  photo_path?: string | null;
 
   @ApiProperty({example: '오늘은 출근하고 개발하다가 커피 마셨다'})
   @IsString()
@@ -71,7 +79,5 @@ export class DiaryAnalysisDto {
   @ValidateNested()
   @Type(() => TodoAnalysisDto)
   todos: TodoAnalysisDto[] = []
-
-
 
 }

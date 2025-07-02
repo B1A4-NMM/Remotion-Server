@@ -16,10 +16,11 @@ import { Member } from '../entities/Member.entity';
 import { TodoService } from '../todo/todo.service';
 import { Todo } from '../entities/Todo.entity';
 import { DiarytodoModule } from '../diarytodo/diarytodo.module';
+import { UploadModule } from '../upload/upload.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Diary,DiaryTodo,Member,Todo]),
+    TypeOrmModule.forFeature([Diary, DiaryTodo, Member, Todo]),
     AnalysisModule,
     MemberModule,
     ActivityModule,
@@ -28,7 +29,8 @@ import { DiarytodoModule } from '../diarytodo/diarytodo.module';
     MemberSummaryModule,
     EmotionModule,
     TodoModule,
-    DiarytodoModule
+    DiarytodoModule,
+    UploadModule
   ],
   controllers: [DiaryController],
   providers: [DiaryService],
