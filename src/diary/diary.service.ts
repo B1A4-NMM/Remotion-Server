@@ -23,11 +23,10 @@ import {
 import { MemberSummaryService } from '../member-summary/member-summary.service';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 
-
-
 @Injectable()
 export class DiaryService {
-  private readonly logger= new Logger(DiaryService.name);
+  private readonly logger = new Logger(DiaryService.name);
+
   constructor(
     private readonly analysisDiaryService: AnalysisDiaryService,
     private readonly memberService: MemberService,
@@ -41,8 +40,7 @@ export class DiaryService {
     private readonly todoService: TodoService,
     private readonly utilService: CommonUtilService,
     private readonly emotionService: EmotionService,
-    private readonly diaryTodoService : DiarytodoService,
-
+    private readonly diaryTodoService: DiarytodoService,
   ) {}
 
   /**
@@ -50,7 +48,11 @@ export class DiaryService {
    * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장
    * 연관된 엔티티 : [ Activity, Target, DiaryTarget, DiaryEmotion ]
    */
-  async createDiary(memberId: string, dto: CreateDiaryDto) {
+  async createDiary(
+    memberId: string,
+    dto: CreateDiaryDto,
+    imageUrl?: string | null, // S3 이미지 경로
+  ): Promise<DiaryAnalysisDto> {
     this.logger.log('다이어리 생성');
     const result = await this.analysisDiaryService.analysisDiary(dto.content);
 
@@ -60,9 +62,11 @@ export class DiaryService {
     diary.written_date = dto.writtenDate;
     diary.content = dto.content;
     diary.title = 'demo';
+    if (imageUrl) {
+      diary.photo_path = imageUrl;
+    }
 
     const saveDiary = await this.diaryRepository.save(diary);
-
 
     //activity & target & todo 은 여러개라서 따로 처리 => 다른 레이어라서 상관없음
     await this.activityService.createByDiary(result, saveDiary);
@@ -72,15 +76,13 @@ export class DiaryService {
       memberId,
       dto.writtenDate,
     );
+    await this.diaryTodoService.createByDiary(result, saveDiary, member);
+
     this.logger.log(
       `생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`,
     );
-    await this.diaryTodoService.createByDiary(result,saveDiary,member);
-
-    this.logger.log(`생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`)
 
     return this.getDiary(memberId, saveDiary.id);
-
   }
 
   /**
@@ -169,8 +171,9 @@ export class DiaryService {
   /**
    * id로 작성한 일기 하나를 보여줌.
    * 분석한 결과도 같이 dto로 전달
+   * RETURN: DiaryAnalysisDto
    */
-  async getDiary(memberId: string, id: number) {
+  async getDiary(memberId: string, id: number): Promise<DiaryAnalysisDto> {
     this.logger.log('일기 단일 조회');
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
@@ -199,9 +202,11 @@ export class DiaryService {
    * [ 대상, 감정, 사건 ]
    * RETURN: DiaryAnalysisDto
    */
-  async createDiaryAnalysis(diary: Diary) {
+  async createDiaryAnalysis(diary: Diary): Promise<DiaryAnalysisDto> {
     const result = new DiaryAnalysisDto();
     result.content = diary.content;
+    result.title = diary.title;
+    result.photo_path = diary.photo_path;
     result.id = diary.id;
 
     for (const activity of diary.activities) {
@@ -227,12 +232,12 @@ export class DiaryService {
     }
 
     //diaryTodo => TodoResDto로 매핑 (응답 주고 받을 때 통일 형식)
-    diary.diaryTodos.forEach((diaryTodo) =>{
-      const todoDto = new TodoAnalysisDto;
-      console.log('todo 조회중')
-      todoDto.Todocontent =diaryTodo.content;
+    diary.diaryTodos.forEach((diaryTodo) => {
+      const todoDto = new TodoAnalysisDto();
+      console.log('todo 조회중');
+      todoDto.Todocontent = diaryTodo.content;
       result.todos.push(todoDto);
-    })
+    });
 
     return result;
   }
