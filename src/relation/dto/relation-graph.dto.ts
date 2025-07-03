@@ -20,6 +20,12 @@ class TargetEmotionRes {
     description: '관계 대상에 대한 지배적 감정',
   })
   highestEmotion: EmotionType | null;
+
+  @ApiProperty({
+    type: Number,
+    description: '언급 수'
+  })
+  count: number;
 }
 
 export class RelationGraphDto {

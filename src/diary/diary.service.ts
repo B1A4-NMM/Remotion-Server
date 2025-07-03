@@ -22,6 +22,7 @@ import {
 } from '../analysis/dto/diary-analysis.dto';
 import { MemberSummaryService } from '../member-summary/member-summary.service';
 import { CreateDiaryDto } from './dto/create-diary.dto';
+import { EmotionBase } from '../enums/emotion-type.enum';
 
 @Injectable()
 export class DiaryService {
@@ -54,9 +55,12 @@ export class DiaryService {
     imageUrl?: string | null, // S3 이미지 경로
   ): Promise<DiaryAnalysisDto> {
     this.logger.log('다이어리 생성');
+    // 여기서 분석 결과 받아오고
     const result = await this.analysisDiaryService.analysisDiary(dto.content);
 
+    // 주인 찾아서
     const member = await this.memberService.findOne(memberId);
+    // 일기 만들어두고
     const diary = new Diary();
     diary.author = member;
     diary.written_date = dto.writtenDate;
@@ -66,12 +70,23 @@ export class DiaryService {
       diary.photo_path = imageUrl;
     }
 
+    // 여기서 일기 저장
     const saveDiary = await this.diaryRepository.save(diary);
 
     //activity & target & todo 은 여러개라서 따로 처리 => 다른 레이어라서 상관없음
-    await this.activityService.createByDiary(result, saveDiary);
-    await this.targetService.createByDiary(result, saveDiary, memberId);
-    await this.memberSummaryService.updateSummaryFromDiary(
+    // 일기에 연관된 정보들 저장
+    await this.activityService.createByDiary(result, saveDiary); // 행동 저장
+    await this.targetService.createByDiary(result, saveDiary, memberId); // 대상 저장
+    await this.emotionService.createDiaryStateEmotion( // 상태 감정 저장
+      result.stateEmotion,
+      diary,
+    );
+    await this.emotionService.createDiarySelfEmotion( // 자가 감정 저장
+      result.selfEmotion,
+      diary
+    );
+
+    await this.memberSummaryService.updateSummaryFromDiary( // 하루 요약 저장
       result,
       memberId,
       dto.writtenDate,
@@ -183,6 +198,7 @@ export class DiaryService {
         'diaryTargets.target.emotionTargets',
         'activities',
         'diaryTodos',
+        'diaryEmotions',
       ],
     });
 
@@ -213,8 +229,21 @@ export class DiaryService {
       const activityDto = new ActivityAnalysisDto();
       activityDto.activityContent = activity.content;
       activityDto.strength = activity.strength;
-      activityDto.weakness = activity.weakness;
       result.activity.push(activityDto);
+    }
+
+    const emotions = diary.diaryEmotions;
+    for (const emotion of emotions) {
+      let dto = new EmotionAnalysisDto();
+      dto.emotionType = emotion.emotion;
+      dto.intensity = emotion.intensity;
+      switch (emotion.emotionBase) {
+        case EmotionBase.State:
+          result.stateEmotion.push(dto)
+          break
+        case EmotionBase.Self:
+          result.selfEmotion.push(dto)
+      }
     }
 
     for (const target of diary.diaryTargets) {
@@ -228,6 +257,7 @@ export class DiaryService {
       }
 
       peopleDto.name = target.target.name;
+      peopleDto.count = target.target.count
       result.people.push(peopleDto);
     }
 

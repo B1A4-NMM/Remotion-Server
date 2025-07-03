@@ -61,7 +61,7 @@ export class TargetService {
 
       target = await this.targetRepository.save(target);
       await this.createDiaryTarget(target, diary);
-      await this.emotionService.createDiaryEmotion(person.feel, diary);
+      await this.emotionService.createDiaryEmotionForTarget(person.feel, diary);
       await this.emotionService.createOrUpdateEmotionTarget(target, person.feel);
     }
   }
@@ -105,61 +105,51 @@ export class TargetService {
    */
   async calculateAffection(emotions: EmotionAnalysisDto[]) {
     let affection = 0;
-    for (const emotion of emotions) {
-      switch (emotion.emotionType) {
-        case EmotionType.행복:
-        case EmotionType.기쁨:
-        case EmotionType.기쁨:
-        case EmotionType.신남:
-        case EmotionType.설렘:
+
+    for (const { emotionType, intensity } of emotions) {
+      switch (emotionType) {
+        // 긍정적 affection
+        case EmotionType.사랑:
         case EmotionType.유대:
-        case EmotionType.신뢰:
-        case EmotionType.존경:
         case EmotionType.친밀:
-          affection += emotion.intensity / 3;
+        case EmotionType.애정:
+        case EmotionType.존경:
+          affection += intensity / 3;
           break;
-        case EmotionType.자신감:
-        case EmotionType.편안:
-        case EmotionType.평온:
-        case EmotionType.안정:
+
+        case EmotionType.신뢰:
+        case EmotionType.공감:
         case EmotionType.감사:
-        case EmotionType.차분:
-        case EmotionType.기대:
-          affection += emotion.intensity / 4;
+          affection += intensity / 4;
           break;
-        case EmotionType.무난:
-        case EmotionType.지루:
-        case EmotionType.긴장:
-          affection += emotion.intensity / 5;
-          break;
-        case EmotionType.서운:
+
+        // 중립적 또는 애매한 영향
+        case EmotionType.거부감:
         case EmotionType.시기:
-        case EmotionType.소외:
+        case EmotionType.질투:
         case EmotionType.실망:
-        case EmotionType.속상:
-        case EmotionType.무기력:
-        case EmotionType.지침:
-        case EmotionType.초조:
-        case EmotionType.부담:
-        case EmotionType.어색:
-          affection += emotion.intensity / 6;
-          break;
-        case EmotionType.불안:
-        case EmotionType.상처:
-        case EmotionType.화남:
-        case EmotionType.짜증:
         case EmotionType.억울:
-        case EmotionType.외로움:
-        case EmotionType.우울:
-        case EmotionType.공허:
-        case EmotionType.불편:
-        case EmotionType.단절:
-          affection += emotion.intensity / 7;
+          affection -= intensity / 5;
           break;
+
+        // 강한 부정 감정 → affection 감소 크게
+        case EmotionType.분노:
+        case EmotionType.짜증:
+        case EmotionType.속상:
+        case EmotionType.상처:
+        case EmotionType.배신감:
+        case EmotionType.경멸:
+        case EmotionType.불쾌:
+          affection -= intensity / 3;
+          break;
+
         default:
+          // affection에 영향을 주지 않는 감정은 무시
           break;
       }
     }
+
     return affection;
   }
+
 }

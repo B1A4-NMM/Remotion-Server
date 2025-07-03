@@ -14,6 +14,7 @@ class GraphEmotionRes {
     description: '감정 강도',
   })
   intensity: number;
+
 }
 
 export class GraphRes {

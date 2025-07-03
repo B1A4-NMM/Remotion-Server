@@ -22,6 +22,10 @@ export class PeopleAnalysisDto {
   @ValidateNested({each: true})
   @Type(() => EmotionAnalysisDto)
   feel:EmotionAnalysisDto[] = []
+
+  @ApiProperty({example: 1, description: '언급수'})
+  @IsNumber()
+  count:number;
 }
 
 export class ActivityAnalysisDto {
@@ -33,9 +37,6 @@ export class ActivityAnalysisDto {
   @IsString()
   strength:string | null | undefined
 
-  @ApiProperty({example:'술자리 절제 못함'})
-  @IsString()
-  weakness:string | null | undefined
 }
 
 export class TodoAnalysisDto {
@@ -69,6 +70,16 @@ export class DiaryAnalysisDto {
   @ValidateNested()
   @Type(() => PeopleAnalysisDto)
   people: PeopleAnalysisDto[] = []
+
+  @ApiProperty({type: [EmotionAnalysisDto]})
+  @ValidateNested()
+  @Type(() => EmotionAnalysisDto)
+  selfEmotion: EmotionAnalysisDto[] = []
+
+  @ApiProperty({type: [EmotionAnalysisDto]})
+  @ValidateNested()
+  @Type(() => EmotionAnalysisDto)
+  stateEmotion: EmotionAnalysisDto[] = []
 
   @ApiProperty({type: [ActivityAnalysisDto]})
   @ValidateNested()

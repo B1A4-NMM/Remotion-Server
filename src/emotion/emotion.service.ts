@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EmotionTarget } from '../entities/emotion-target.entity';
 import { Target } from '../entities/Target.entity';
-import { EmotionType, isEmotionType } from '../enums/emotion-type.enum';
+import {
+  EmotionBase,
+  EmotionType,
+  isEmotionType,
+} from '../enums/emotion-type.enum';
 import { EmotionAnalysisDto } from '../analysis/dto/diary-analysis.dto';
 import { CommonUtilService } from '../util/common-util.service';
 import { DiaryEmotion } from '../entities/diary-emotion.entity';
@@ -22,18 +26,16 @@ export class EmotionService {
   /**
    * emotion-target 엔티티 생성 함수
    */
-  async createOrUpdateEmotionTarget(target: Target, dtos: EmotionAnalysisDto[]) {
+  async createOrUpdateEmotionTarget(
+    target: Target,
+    dtos: EmotionAnalysisDto[],
+  ) {
     for (const dto of dtos) {
       const emotion = dto.emotionType; // 감정 타입
       const emotionIntensity = dto.intensity; // 감정 강도
       let find = await this.findOneEmotionTarget(target, emotion);
       if (find === null) {
-        find = new EmotionTarget(
-          emotion,
-          target,
-          emotionIntensity,
-          1,
-        );
+        find = new EmotionTarget(emotion, target, emotionIntensity, 1);
       } else {
         find.emotion_intensity += emotionIntensity;
         find.count += 1;
@@ -44,13 +46,40 @@ export class EmotionService {
   }
 
   /**
-   * diary-emotion 엔티티 생성 함수
+   * diary-relation-emotion 엔티티 생성 함수
    */
-  async createDiaryEmotion(dtos: EmotionAnalysisDto[], diary: Diary) {
+  async createDiaryEmotionForTarget(dtos: EmotionAnalysisDto[], diary: Diary) {
+    return this.createDiaryEmotionByBase(dtos, diary, EmotionBase.Relation);
+  }
+
+  /**
+   * diary-self-emotion 생성 함수
+   */
+  async createDiarySelfEmotion(dtos: EmotionAnalysisDto[], diary: Diary) {
+    return this.createDiaryEmotionByBase(dtos, diary, EmotionBase.Self);
+  }
+
+  /**
+   * diary-state-emotion 생성 함수
+   */
+  async createDiaryStateEmotion(dtos: EmotionAnalysisDto[], diary: Diary) {
+    return this.createDiaryEmotionByBase(dtos, diary, EmotionBase.State);
+  }
+
+  async createDiaryEmotionByBase(
+    dtos: EmotionAnalysisDto[],
+    diary: Diary,
+    emotionBase: EmotionBase,
+  ) {
     for (const dto of dtos) {
       let entity = await this.findOneDiaryEmotion(diary, dto.emotionType);
       if (entity === null) {
-        entity = new DiaryEmotion(diary, dto.emotionType, dto.intensity);
+        entity = new DiaryEmotion(
+          diary,
+          dto.emotionType,
+          emotionBase,
+          dto.intensity,
+        );
       } else {
         entity.intensity += dto.intensity;
       }
@@ -65,16 +94,18 @@ export class EmotionService {
     if (!isEmotionType(emotion)) {
       throw new NotFoundException('emotion type is not valid');
     }
-    return this.diaryEmotionRepository.findOneBy({
-      diary: diary,
-      emotion: emotion,
+    return this.diaryEmotionRepository.findOne({
+      where: {
+        diary: {id : diary.id},
+        emotion: emotion
+      }
     });
   }
 
   /**
    * emotion-target 엔티티 찾는 함수
    */
-   async findOneEmotionTarget(target: Target, emotion: EmotionType) {
+  async findOneEmotionTarget(target: Target, emotion: EmotionType) {
     if (!isEmotionType(emotion)) {
       throw new NotFoundException('emotion type is not valid');
     }
@@ -118,7 +149,7 @@ export class EmotionService {
   }
 
   /**
-   * Target을 인자로 받아, 해당 Target의 감정 중 가장 큰 것 하나만 반환합니다 
+   * Target을 인자로 받아, 해당 Target의 감정 중 가장 큰 것 하나만 반환합니다
    */
   async highestEmotionToTarget(target: Target) {
     const row = await this.emotionTargetRepository
@@ -144,16 +175,15 @@ export class EmotionService {
   }
 
   async getTodayEmotions(memberId: string) {
-    const date = this.util.getCurrentDate()
-    return this.getEmotionsByDate(memberId, date)
+    const date = this.util.getCurrentDate();
+    return this.getEmotionsByDate(memberId, date);
   }
 
-  private async getEmotionsByDate(memberId: string, date:string) {
-    const emotions =
-      await this.sumIntensityByEmotionForDateAndOwner(
-        date,
-        memberId,
-      );
+  private async getEmotionsByDate(memberId: string, date: string) {
+    const emotions = await this.sumIntensityByEmotionForDateAndOwner(
+      date,
+      memberId,
+    );
     const result: any[] = [];
     for (const r of emotions) {
       result.push({

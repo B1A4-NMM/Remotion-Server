@@ -115,13 +115,17 @@ export class ClaudeService {
     return parsed?.content?.[0]?.text || 'No response';
   }
 
-  async queryDiaryPatterns(prompt: string): Promise<DiaryAnalysis> {
+  async serializeAnalysis(prompt: string): Promise<DiaryAnalysis> {
+    return this.queryDiaryPatterns(prompt);
+  }
+
+  async queryDiaryPatterns(prompt: string) {
     try {
 
       const processedPrompt = this.patternAnalysisPrompt(prompt);
 
       const command = new InvokeModelCommand({
-        modelId: 'apac.amazon.nova-lite-v1:0',
+        modelId: 'apac.amazon.nova-pro-v1:0',
         contentType: 'application/json',
         accept: 'application/json',
         body: JSON.stringify({
@@ -150,7 +154,7 @@ export class ClaudeService {
 
       const checkPrompt = this.resultAnalysis(responseText)
       const checkCommand = new InvokeModelCommand({
-        modelId: 'apac.amazon.nova-lite-v1:0',
+        modelId: 'apac.amazon.nova-pro-v1:0',
         contentType: 'application/json',
         accept: 'application/json',
         body: JSON.stringify({
