@@ -46,7 +46,21 @@ export class DiaryController {
     type: DiaryAnalysisDto,
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiBody({ type: CreateDiaryDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        content: { type: 'string', example: '오늘은 좋은 하루였다.' },
+        writtenDate: { type: 'string', format: 'date', example: '2024-01-01' },
+        weather: { type: 'string', example: 'SUNNY' },
+        photo: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: ['content', 'writtenDate'],
+    },
+  })
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('photo'))
   async create(
