@@ -19,8 +19,12 @@ import { DiaryModule } from './diary/diary.module';
 import { EmotionModule } from './emotion/emotion.module';
 import { RelationController } from './relation/relation.controller';
 import { RelationModule } from './relation/relation.module';
+import { MemberSummaryModule } from './member-summary/member-summary.module';
+
 import { TodoModule } from './todo/todo.module';
 import { DiarytodoModule } from './diarytodo/diarytodo.module';
+import { S3Service } from './s3/s3.service';
+import { UploadModule } from './upload/upload.module';
 
 
 @Module({
@@ -42,9 +46,11 @@ import { DiarytodoModule } from './diarytodo/diarytodo.module';
     DiaryModule,
     EmotionModule,
     RelationModule,
+    MemberSummaryModule,
     TodoModule,
     DiarytodoModule,
-    
+    UploadModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -31,7 +31,8 @@ export class RelationService {
       res.relations.push({
         name: target.name,
         affection: target.affection,
-        highestEmotion: emotion
+        highestEmotion: emotion,
+        count: target.count
       });
     }
 

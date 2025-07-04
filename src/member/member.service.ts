@@ -7,11 +7,11 @@ import { Member } from '../entities/Member.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SocialType } from '../enums/social-type.enum';
 import { MEMBER_DAILY_LIMIT } from '../constants/member.constant';
+import { MemberSummary } from '../entities/member-summary.entity';
 
 @Injectable()
 export class MemberService {
   constructor(
-    private readonly neo4jService: Neo4jService,
     @InjectRepository(Member) private readonly repo: Repository<Member>,
   ) {}
 
@@ -48,4 +48,6 @@ export class MemberService {
   remove(id: number) {
     return `This action removes a #${id} member`;
   }
+
+
 }

@@ -8,9 +8,18 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { DiaryAnalysisDto } from '../analysis/dto/diary-analysis.dto';
 import { DiaryService } from './diary.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -18,11 +27,16 @@ import { CurrentUser } from '../auth/user.decorator';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { DiaryListRes } from './dto/diary-list.res';
 import { DiaryHomeRes } from './dto/diary-home.res';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { S3Service } from '../s3/s3.service';
 
 @Controller('diary')
 @ApiTags('일기')
 export class DiaryController {
-  constructor(private readonly diaryService: DiaryService) {}
+  constructor(
+    private readonly diaryService: DiaryService,
+    private readonly s3Service: S3Service,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: '일기 생성 후 분석 내용 받기' })
@@ -32,15 +46,39 @@ export class DiaryController {
     type: DiaryAnalysisDto,
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiBody({ type: CreateDiaryDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        content: { type: 'string', example: '오늘은 좋은 하루였다.' },
+        writtenDate: { type: 'string', format: 'date', example: '2024-01-01' },
+        weather: { type: 'string', example: 'SUNNY' },
+        photo: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: ['content', 'writtenDate'],
+    },
+  })
   @UseGuards(AuthGuard('jwt'))
-  async create(@Body() body: CreateDiaryDto, @CurrentUser() user) {
-    try {
-      const response = await this.diaryService.createDiary(user.id, body);
-      return { response };
-    } catch (error) {
-      throw new Error(`Detail analysis failed: ${error.message}`);
+  @UseInterceptors(FileInterceptor('photo'))
+  async create(
+    @Body() body: CreateDiaryDto,
+    @CurrentUser() user,
+    @UploadedFile() photo?: Express.Multer.File,
+  ) {
+    let imageUrl: string | null = null;
+    if (photo) {
+      imageUrl = await this.s3Service.uploadFile(photo);
     }
+
+    const response = await this.diaryService.createDiary(
+      user.id,
+      body,
+      imageUrl,
+    );
+    return { response };
   }
 
   @ApiOperation({ summary: '자신이 작성한 모든 일기 받기' })
@@ -54,9 +92,9 @@ export class DiaryController {
 
   @ApiOperation({
     summary: '홈 화면',
-    description:'오늘 작성한 일기와 그에 나타난 감정들을 보여줍니다'
+    description: '오늘 작성한 일기와 그에 나타난 감정들을 보여줍니다',
   })
-  @ApiBody({ type: DiaryHomeRes }) 
+  @ApiBody({ type: DiaryHomeRes })
   @Get('/today')
   @UseGuards(AuthGuard('jwt'))
   async getTodayDiary(@CurrentUser() user): Promise<DiaryHomeRes> {
@@ -69,10 +107,9 @@ export class DiaryController {
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
   async getDiary(@CurrentUser() user, @Param('id') id: string) {
-    const memberId:string = user.id;
+    const memberId: string = user.id;
     return await this.diaryService.getDiary(memberId, +id);
   }
-
 
   // @ApiOperation({
   //   summary: '일기 전체 조회',

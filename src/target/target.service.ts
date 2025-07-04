@@ -14,6 +14,8 @@ import { DiaryTarget } from '../entities/diary-target.entity';
 import * as process from 'node:process';
 import { EmotionService } from '../emotion/emotion.service';
 import { EmotionType } from '../enums/emotion-type.enum';
+import { MemberSummaryService } from '../member-summary/member-summary.service';
+import { DiaryEmotionGroupingDto } from '../member-summary/dto/diary-emotion-grouping.dto';
 
 @Injectable()
 export class TargetService {
@@ -40,7 +42,7 @@ export class TargetService {
       let target = await this.findOne(memberId, person.name);
       if (target === null) {
         // 대상이 없다면 생성
-        const newTarget = new Target(
+        target = new Target(
           person.name,
           1,
           this.util.getCurrentDateToISOString(),
@@ -49,21 +51,29 @@ export class TargetService {
           member,
         );
 
-        const saveTarget = await this.targetRepository.save(newTarget);
-        const diaryTarget = new DiaryTarget(diary, saveTarget);
-        await this.diaryTargetRepository.save(diaryTarget);
-        await this.emotionService.createEmotionTarget(saveTarget, person.feel);
       } else {
         // 있으면 갱신
-        target.count += await this.calculateAffection(person.feel);
+        target.affection += await this.calculateAffection(person.feel);
         target.recent_date = this.util.getCurrentDateToISOString();
-        target.affection += 1;
-        await this.targetRepository.save(target);
-        const diaryTarget = new DiaryTarget(diary, target);
-        await this.diaryTargetRepository.save(diaryTarget);
+        target.count += 1;
+        // DONE : emotionTarget도 갱신해야할듯
       }
 
-      await this.emotionService.createDiaryEmotion(person.feel, diary)
+      target = await this.targetRepository.save(target);
+      await this.createDiaryTarget(target, diary);
+      await this.emotionService.createDiaryEmotionForTarget(person.feel, diary);
+      await this.emotionService.createOrUpdateEmotionTarget(target, person.feel);
+    }
+  }
+
+  async createDiaryTarget(target: Target, diary: Diary) {
+    let diaryTarget = await this.diaryTargetRepository.findOneBy({
+      diary: diary,
+      target: target,
+    });
+    if (diaryTarget === null) {
+      diaryTarget = new DiaryTarget(diary, target);
+      await this.diaryTargetRepository.save(diaryTarget);
     }
   }
 
@@ -84,7 +94,7 @@ export class TargetService {
       order: {
         affection: 'DESC',
       },
-    })
+    });
 
     return result;
   }
@@ -95,61 +105,51 @@ export class TargetService {
    */
   async calculateAffection(emotions: EmotionAnalysisDto[]) {
     let affection = 0;
-    for (const emotion of emotions) {
-      switch (emotion.emotionType) {
-        case EmotionType.행복:
-        case EmotionType.기쁨:
-        case EmotionType.기쁨:
-        case EmotionType.신남:
-        case EmotionType.설렘:
+
+    for (const { emotionType, intensity } of emotions) {
+      switch (emotionType) {
+        // 긍정적 affection
+        case EmotionType.사랑:
         case EmotionType.유대:
-        case EmotionType.신뢰:
-        case EmotionType.존경:
         case EmotionType.친밀:
-          affection += (emotion.intensity / 3);
+        case EmotionType.애정:
+        case EmotionType.존경:
+          affection += intensity / 3;
           break;
-        case EmotionType.자신감:
-        case EmotionType.편안:
-        case EmotionType.평온:
-        case EmotionType.안정:
+
+        case EmotionType.신뢰:
+        case EmotionType.공감:
         case EmotionType.감사:
-        case EmotionType.차분:
-        case EmotionType.기대:
-          affection += (emotion.intensity / 4);
+          affection += intensity / 4;
           break;
-        case EmotionType.무난:
-        case EmotionType.지루:
-        case EmotionType.긴장:
-          affection += (emotion.intensity / 5);
-          break;
-        case EmotionType.서운:
+
+        // 중립적 또는 애매한 영향
+        case EmotionType.거부감:
         case EmotionType.시기:
-        case EmotionType.소외:
+        case EmotionType.질투:
         case EmotionType.실망:
-        case EmotionType.속상:
-        case EmotionType.무기력:
-        case EmotionType.지침:
-        case EmotionType.초조:
-        case EmotionType.부담:
-        case EmotionType.어색:
-          affection += (emotion.intensity / 6);
-          break;
-        case EmotionType.불안:
-        case EmotionType.상처:
-        case EmotionType.화남:
-        case EmotionType.짜증:
         case EmotionType.억울:
-        case EmotionType.외로움:
-        case EmotionType.우울:
-        case EmotionType.공허:
-        case EmotionType.불편:
-        case EmotionType.단절:
-          affection += (emotion.intensity / 7);
+          affection -= intensity / 5;
           break;
+
+        // 강한 부정 감정 → affection 감소 크게
+        case EmotionType.분노:
+        case EmotionType.짜증:
+        case EmotionType.속상:
+        case EmotionType.상처:
+        case EmotionType.배신감:
+        case EmotionType.경멸:
+        case EmotionType.불쾌:
+          affection -= intensity / 3;
+          break;
+
         default:
+          // affection에 영향을 주지 않는 감정은 무시
           break;
       }
     }
+
     return affection;
   }
+
 }

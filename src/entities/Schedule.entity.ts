@@ -38,8 +38,4 @@ export class Schedule {
     @JoinColumn({ name : 'todoId' })
     todo?: Todo;
 
-    @ManyToOne(() => Member, (member) => member.schedules)
-    @JoinColumn({ name : 'member_id'})
-    user: Member;
-
 }

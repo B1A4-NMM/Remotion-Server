@@ -25,10 +25,12 @@ export interface ProblemAnalysis {
 
 export interface ActivityAnalysis {
   activity: string;
+  peoples: Person[];
+  self_emotions: EmotionInteraction;
+  state_emotions: EmotionInteraction;
   problem: ProblemAnalysis[];
   strength: string;
-  weakness: string;
-  peoples: Person[];
+
 }
 
 export interface Reflection {

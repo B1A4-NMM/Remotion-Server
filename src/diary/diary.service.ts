@@ -1,7 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
 import { EmotionService } from '../emotion/emotion.service';
@@ -10,13 +9,10 @@ import { ActivityService } from '../activity/activity.service';
 import { TargetService } from '../target/target.service';
 import { CommonUtilService } from '../util/common-util.service';
 import { DiarytodoService } from '../diarytodo/diarytodo.service';
-
 import { DiaryListRes, DiaryRes } from './dto/diary-list.res';
 import { DiaryHomeRes } from './dto/diary-home.res';
-
 import { DiaryTodo } from '../entities/diary-todo.entity';
 import { Diary } from '../entities/Diary.entity';
-
 import {
   ActivityAnalysisDto,
   DiaryAnalysisDto,
@@ -24,29 +20,28 @@ import {
   PeopleAnalysisDto,
   TodoAnalysisDto,
 } from '../analysis/dto/diary-analysis.dto';
+import { MemberSummaryService } from '../member-summary/member-summary.service';
 import { CreateDiaryDto } from './dto/create-diary.dto';
-
-
+import { EmotionBase } from '../enums/emotion-type.enum';
 
 @Injectable()
 export class DiaryService {
-  private readonly logger= new Logger(DiaryService.name);
+  private readonly logger = new Logger(DiaryService.name);
+
   constructor(
     private readonly analysisDiaryService: AnalysisDiaryService,
     private readonly memberService: MemberService,
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
-
     @InjectRepository(DiaryTodo)
     private readonly diaryTodoRepository: Repository<DiaryTodo>,
-
+    private readonly memberSummaryService: MemberSummaryService,
     private readonly activityService: ActivityService,
     private readonly targetService: TargetService,
     private readonly todoService: TodoService,
     private readonly utilService: CommonUtilService,
     private readonly emotionService: EmotionService,
-    private readonly diaryTodoService : DiarytodoService,
-    
+    private readonly diaryTodoService: DiarytodoService,
   ) {}
 
   /**
@@ -54,29 +49,55 @@ export class DiaryService {
    * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장
    * 연관된 엔티티 : [ Activity, Target, DiaryTarget, DiaryEmotion ]
    */
-  async createDiary(memberId: string, dto: CreateDiaryDto) {
-    this.logger.log('다이어리 생성')
+  async createDiary(
+    memberId: string,
+    dto: CreateDiaryDto,
+    imageUrl?: string | null, // S3 이미지 경로
+  ): Promise<DiaryAnalysisDto> {
+    this.logger.log('다이어리 생성');
+    // 여기서 분석 결과 받아오고
     const result = await this.analysisDiaryService.analysisDiary(dto.content);
 
+    // 주인 찾아서
     const member = await this.memberService.findOne(memberId);
+    // 일기 만들어두고
     const diary = new Diary();
     diary.author = member;
     diary.written_date = dto.writtenDate;
     diary.content = dto.content;
     diary.title = 'demo';
+    if (imageUrl) {
+      diary.photo_path = imageUrl;
+    }
 
+    // 여기서 일기 저장
     const saveDiary = await this.diaryRepository.save(diary);
-    
 
-    //activity & target & todo 은 여러개라서 따로 처리 => 다른 레이어라서 상관없음 
-    await this.activityService.createByDiary(result, saveDiary);
-    await this.targetService.createByDiary(result, saveDiary, memberId);
-    await this.diaryTodoService.createByDiary(result,saveDiary,member);
+    //activity & target & todo 은 여러개라서 따로 처리 => 다른 레이어라서 상관없음
+    // 일기에 연관된 정보들 저장
+    await this.activityService.createByDiary(result, saveDiary); // 행동 저장
+    await this.targetService.createByDiary(result, saveDiary, memberId); // 대상 저장
+    await this.emotionService.createDiaryStateEmotion( // 상태 감정 저장
+      result.stateEmotion,
+      diary,
+    );
+    await this.emotionService.createDiarySelfEmotion( // 자가 감정 저장
+      result.selfEmotion,
+      diary
+    );
 
-    this.logger.log(`생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`)
+    await this.memberSummaryService.updateSummaryFromDiary( // 하루 요약 저장
+      result,
+      memberId,
+      dto.writtenDate,
+    );
+    await this.diaryTodoService.createByDiary(result, saveDiary, member);
+
+    this.logger.log(
+      `생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`,
+    );
 
     return this.getDiary(memberId, saveDiary.id);
-    
   }
 
   /**
@@ -100,7 +121,7 @@ export class DiaryService {
 
   /**
    *  홈 화면에서 보여질 정보들을 추출
-   *  RETURN [ 오늘의 감정 , 오늘 작성한 일기 (감정, 대상) ] 
+   *  RETURN [ 오늘의 감정 , 오늘 작성한 일기 (감정, 대상) ]
    */
   async getHomeDiaries(memberId: string): Promise<DiaryHomeRes> {
     const diaries = await this.getTodayDiaries(memberId);
@@ -147,14 +168,15 @@ export class DiaryService {
       diaryRes.title = diary.title;
       diaryRes.writtenDate = diary.written_date;
 
-      diary.diaryEmotions.forEach((emotion) => {
-        if (!diaryRes.emotions.includes(emotion.emotion)) // 중복 방지
+      for (const emotion of diary.diaryEmotions) {
+        if (!diaryRes.emotions.includes(emotion.emotion))
+          // 중복 방지
           diaryRes.emotions.push(emotion.emotion);
-      });
+      }
 
-      diary.diaryTargets.forEach((target) => {
+      for (const target of diary.diaryTargets) {
         diaryRes.targets.push(target.target.name);
-      });
+      }
 
       res.diaries.push(diaryRes);
     }
@@ -164,9 +186,10 @@ export class DiaryService {
   /**
    * id로 작성한 일기 하나를 보여줌.
    * 분석한 결과도 같이 dto로 전달
+   * RETURN: DiaryAnalysisDto
    */
-  async getDiary(memberId: string, id: number) {
-    this.logger.log('일기 단일 조회')
+  async getDiary(memberId: string, id: number): Promise<DiaryAnalysisDto> {
+    this.logger.log('일기 단일 조회');
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
       relations: [
@@ -175,6 +198,7 @@ export class DiaryService {
         'diaryTargets.target.emotionTargets',
         'activities',
         'diaryTodos',
+        'diaryEmotions',
       ],
     });
 
@@ -194,29 +218,48 @@ export class DiaryService {
    * [ 대상, 감정, 사건 ]
    * RETURN: DiaryAnalysisDto
    */
-  async createDiaryAnalysis(diary: Diary) {
+  async createDiaryAnalysis(diary: Diary): Promise<DiaryAnalysisDto> {
     const result = new DiaryAnalysisDto();
-    result.content = diary.content
-    result.id = diary.id
+    result.content = diary.content;
+    result.title = diary.title;
+    result.photo_path = diary.photo_path;
+    result.id = diary.id;
 
-    diary.activities.forEach((activity) => {
+    for (const activity of diary.activities) {
       const activityDto = new ActivityAnalysisDto();
       activityDto.activityContent = activity.content;
+      activityDto.strength = activity.strength;
       result.activity.push(activityDto);
-    });
+    }
 
-    diary.diaryTargets.forEach((target) => {
+    const emotions = diary.diaryEmotions;
+    for (const emotion of emotions) {
+      let dto = new EmotionAnalysisDto();
+      dto.emotionType = emotion.emotion;
+      dto.intensity = emotion.intensity;
+      switch (emotion.emotionBase) {
+        case EmotionBase.State:
+          result.stateEmotion.push(dto)
+          break
+        case EmotionBase.Self:
+          result.selfEmotion.push(dto)
+      }
+    }
+
+    for (const target of diary.diaryTargets) {
       const peopleDto = new PeopleAnalysisDto();
-      target.target.emotionTargets.forEach((emotionTarget) => {
+      for (const emotionTarget of target.target.emotionTargets) {
         const peopleEmotionsDto = new EmotionAnalysisDto();
         peopleEmotionsDto.emotionType = emotionTarget.emotion;
-        peopleEmotionsDto.intensity = emotionTarget.emotion_intensity;
+        peopleEmotionsDto.intensity =
+          emotionTarget.emotion_intensity / emotionTarget.count;
         peopleDto.feel.push(peopleEmotionsDto);
-      });
+      }
 
       peopleDto.name = target.target.name;
+      peopleDto.count = target.target.count
       result.people.push(peopleDto);
-    });
+    }
 
     //diaryTodo => TodoResDto로 매핑 (응답 주고 받을 때 통일 형식)
     diary.diaryTodos.forEach((diaryTodo) =>{
@@ -224,7 +267,7 @@ export class DiaryService {
       
       todoDto.Todocontent =diaryTodo.content;
       result.todos.push(todoDto);
-    })
+    });
 
     return result;
   }

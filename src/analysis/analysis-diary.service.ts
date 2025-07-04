@@ -19,7 +19,7 @@ export class AnalysisDiaryService {
   ) {}
 
   async analysisDiary(prompt: string): Promise<DiaryAnalysisDto> {
-    const result = await this.promptService.queryDiaryPatterns(prompt);
+    const result = await this.promptService.serializeAnalysis(prompt);
 
     // 다이어리 응답 DTO
     let diaryAnalysisDto = new DiaryAnalysisDto();
@@ -29,10 +29,13 @@ export class AnalysisDiaryService {
     for (const activity of activities) {
       let activityAnalysisDto = new ActivityAnalysisDto();
       activityAnalysisDto.activityContent = activity.activity;
+      activityAnalysisDto.strength = activity.strength === 'None' ? null : activity.strength;
 
       diaryAnalysisDto.activity.push(activityAnalysisDto);
 
       diaryAnalysisDto.people.push(...this.peopleAnalysis(activity.peoples));
+      diaryAnalysisDto.selfEmotion.push(...this.emotionAnalysis(activity.self_emotions))
+      diaryAnalysisDto.stateEmotion.push(...this.emotionAnalysis(activity.state_emotions))
     }
 
     diaryAnalysisDto.title = '[가제] 오늘의 일기'; // 일기 타이틀
@@ -72,6 +75,8 @@ export class AnalysisDiaryService {
 
   private emotionAnalysis(emotion: EmotionInteraction) {
     let dtos: EmotionAnalysisDto[] = [];
+    if (!emotion.emotion)
+      return []
 
     for (let i = 0; i < emotion.emotion.length; i++) {
       const dto = new EmotionAnalysisDto();

@@ -4,7 +4,6 @@ import { Entity,
     CreateDateColumn, 
     ManyToOne, 
     JoinColumn, 
-    ManyToMany,
     OneToMany} from 'typeorm';
 
 import { ShareGroup } from './ShareGroup.entity';   
