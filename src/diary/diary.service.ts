@@ -221,7 +221,7 @@ export class DiaryService {
     //diaryTodo => TodoResDto로 매핑 (응답 주고 받을 때 통일 형식)
     diary.diaryTodos.forEach((diaryTodo) =>{
       const todoDto = new TodoAnalysisDto;
-      console.log('todo 조회중')
+      
       todoDto.Todocontent =diaryTodo.content;
       result.todos.push(todoDto);
     })

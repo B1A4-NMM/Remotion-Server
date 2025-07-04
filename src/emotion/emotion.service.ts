@@ -17,6 +17,9 @@ export class EmotionService {
     @InjectRepository(DiaryEmotion)
     private readonly diaryEmotionRepository: Repository<DiaryEmotion>,
     private readonly util: CommonUtilService,
+
+    @InjectRepository(Diary)
+    private readonly diaryRepository : Repository<Diary>,
   ) {}
 
   /**
@@ -89,6 +92,9 @@ export class EmotionService {
    * 날짜와 멤버 아이디를 받아 해당 멤버가 해당하는 날짜에 쓴 일기에서
    * 추출 된 감정들을 가져옵니다
    * 이 때, 감정들이 같을 경우, 감정의 intensity의 합을 가져옵니다.
+   * 
+   * 
+   * 캘린더에서 이거 쓰면 될 듯
    */
   async sumIntensityByEmotionForDateAndOwner(date: string, ownerId: string) {
     return (
@@ -160,5 +166,22 @@ export class EmotionService {
     }
 
     return result;
+  }
+
+
+  // 감정 추출하는 로직인데 특정 날짜의 추출 감정들중 intensity 가장 높은거
+
+  async getRepresentEmotionByDiary(diaryId : number) : Promise<EmotionType | null> {
+    const diary = await this.diaryRepository.findOne({
+
+      where: { id : diaryId },
+      relations  : ['diaryEmotions'],
+      
+    });
+
+    if( !diary || !diary.diaryEmotions.length) return null; 
+
+    const sorted = diary.diaryEmotions.sort( (a,b) => b.intensity - a.intensity);
+    return sorted[0].emotion; 
   }
 }

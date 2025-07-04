@@ -5,7 +5,8 @@ import { Target } from './Target.entity';
 import { UserShareGroup } from './user-share-group.entity';
 import { Todo } from './Todo.entity';
 import { SocialType } from '../enums/social-type.enum';
-
+import { Schedule } from './Schedule.entity';
+import { scheduled } from 'rxjs';
 
 @Entity()
 export class Member {
@@ -45,5 +46,10 @@ export class Member {
 
     @OneToMany( () => Todo, (todo) => todo.owner)
     todos: Todo[];
+
+
+    @OneToMany( () => Schedule, (schedule) =>schedule.user)
+    schedules : Schedule[];
+
 
 }
