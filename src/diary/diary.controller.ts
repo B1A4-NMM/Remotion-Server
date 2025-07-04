@@ -73,16 +73,12 @@ export class DiaryController {
       imageUrl = await this.s3Service.uploadFile(photo);
     }
 
-    try {
-      const response = await this.diaryService.createDiary(
-        user.id,
-        body,
-        imageUrl,
-      );
-      return { response };
-    } catch (error) {
-      throw new Error(`Detail analysis failed: ${error.message}`);
-    }
+    const response = await this.diaryService.createDiary(
+      user.id,
+      body,
+      imageUrl,
+    );
+    return { response };
   }
 
   @ApiOperation({ summary: '자신이 작성한 모든 일기 받기' })

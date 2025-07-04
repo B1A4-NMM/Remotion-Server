@@ -29,4 +29,14 @@ export class ClaudeController {
     }
   }
 
+  @Post('serial')
+  async askSerial(@Body('prompt') prompt: string) {
+    try {
+      const response = await this.claudeService.serializeAnalysis(prompt);
+      return { response };
+    } catch (error) {
+      throw new Error(`Detail analysis failed: ${error.message}`);
+    }
+  }
+
 }
