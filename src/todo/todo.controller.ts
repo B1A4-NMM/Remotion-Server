@@ -1,12 +1,12 @@
-import { Body, Controller, Injectable, Post, UseGuards, Get, Logger } from '@nestjs/common';
+import { Body, Controller, Injectable, Post, Patch, UseGuards, Get, Logger, Query, Param } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { TodoService } from './todo.service'
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
-import { TodoAnalysisDto } from 'src/analysis/dto/diary-analysis.dto';
-
+import { TodoAnalysisDto } from '../analysis/dto/diary-analysis.dto';
+import { UpdateTodoDto } from './dto/update-todo.dto';
 
 
 /*
@@ -50,7 +50,7 @@ export class TodoController {
     }
 
 
-    // 이 부분 캘린더 뷰로 수정
+    // 이 부분 캘린더 뷰로 수정 todo + 감정들 보내주기 
     @Get()
     @ApiOperation({ summary : "전체 Todo 조회",
     description: "User식별해서 전체 todo목록을 조회합니다."
@@ -61,11 +61,25 @@ export class TodoController {
     // })
     @ApiResponse({ status: 200, description: '할 일 조회 성공' })
     @ApiResponse({ status: 400, description : 'Bad request'})
-    async getTodos(@CurrentUser() user){
-
+    async getTodos(@Query('from') from: string,
+                   @Query('to') to: string,
+                   @CurrentUser() user
+                   ){
+                    
         //console.log("Todo 조회 성공")
-        return this.todoService.getTodoByUserId(user.id);
+        return this.todoService.getTodoAndEmotions(user.id,from,to);
     }
+
+
+    @Patch(':id')
+    async updateTodo(
+        @Param('id') id: string,
+        @Body() updateDto : UpdateTodoDto,
+        @CurrentUser() user: any,
+    ){
+        return this.todoService.updateTodo(id, updateDto, user.id);
+    }
+
 
 
 
