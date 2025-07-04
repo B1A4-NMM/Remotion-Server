@@ -14,8 +14,8 @@ import { DiaryTarget } from '../entities/diary-target.entity';
 import * as process from 'node:process';
 import { EmotionService } from '../emotion/emotion.service';
 import { EmotionType } from '../enums/emotion-type.enum';
-import { MemberSummaryService } from '../member-summary/member-summary.service';
-import { DiaryEmotionGroupingDto } from '../member-summary/dto/diary-emotion-grouping.dto';
+import { MemberSummaryService } from '../member/member-summary.service';
+import { DiaryEmotionGroupingDto } from '../member/dto/diary-emotion-grouping.dto';
 
 @Injectable()
 export class TargetService {

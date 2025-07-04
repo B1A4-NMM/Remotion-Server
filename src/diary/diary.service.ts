@@ -20,7 +20,7 @@ import {
   PeopleAnalysisDto,
   TodoAnalysisDto,
 } from '../analysis/dto/diary-analysis.dto';
-import { MemberSummaryService } from '../member-summary/member-summary.service';
+import { MemberSummaryService } from '../member/member-summary.service';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { EmotionBase } from '../enums/emotion-type.enum';
 
@@ -96,6 +96,8 @@ export class DiaryService {
     this.logger.log(
       `생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`,
     );
+
+    this.logger.log(`일기의 주인 : ${saveDiary.author.id}, 글쓴이 : ${memberId}`)
 
     return this.getDiary(memberId, saveDiary.id);
   }
