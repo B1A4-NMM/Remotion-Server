@@ -272,6 +272,16 @@ export class DiaryService {
     return result;
   }
 
+  async deleteAll(memberId: string) {
+    const member = await this.memberService.findOne(memberId);
+    const diaries = await this.diaryRepository.find({
+      where: { author: member },
+    });
+    for (const diary of diaries) {
+      await this.diaryRepository.delete(diary.id);
+    }
+  }
+
   /**
    * 커서를 통해 일기를 가져옴
    * 연관된 감정이나 사건, 대상은 가져오지 않음

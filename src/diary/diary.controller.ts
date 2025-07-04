@@ -1,7 +1,7 @@
 import {
   Body,
   Controller,
-  DefaultValuePipe,
+  DefaultValuePipe, Delete,
   Get,
   Injectable,
   Param,
@@ -109,6 +109,13 @@ export class DiaryController {
   async getDiary(@CurrentUser() user, @Param('id') id: string) {
     const memberId: string = user.id;
     return await this.diaryService.getDiary(memberId, +id);
+  }
+
+  @Delete('all')
+  @UseGuards(AuthGuard('jwt'))
+  async deleteAll(@CurrentUser() user) {
+    const memberId:string = user.id
+    return await this.diaryService.deleteAll(memberId);
   }
 
   // @ApiOperation({
