@@ -13,7 +13,7 @@ import { Todo } from './src/entities/Todo.entity';
 import { Activity } from './src/entities/Activity.entity';
 import { DiaryEmotion } from './src/entities/diary-emotion.entity';
 import { DiaryTodo } from './src/entities/diary-todo.entity';
-import { Schedule } from 'src/entities/Schedule.entity';
+
 
 config();
 
@@ -37,7 +37,6 @@ export const AppDataSource = new DataSource({
     Activity,
     DiaryEmotion,
     DiaryTodo,
-    Schedule,
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: true,

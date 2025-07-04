@@ -15,7 +15,7 @@ import { MemberSummary } from './src/entities/member-summary.entity';
 import { EmotionSummaryScore } from './src/entities/emotion-summary-score.entity';
 import { DiaryEmotion } from './src/entities/diary-emotion.entity';
 import { DiaryTodo } from './src/entities/diary-todo.entity';
-import { Schedule } from 'src/entities/Schedule.entity';
+
 
 //__dirname + '/**/*.entity{.ts,.js}'
 
