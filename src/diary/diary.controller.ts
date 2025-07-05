@@ -1,7 +1,8 @@
 import {
   Body,
   Controller,
-  DefaultValuePipe, Delete,
+  DefaultValuePipe,
+  Delete,
   Get,
   Injectable,
   Param,
@@ -30,6 +31,9 @@ import { DiaryHomeRes } from './dto/diary-home.res';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { S3Service } from '../s3/s3.service';
 import { CreateDiaryRes } from './dto/create-diary.res';
+import { CommonUtilService } from '../util/common-util.service';
+import * as util from 'node:util';
+import { ParseDatePipe } from '../pipe/parse-date.pipe';
 
 @Controller('diary')
 @ApiTags('일기')
@@ -37,6 +41,7 @@ export class DiaryController {
   constructor(
     private readonly diaryService: DiaryService,
     private readonly s3Service: S3Service,
+    private readonly util: CommonUtilService
   ) {}
 
   @Post()
@@ -63,8 +68,12 @@ export class DiaryController {
     }
     const memberId = user.id;
 
-    const createId = await this.diaryService.createDiary(memberId, body, imageUrl);
-    return new CreateDiaryRes(createId)
+    const createId = await this.diaryService.createDiary(
+      memberId,
+      body,
+      imageUrl,
+    );
+    return new CreateDiaryRes(createId);
   }
 
   @ApiOperation({ summary: '자신이 작성한 모든 일기 받기' })
@@ -74,6 +83,16 @@ export class DiaryController {
   async allDiaries(@CurrentUser() user) {
     const memberId = user.id;
     return await this.diaryService.getDiaryList(memberId);
+  }
+
+  @ApiOperation({ summary: '자신이 특정 날짜에 작성한 일기 받기' })
+  @ApiBody({ type: DiaryListRes })
+  @Get('date')
+  @UseGuards(AuthGuard('jwt'))
+  async getDiaryByDate(@CurrentUser() user: any, @Query('date', ParseDatePipe) date: Date) {
+    const memberId = user.id;
+    console.log(`date = ${date}`)
+    return await this.diaryService.getDiaryByDate(memberId, date);
   }
 
   @ApiOperation({
@@ -100,7 +119,7 @@ export class DiaryController {
   @Delete('all')
   @UseGuards(AuthGuard('jwt'))
   async deleteAll(@CurrentUser() user) {
-    const memberId:string = user.id
+    const memberId: string = user.id;
     return await this.diaryService.deleteAll(memberId);
   }
 

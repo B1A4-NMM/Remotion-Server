@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
@@ -100,6 +100,20 @@ export class DiaryService {
     this.logger.log(`일기의 주인 : ${saveDiary.author.id}, 글쓴이 : ${memberId}`)
 
     return saveDiary.id;
+  }
+
+  async getDiaryByDate(memberId: string, date: Date) {
+    const member = await this.memberService.findOne(memberId);
+
+    console.log(`member_id = ${member.id}`)
+
+    const diaries = await this.diaryRepository.find({
+      where: { written_date: new Date('2025-07-01') },
+      relations: ['diaryTargets', 'diaryTargets.target', 'diaryEmotions'],
+    });
+
+    const res = this.buildDiaryList(diaries);
+    return res
   }
 
   /**

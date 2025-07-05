@@ -3,6 +3,7 @@ import { IsString, IsNotEmpty, IsDate, IsEnum, IsOptional } from 'class-validato
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { Weather } from '../../enums/weather.enum';
+import { BadRequestException } from '@nestjs/common';
 
 export class CreateDiaryDto {
   @ApiProperty({
@@ -18,6 +19,11 @@ export class CreateDiaryDto {
     example: '2024-01-01',
   })
   @Type(() => Date)
+  @Transform(({ value }) => {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) throw new BadRequestException('Invalid date format');
+    return date;
+  })
   @IsDate()
   writtenDate: Date;
 

@@ -36,7 +36,9 @@ export class Diary {
     @CreateDateColumn()
     create_date! : Date;
 
-    @Column({ type: 'date' })
+    @Column({
+        type: 'date',
+    })
     written_date! : Date;
 
     @Column({ type: 'text' })
