@@ -12,6 +12,7 @@ import { EmotionSummaryScore } from '../entities/emotion-summary-score.entity';
 import { DiaryAnalysisDto } from '../analysis/dto/diary-analysis.dto';
 import { MemberSummaryRes } from './dto/member-summary.res';
 import { CommonUtilService } from '../util/common-util.service';
+import { LocalDate } from 'js-joda';
 
 @Injectable()
 export class MemberSummaryService {
@@ -26,8 +27,8 @@ export class MemberSummaryService {
 
   async findMemberSummaryByPeriod(memberId: string, period: number) {
     const member = await this.memberService.findOne(memberId);
-    const today = new Date();
-    const end = new Date(today.getDate() - period);
+    const today = LocalDate.now();
+    const end = today.minusDays(period);
 
     const result = await this.repo.find({
       where: { member: member, date: Between(end, today) },
@@ -64,27 +65,19 @@ export class MemberSummaryService {
     return result;
   }
 
-  async findMemberSummaryIfNotExistCreate(memberId: string, date: Date) {
+  async findMemberSummaryIfNotExistCreate(memberId: string, date: LocalDate) {
     const member = await this.memberService.findOne(memberId);
 
-    console.log('생성 날짜 : ' + date);
-
     let summary = await this.repo.findOne({
-      where: { member: member },
+      where: { member: member, date: date },
     });
 
-    const dateFormat = this.util.formatDateToYMD(date);
-
-    // @ts-ignore
-    if (summary === null || summary.date != dateFormat) {
+    if (summary === null) {
       summary = new MemberSummary();
       summary.member = member;
       summary.date = date;
       summary = await this.repo.save(summary);
     }
-
-    console.log('생성된 날짜 : ' + summary.date);
-    console.log('둘이 같은가?', summary.date === date);
 
     return summary;
   }
@@ -112,7 +105,7 @@ export class MemberSummaryService {
   async updateSummaryFromDiary(
     dto: DiaryAnalysisDto,
     memberId: string,
-    date: Date,
+    date: LocalDate,
   ) {
     for (const person of dto.people) {
       for (const feel of person.feel) {
@@ -146,7 +139,7 @@ export class MemberSummaryService {
 
   async updateEmotion(
     memberId: string,
-    date: Date,
+    date: LocalDate,
     emotion: EmotionType,
     intensity: number,
   ) {

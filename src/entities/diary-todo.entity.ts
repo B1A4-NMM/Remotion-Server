@@ -1,9 +1,11 @@
+import { LocalDate } from 'js-joda';
 import { Entity, 
     PrimaryGeneratedColumn, 
     ManyToOne,
     JoinColumn,
     Column, 
     CreateDateColumn} from 'typeorm';
+import { LocalDateTransformer } from '../util/local-date.transformer';
 
 import { Todo } from './Todo.entity';
 import { Diary } from './Diary.entity';
@@ -36,8 +38,8 @@ export class DiaryTodo {
     // @JoinColumn({ name: 'todo_id' })
     // todo: Todo;
 
-    @CreateDateColumn()
-    createdAt : Date;
+    @Column({type:'date', transformer: new LocalDateTransformer() })
+    createdAt : LocalDate;
 
 
 }

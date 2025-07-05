@@ -14,6 +14,7 @@ import { DiaryEmotion } from '../entities/diary-emotion.entity';
 import { Diary } from '../entities/Diary.entity';
 import { Emotions, EmotionSummaryWeekdayRes } from '../member/dto/emotion-summary-weekday.res';
 import { weekday } from '../constants/weekday.constant';
+import { LocalDate } from 'js-joda';
 
 @Injectable()
 export class EmotionService {
@@ -32,9 +33,8 @@ export class EmotionService {
    * 기간을 인자로 받아 해당 기간 내에 등장한 감정들이 어떤 요일에 등장했는지 반환
    */
   async getEmotionSummaryWeekDay(memberId: string, period: number) {
-    const today = new Date();
-    const pastDate = new Date();
-    pastDate.setDate(today.getDate() - period);
+    const today = LocalDate.now();
+    const pastDate = today.minusDays(period);
 
     const diaries = await this.diaryRepository.find({
       where: {
@@ -46,7 +46,7 @@ export class EmotionService {
 
     const res = new EmotionSummaryWeekdayRes();
     for (const diary of diaries) {
-      const dayIndex = new Date(diary.written_date).getDay();
+      const dayIndex = diary.written_date.dayOfWeek().value();
       const dayName = weekday[dayIndex] as keyof EmotionSummaryWeekdayRes;
 
       for (const diaryEmotion of diary.diaryEmotions) {
@@ -75,8 +75,8 @@ export class EmotionService {
     dtos: EmotionAnalysisDto[],
   ) {
     for (const dto of dtos) {
-      const emotion = dto.emotionType; // 감정 타입
-      const emotionIntensity = dto.intensity; // 감정 강도
+      const emotion = dto.emotionType;
+      const emotionIntensity = dto.intensity;
       let find = await this.findOneEmotionTarget(target, emotion);
       if (find === null) {
         find = new EmotionTarget(emotion, target, emotionIntensity, 1);
@@ -159,7 +159,7 @@ export class EmotionService {
         target: { id: target.id },
         emotion,
       },
-      relations: ['target'], // optional
+      relations: ['target'],
     });
   }
 
@@ -175,22 +175,16 @@ export class EmotionService {
     return (
       this.diaryEmotionRepository
         .createQueryBuilder('de')
-        // 감정 타입별로 묶어서 가져오기
         .select('de.emotion', 'emotion')
         .addSelect('SUM(de.intensity)', 'totalIntensity')
-        // Diary와 조인
         .innerJoin('de.diary', 'd')
-        // Diary.owner (또는 Diary.member) 와 조인
         .innerJoin('d.author', 'o')
-        // 날짜 필터
         .where('d.written_date = :date', { date })
-        // 소유자(owner)의 id 필터
         .andWhere('o.id = :ownerId', { ownerId })
-        // 감정별 그룹화
         .groupBy('de.emotion')
         .getRawMany<{
           emotion: EmotionType;
-          totalIntensity: string; // DB에서 숫자는 string으로
+          totalIntensity: string;
         }>()
     );
   }
@@ -201,28 +195,20 @@ export class EmotionService {
   async highestEmotionToTarget(target: Target) {
     const row = await this.emotionTargetRepository
       .createQueryBuilder('et')
-      // Target 테이블과 조인해서 필터
       .innerJoin('et.target', 't')
-      // 감정 타입과 총합을 선택
       .select('et.emotion', 'emotion')
       .addSelect('SUM(et.emotion_intensity)', 'totalIntensity')
-      // where t.id = :targetId
       .where('t.id = :targetId', { targetId: target.id })
-      // 감정별 그룹화
       .groupBy('et.emotion')
-      // intensity 합 기준 내림차순
       .orderBy('totalIntensity', 'DESC')
-      // 가장 큰 것 한 건만
       .limit(1)
-      // raw 결과로 가져오기
       .getRawOne<{ emotion: EmotionType; totalIntensity: string }>();
 
-    // 없으면 null, 있으면 emotion 코드만 반환
     return row ? (row.emotion as EmotionType) : null;
   }
 
   async getTodayEmotions(memberId: string) {
-    const date = this.util.getCurrentDate();
+    const date = LocalDate.now().toString();
     return this.getEmotionsByDate(memberId, date);
   }
 

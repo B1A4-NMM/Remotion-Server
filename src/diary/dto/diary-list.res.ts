@@ -1,5 +1,6 @@
 import { EmotionType } from '../../enums/emotion-type.enum';
 import { ApiProperty } from '@nestjs/swagger';
+import { LocalDate } from 'js-joda';
 
 export class DiaryRes {
   @ApiProperty({ example: 1, description: '일기 ID' })
@@ -9,7 +10,7 @@ export class DiaryRes {
   title: string;
 
   @ApiProperty({ example: '2023-12-25', description: '일기 작성일' })
-  writtenDate: Date;
+  writtenDate: LocalDate;
 
   @ApiProperty({
     type: [String],

@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
@@ -23,6 +23,7 @@ import {
 import { MemberSummaryService } from '../member/member-summary.service';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { EmotionBase } from '../enums/emotion-type.enum';
+import { LocalDate } from 'js-joda';
 
 @Injectable()
 export class DiaryService {
@@ -52,7 +53,7 @@ export class DiaryService {
   async createDiary(
     memberId: string,
     dto: CreateDiaryDto,
-    imageUrl?: string | null, // S3 이미지 경로
+    imageUrl?: string | null,
   ) {
     this.logger.log('다이어리 생성');
     // 여기서 분석 결과 받아오고
@@ -66,6 +67,7 @@ export class DiaryService {
     diary.written_date = dto.writtenDate;
     diary.content = dto.content;
     diary.title = 'demo';
+    diary.create_date = LocalDate.now()
     if (imageUrl) {
       diary.photo_path = imageUrl;
     }
@@ -81,12 +83,12 @@ export class DiaryService {
       result.stateEmotion,
       diary,
     );
-    await this.emotionService.createDiarySelfEmotion( // 자가 감정 저장
+    await this.emotionService.createDiarySelfEmotion(
       result.selfEmotion,
       diary
     );
 
-    await this.memberSummaryService.updateSummaryFromDiary( // 하루 요약 저장
+    await this.memberSummaryService.updateSummaryFromDiary(
       result,
       memberId,
       dto.writtenDate,
@@ -100,6 +102,20 @@ export class DiaryService {
     this.logger.log(`일기의 주인 : ${saveDiary.author.id}, 글쓴이 : ${memberId}`)
 
     return saveDiary.id;
+  }
+
+  async getDiaryByDate(memberId: string, date: LocalDate) {
+    const member = await this.memberService.findOne(memberId);
+
+    console.log(`member_id = ${member.id}`)
+
+    const diaries = await this.diaryRepository.find({
+      where: { written_date: date },
+      relations: ['diaryTargets', 'diaryTargets.target', 'diaryEmotions'],
+    });
+
+    const res = this.buildDiaryList(diaries);
+    return res
   }
 
   /**
@@ -138,15 +154,11 @@ export class DiaryService {
    * 오늘 작성한 일기 가져오기
    */
   private async getTodayDiaries(memberId: string) {
-    const date = this.utilService.getCurrentDateToISOString();
+    const date = LocalDate.now();
     return this.getDiariesByDate(memberId, date);
   }
 
-  /**
-   * 멤버의 일기 중 날짜에 해당하는 일기들을 반환합니다
-   * RETURN DiaryListRes
-   */
-  async getDiariesByDate(memberId: string, date: Date) {
+  async getDiariesByDate(memberId: string, date: LocalDate) {
     const member = await this.memberService.findOne(memberId);
     const diaries = await this.diaryRepository.find({
       where: { author: member, written_date: date },
@@ -295,7 +307,7 @@ export class DiaryService {
   ): Promise<{
     items: Diary[];
     hasMore: boolean;
-    nextCursor: { writtenDate: Date; id: number } | null;
+    nextCursor: { writtenDate: LocalDate; id: number } | null;
   }> {
     // 요청마다 limit+1 개 가져와서 hasMore 판별
     const take = limit + 1;
@@ -319,7 +331,7 @@ export class DiaryService {
     const hasMore = rows.length === take;
     const items = hasMore ? rows.slice(0, -1) : rows;
 
-    const nextCursor: { writtenDate: Date; id: number } | null = hasMore
+    const nextCursor: { writtenDate: LocalDate; id: number } | null = hasMore
       ? {
           writtenDate: items[items.length - 1].written_date,
           id: items[items.length - 1].id,

@@ -16,6 +16,7 @@ import { EmotionService } from '../emotion/emotion.service';
 import { EmotionType } from '../enums/emotion-type.enum';
 import { MemberSummaryService } from '../member/member-summary.service';
 import { DiaryEmotionGroupingDto } from '../member/dto/diary-emotion-grouping.dto';
+import { LocalDate } from 'js-joda';
 
 @Injectable()
 export class TargetService {
@@ -45,7 +46,7 @@ export class TargetService {
         target = new Target(
           person.name,
           1,
-          this.util.getCurrentDateToISOString(),
+          LocalDate.now(),
           TargetRelation.ETC,
           await this.calculateAffection(person.feel),
           member,
@@ -54,7 +55,7 @@ export class TargetService {
       } else {
         // 있으면 갱신
         target.affection += await this.calculateAffection(person.feel);
-        target.recent_date = this.util.getCurrentDateToISOString();
+        target.recent_date = LocalDate.now();
         target.count += 1;
         // DONE : emotionTarget도 갱신해야할듯
       }

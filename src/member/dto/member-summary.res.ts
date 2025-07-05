@@ -1,6 +1,7 @@
 import { EmotionBase, EmotionGroup } from '../../enums/emotion-type.enum';
 import { IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { LocalDate } from 'js-joda';
 
 class EmotionGroups {
   @ApiProperty({ enum: EmotionGroup })
@@ -12,7 +13,7 @@ class EmotionGroups {
 
 class PerDate {
   @ApiProperty({ example: '2024-01-01' })
-  date: Date;
+  date: LocalDate;
 
   @ApiProperty({ type: [EmotionGroups] })
   emotions: EmotionGroups[];

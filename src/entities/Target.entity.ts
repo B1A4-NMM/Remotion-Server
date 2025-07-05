@@ -1,3 +1,4 @@
+import { LocalDate } from 'js-joda';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -6,6 +7,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
+import { LocalDateTransformer } from '../util/local-date.transformer';
 
 import { Member } from './Member.entity';
 import { Alias } from './Alias.entity';
@@ -24,8 +26,8 @@ export class Target {
   @Column({ default: 0 })
   count!: number;
 
-  @Column({ type: 'date', nullable: true })
-  recent_date!: Date;
+  @Column({ type: 'date', nullable: true, transformer: new LocalDateTransformer() })
+  recent_date!: LocalDate;
 
   //User와 어떤 관계인지
   @Column({
@@ -63,7 +65,7 @@ export class Target {
   constructor(
     name: string,
     count: number,
-    recent_date: Date,
+    recent_date: LocalDate,
     relation: TargetRelation,
     affection: number,
     member: Member,

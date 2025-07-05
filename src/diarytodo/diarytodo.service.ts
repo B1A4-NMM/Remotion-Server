@@ -21,6 +21,7 @@ import {
   PeopleAnalysisDto,
   TodoAnalysisDto,
 } from '../analysis/dto/diary-analysis.dto';
+import { LocalDate } from 'js-joda';
 
 @Injectable()
 export class DiarytodoService {
@@ -37,7 +38,7 @@ export class DiarytodoService {
             dt.content =todoResDto.Todocontent;
 
             //어떤 회원의 일기에 의해 생성된 todo인지 저장해야함
-
+            dt.createdAt = LocalDate.now()
             dt.diary = diary;
             dt.member =member;
             return dt;
