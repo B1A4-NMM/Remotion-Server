@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale/ko';
 
 @Injectable()
 export class CommonUtilService {
@@ -18,6 +20,17 @@ export class CommonUtilService {
   getCurrentDateToISOString(): Date {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  formatDateToYMD(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 0-based
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  getWeekDay(date:Date): string {
+    return format(date, 'EEEE', {locale: ko})
   }
 
   parseEnumValue<E extends { [K in keyof E]: string }>(

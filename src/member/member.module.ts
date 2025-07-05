@@ -5,14 +5,18 @@ import { Neo4jModule } from '../neo4j/neo4j.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Member } from '../entities/Member.entity';
 import { MemberSummary } from '../entities/member-summary.entity';
+import { MemberSummaryService } from './member-summary.service';
+import { EmotionSummaryScore } from '../entities/emotion-summary-score.entity';
+import { EmotionModule } from '../emotion/emotion.module';
 
 @Module({
   imports: [
     Neo4jModule,
-    TypeOrmModule.forFeature([Member, MemberSummary])
+    TypeOrmModule.forFeature([Member, MemberSummary, EmotionSummaryScore]),
+    EmotionModule
   ],
   controllers: [MemberController],
-  providers: [MemberService],
-  exports: [MemberService]
+  providers: [MemberService, MemberSummaryService],
+  exports: [MemberService, MemberSummaryService]
 })
 export class MemberModule {}

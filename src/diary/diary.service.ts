@@ -20,7 +20,7 @@ import {
   PeopleAnalysisDto,
   TodoAnalysisDto,
 } from '../analysis/dto/diary-analysis.dto';
-import { MemberSummaryService } from '../member-summary/member-summary.service';
+import { MemberSummaryService } from '../member/member-summary.service';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { EmotionBase } from '../enums/emotion-type.enum';
 
@@ -53,7 +53,7 @@ export class DiaryService {
     memberId: string,
     dto: CreateDiaryDto,
     imageUrl?: string | null, // S3 이미지 경로
-  ): Promise<DiaryAnalysisDto> {
+  ) {
     this.logger.log('다이어리 생성');
     // 여기서 분석 결과 받아오고
     const result = await this.analysisDiaryService.analysisDiary(dto.content);
@@ -97,7 +97,9 @@ export class DiaryService {
       `생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`,
     );
 
-    return this.getDiary(memberId, saveDiary.id);
+    this.logger.log(`일기의 주인 : ${saveDiary.author.id}, 글쓴이 : ${memberId}`)
+
+    return saveDiary.id;
   }
 
   /**
@@ -270,6 +272,16 @@ export class DiaryService {
     });
 
     return result;
+  }
+
+  async deleteAll(memberId: string) {
+    const member = await this.memberService.findOne(memberId);
+    const diaries = await this.diaryRepository.find({
+      where: { author: member },
+    });
+    for (const diary of diaries) {
+      await this.diaryRepository.delete(diary.id);
+    }
   }
 
   /**
