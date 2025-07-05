@@ -8,8 +8,10 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { S3Service } from '../s3/s3.service';
+import { ApiExcludeController } from '@nestjs/swagger';
 
 @Controller('upload')
+@ApiExcludeController()
 export class UploadController {
   constructor(private readonly s3Service: S3Service) {}
 

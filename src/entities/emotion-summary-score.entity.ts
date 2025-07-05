@@ -7,7 +7,7 @@ export class EmotionSummaryScore {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => MemberSummary, (summary) => summary.emotionScores)
+  @ManyToOne(() => MemberSummary, (summary) => summary.emotionScores, {onDelete: 'CASCADE'})
   summary: MemberSummary;
 
   @Column({

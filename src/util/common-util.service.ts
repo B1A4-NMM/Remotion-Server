@@ -20,6 +20,13 @@ export class CommonUtilService {
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
 
+  formatDateToYMD(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 0-based
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   parseEnumValue<E extends { [K in keyof E]: string }>(
     enumObj: E,
     value: string,
