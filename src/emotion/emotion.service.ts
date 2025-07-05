@@ -24,6 +24,14 @@ export class EmotionService {
   ) {}
 
   /**
+   * 기간을 인자로 받아 해당 기간 내에 등장한 감정들이 어떤 요일에 등장했는지 반환
+   */
+  async getEmotionSummaryWeekDay(memberId: string, period:number) {
+    const today = this.util.getCurrentDateToISOString();
+    const end = new Date(today.getDate()- period)
+  }
+
+  /**
    * emotion-target 엔티티 생성 함수
    */
   async createOrUpdateEmotionTarget(
@@ -96,9 +104,9 @@ export class EmotionService {
     }
     return this.diaryEmotionRepository.findOne({
       where: {
-        diary: {id : diary.id},
-        emotion: emotion
-      }
+        diary: { id: diary.id },
+        emotion: emotion,
+      },
     });
   }
 

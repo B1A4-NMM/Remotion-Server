@@ -55,4 +55,12 @@ export class MemberController {
       period,
     );
   }
+
+  @Get('emotion/weekday')
+  @UseGuards(AuthGuard('jwt'))
+  async getWeekdayEmotion(@CurrentUser() user: any) {
+    const id = user.id;
+
+  }
+
 }
