@@ -40,12 +40,12 @@ export class Todo {
   repeatEndDate: string;
   
   //이 entity가 호출되면 이 시간 기준으로 저장해줌 service에서 따로 처리 필요없음
-  @CreateDateColumn({ transformer: new LocalDateTransformer() })
-  createdAt: Date;
+  @Column({ type: 'date',  transformer: new LocalDateTransformer() })
+  createdAt: LocalDate;
   
   //업데이트 시각 자동 저장해줌 , service에서 따로 처리 필요없음
-  @UpdateDateColumn({ transformer: new LocalDateTransformer() })
-  updatedAt: Date;
+  @Column({ type: 'date', transformer: new LocalDateTransformer() })
+  updatedAt: LocalDate;
 
   @ManyToOne(() => Member, (member) => member.todos)
   @JoinColumn({ name: 'user_id' })
