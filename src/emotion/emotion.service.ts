@@ -12,7 +12,8 @@ import { EmotionAnalysisDto } from '../analysis/dto/diary-analysis.dto';
 import { CommonUtilService } from '../util/common-util.service';
 import { DiaryEmotion } from '../entities/diary-emotion.entity';
 import { Diary } from '../entities/Diary.entity';
-import { EmotionSummaryWeekdayRes } from '../member/dto/emotion-summary-weekday.res';
+import { Emotions, EmotionSummaryWeekdayRes } from '../member/dto/emotion-summary-weekday.res';
+import { weekday } from '../constants/weekday.constant';
 
 @Injectable()
 export class EmotionService {
@@ -30,23 +31,40 @@ export class EmotionService {
   /**
    * 기간을 인자로 받아 해당 기간 내에 등장한 감정들이 어떤 요일에 등장했는지 반환
    */
-  async getEmotionSummaryWeekDay(memberId: string, period:number) {
-    const today = this.util.getCurrentDateToISOString();
-    const end = new Date(today.getDate() - period)
-    
+  async getEmotionSummaryWeekDay(memberId: string, period: number) {
+    const today = new Date();
+    const pastDate = new Date();
+    pastDate.setDate(today.getDate() - period);
+
     const diaries = await this.diaryRepository.find({
       where: {
         author: { id: memberId },
-        written_date: Between(end, today),
+        written_date: Between(pastDate, today),
       },
-      relations: ['diaryEmotions']
+      relations: ['diaryEmotions'],
     });
 
-    let res = new EmotionSummaryWeekdayRes();
+    const res = new EmotionSummaryWeekdayRes();
     for (const diary of diaries) {
+      const dayIndex = new Date(diary.written_date).getDay();
+      const dayName = weekday[dayIndex] as keyof EmotionSummaryWeekdayRes;
 
+      for (const diaryEmotion of diary.diaryEmotions) {
+        const emotionType = diaryEmotion.emotion;
+        const dayArray = res[dayName] as Emotions[];
+
+        if (!dayArray) continue
+
+        const existingEmotion = dayArray.find((e) => e.emotion === emotionType);
+
+        if (existingEmotion) {
+          existingEmotion.count++;
+        } else {
+          dayArray.push({ emotion: emotionType, count: 1 });
+        }
+      }
     }
-
+    return res;
   }
 
   /**

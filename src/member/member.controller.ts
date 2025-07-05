@@ -16,6 +16,8 @@ import { MemberSummaryService } from './member-summary.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
 import { MemberSummaryRes } from './dto/member-summary.res';
+import { EmotionService } from '../emotion/emotion.service';
+import { EmotionSummaryWeekdayRes } from './dto/emotion-summary-weekday.res';
 
 @Controller('member')
 @ApiTags('사용자/회원')
@@ -23,6 +25,7 @@ export class MemberController {
   constructor(
     private readonly memberService: MemberService,
     private readonly memberSummaryService: MemberSummaryService,
+    private readonly emotionService: EmotionService
   ) {}
 
   @Get('summary')
@@ -58,9 +61,33 @@ export class MemberController {
 
   @Get('emotion/weekday')
   @UseGuards(AuthGuard('jwt'))
-  async getWeekdayEmotion(@CurrentUser() user: any) {
-    const id = user.id;
-
+  @ApiOperation({
+    summary: '요일별 감정 요약',
+    description: '기간 내 요일별로 등장한 감정들의 빈도를 조회합니다',
+  })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    type: Number,
+    description: '조회할 기간(일), 기본값: 7',
+  })
+  @ApiResponse({
+    type: EmotionSummaryWeekdayRes
+  })
+  @ApiResponse({
+    status: 200,
+    description: '요일별 감정 빈도 조회 성공',
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 실패',
+  })
+  async getWeekdayEmotion(
+    @CurrentUser() user: any,
+    @Query('period') period: number = 7,
+  ) {
+    const memberId = user.id;
+    return await this.emotionService.getEmotionSummaryWeekDay(memberId, period);
   }
 
 }
