@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { EmotionTarget } from '../entities/emotion-target.entity';
 import { Target } from '../entities/Target.entity';
 import {
@@ -12,6 +12,7 @@ import { EmotionAnalysisDto } from '../analysis/dto/diary-analysis.dto';
 import { CommonUtilService } from '../util/common-util.service';
 import { DiaryEmotion } from '../entities/diary-emotion.entity';
 import { Diary } from '../entities/Diary.entity';
+import { EmotionSummaryWeekdayRes } from '../member/dto/emotion-summary-weekday.res';
 
 @Injectable()
 export class EmotionService {
@@ -31,7 +32,21 @@ export class EmotionService {
    */
   async getEmotionSummaryWeekDay(memberId: string, period:number) {
     const today = this.util.getCurrentDateToISOString();
-    const end = new Date(today.getDate()- period)
+    const end = new Date(today.getDate() - period)
+    
+    const diaries = await this.diaryRepository.find({
+      where: {
+        author: { id: memberId },
+        written_date: Between(end, today),
+      },
+      relations: ['diaryEmotions']
+    });
+
+    let res = new EmotionSummaryWeekdayRes();
+    for (const diary of diaries) {
+
+    }
+
   }
 
   /**
