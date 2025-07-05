@@ -6,9 +6,11 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { MemberService } from '../member/member.service';
+import { EmotionService } from '../emotion/emotion.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { Todo } from '../entities/Todo.entity';
 import { DiaryTodo } from '../entities/diary-todo.entity';
+import { UpdateTodoDto } from './dto/update-todo.dto';
 
 
 
@@ -22,6 +24,8 @@ export class TodoService {
 
     constructor(
         private readonly memberService : MemberService,
+        private readonly emotionService : EmotionService,
+
         @InjectRepository(Todo) private readonly todoRepository : Repository<Todo>,
 
 
@@ -56,11 +60,73 @@ export class TodoService {
         return saved;
 
     }
+    
 
-    async getTodoByUserId(memberId : string ){
-        return this.todoRepository.find({
-            where: { owner: { id: memberId} },
-            order: { createdAt: 'DESC'},
+    // date나 repeat 업데이트 할 때 
+    async updateTodo(id: string, dto: UpdateTodoDto, memberId : string){
+        const todo = await this.todoRepository.findOne({
+            where: {
+                id,
+                owner: { id : memberId },
+            },
+            relations: ['owner'],
         });
+
+        if(!todo){
+            throw new NotFoundException('해당 Todo를 찾을 수 없습니다.');
+        }
+
+        if(dto.date !== undefined ){
+            todo.date =dto.date; // 그냥 string으로 할당 ? 
+        }
+
+        if(dto.isRepeat !== undefined){
+            todo.isRepeat =dto.isRepeat;
+        }
+
+        await this.todoRepository.save(todo);
+        
+        return { message: '수정 완료', todo };
+    }
+
+    async deleteTodo(id: string, memberId : string ){
+        const todo = await this.todoRepository.findOne({
+            where: {
+                id,
+                owner: { id : memberId }, // 사용자 권한 check
+            },
+            relations: ['owner'],
+        });
+
+        if(!todo){
+            throw new NotFoundException('해당 Todo를 찾을 수 없습니다.');
+        }
+
+        await this.todoRepository.remove(todo);
+        
+    }
+
+    // [채민.캘린더 부분 구현시 작성함-1]
+
+    async getTodoAndEmotions(memberId : string, from:string, to: string ) {
+        
+        //데이터 추출할 날짜
+        const fromDate = new Date(from);
+        const toDate = new Date(to);
+
+
+        //감정 데이터 , Todo 리스트 동시에 작업 시작(병렬 처리)
+        const [emotionData,todos] =await Promise.all([
+            this.emotionService.getAllEmotionsGroupedByDateRange(memberId,from,to),
+            this.todoRepository.find({
+                where:{ owner: { id: memberId }},
+                order: { createdAt : 'DESC'},
+            }),
+        ]);
+
+        return {
+            emotions: emotionData,
+            todos,
+        }
     }
 }
