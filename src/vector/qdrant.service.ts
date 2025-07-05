@@ -24,6 +24,28 @@ export class QdrantService {
     }
   }
 
+  async createCollectionIfNotExist(name:string, vector_size:number) {
+    try {
+      await this.client.getCollection(name);
+    } catch {
+      await this.client.createCollection(name, {
+        vectors: { size: vector_size, distance: 'Cosine' },
+      });
+      this.logger.log('Qdrant collection created');
+    }
+  }
+
+  async upsertVector(name:string, id: string, vector: number[], payload: Record<string, any>) {
+    await this.client.upsert(name, {
+      wait: true,
+      points: [{ id, vector }],
+    });
+  }
+
+  async searchVector(name:string ,vector: number[], limit = 5) {
+    return this.client.search(name, { vector, limit });
+  }
+
   async upsert(id: string, vector: number[], payload: Record<string, any>) {
     await this.client.upsert(this.collection, {
       wait: true,
