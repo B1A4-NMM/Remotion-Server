@@ -29,6 +29,7 @@ import { DiaryListRes } from './dto/diary-list.res';
 import { DiaryHomeRes } from './dto/diary-home.res';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { S3Service } from '../s3/s3.service';
+import { CreateDiaryRes } from './dto/create-diary.res';
 
 @Controller('diary')
 @ApiTags('일기')
@@ -42,24 +43,12 @@ export class DiaryController {
   @ApiOperation({ summary: '일기 생성 후 분석 내용 받기' })
   @ApiResponse({
     status: 201,
-    description: 'The diary has been successfully analyzed',
-    type: DiaryAnalysisDto,
+    description: '다이어리 생성 완료',
+    type: CreateDiaryRes,
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        content: { type: 'string', example: '오늘은 좋은 하루였다.' },
-        writtenDate: { type: 'string', format: 'date', example: '2024-01-01' },
-        weather: { type: 'string', example: 'SUNNY' },
-        photo: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-      required: ['content', 'writtenDate'],
-    },
+    type: CreateDiaryDto,
   })
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('photo'))
@@ -72,13 +61,10 @@ export class DiaryController {
     if (photo) {
       imageUrl = await this.s3Service.uploadFile(photo);
     }
+    const memberId = user.id;
 
-    const response = await this.diaryService.createDiary(
-      user.id,
-      body,
-      imageUrl,
-    );
-    return { response };
+    const createId = await this.diaryService.createDiary(memberId, body, imageUrl);
+    return new CreateDiaryRes(createId)
   }
 
   @ApiOperation({ summary: '자신이 작성한 모든 일기 받기' })
