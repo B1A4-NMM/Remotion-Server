@@ -26,7 +26,7 @@ export class Todo {
   isCompleted: boolean;
 
   @Column({ type: 'date', nullable: true })
-  date: string;
+  date!: string;
 
   @Column({ default: false })
   isRepeat: boolean;
@@ -49,7 +49,7 @@ export class Todo {
   @JoinColumn({ name: 'user_id' })
   owner: Member;
 
-  
+
   // // 💡 DiaryTodo와 양방향 설정
   // @OneToMany(() => DiaryTodo, (diaryTodo) => diaryTodo.todo)
   // diaryTodos: DiaryTodo[];

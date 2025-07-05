@@ -1,4 +1,4 @@
-import { Body, Controller, Injectable, Post, Patch, UseGuards, Get, Logger, Query, Param } from '@nestjs/common';
+import { Body, Controller, Injectable, Post, Patch ,UseGuards, Get, Logger, Query, Param, Delete } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CreateTodoDto } from './dto/create-todo.dto';
@@ -78,6 +78,13 @@ export class TodoController {
         @CurrentUser() user: any,
     ){
         return this.todoService.updateTodo(id, updateDto, user.id);
+    }
+
+    @Delete(':id')
+    async deleteTodo(@Param('id') id:string,@CurrentUser() user : any){
+        await this.todoService.deleteTodo(id, user.id);
+
+        return { message: 'Todo 삭제 성공 '};
     }
 
 
