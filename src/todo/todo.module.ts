@@ -10,9 +10,10 @@ import { DiaryTodo } from '../entities/diary-todo.entity'; // ← 이거 추가
 import { Member } from '../entities/Member.entity';
 import { MemberService } from '../member/member.service';
 import { Neo4jModule } from '../neo4j/neo4j.module'; // ✅ 추가
+import { EmotionModule } from '../emotion/emotion.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Todo,DiaryTodo,Member]) , MemberModule, Neo4jModule ],
+  imports: [TypeOrmModule.forFeature([Todo,DiaryTodo,Member]) , MemberModule, Neo4jModule, EmotionModule ],
   controllers: [TodoController],
   providers: [TodoService,MemberService],
   exports : [TodoService],

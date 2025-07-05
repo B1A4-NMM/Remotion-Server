@@ -26,7 +26,7 @@ export class DiaryEmotion {
   emotionBase! : EmotionBase;
 
 
-  @Column()
+  @Column({ type: 'float'})
   intensity! : number;
 
   constructor(diary: Diary, emotion: EmotionType, emotionBase: EmotionBase, intensity: number) {

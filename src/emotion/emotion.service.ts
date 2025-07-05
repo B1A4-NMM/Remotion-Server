@@ -258,4 +258,38 @@ export class EmotionService {
     const sorted = diary.diaryEmotions.sort( (a,b) => b.intensity - a.intensity);
     return sorted[0].emotion; 
   }
+
+  
+
+   //특정 날짜 범위에 있는 모든 감정들 추출해서 보내주기
+   //비동기,병렬 처리 
+   async getAllEmotionsGroupedByDateRange(userId: string, from: string, to: string) {
+
+    const startDate = new Date(from);
+    const endDate = new Date(to);
+    const dates: string[] = [];
+
+    //날짜 범위 내 모든 날짜 문자열로 저장
+    while (startDate <= endDate) {
+      const isoDate = startDate.toISOString().split('T')[0];
+      dates.push(isoDate);
+      startDate.setDate(startDate.getDate() + 1);
+    }
+
+    //병렬 처리로 모든 날짜에 대해 감정 데이터 조회
+    const emotionPromises =dates.map(async (date) => {
+      const emotions =await this.getEmotionsByDate(userId,date);
+
+      return { date,emotions }; // 날짜별로 묶인 결과 반환
+
+
+    });
+
+    const results =await Promise.all(emotionPromises);
+    
+    return results;
+  }
+  
+
+   
 }
