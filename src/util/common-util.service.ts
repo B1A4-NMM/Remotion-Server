@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale/ko';
+import { LocalDate } from 'js-joda';
+import { DayOfWeek } from '@js-joda/core';
 
 @Injectable()
 export class CommonUtilService {
@@ -10,37 +10,20 @@ export class CommonUtilService {
   }
 
   getCurrentDate() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`; // 예: 2025-06-27
+    return LocalDate.now().toString();
   }
 
-  getCurrentDateToISOString(): Date {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  }
-
-  formatDateToYMD(date: Date): string {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 0-based
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  getWeekDay(date:Date): string {
-    return format(date, 'EEEE', {locale: ko})
+  getWeekDay(date: LocalDate) {
+    const dayOfWeek = date.dayOfWeek();
+    return dayOfWeek.toString();
   }
 
   parseEnumValue<E extends { [K in keyof E]: string }>(
     enumObj: E,
     value: string,
   ): E[keyof E] {
-    // enumObj의 값들만 뽑아서 string[]으로 만든 뒤 includes 검사
     const enumValues = Object.values(enumObj) as string[];
     if (enumValues.includes(value)) {
-      // value가 enum 값 중 하나이므로, 타입 단언을 통해 반환
       return value as E[keyof E];
     }
     // @ts-ignore

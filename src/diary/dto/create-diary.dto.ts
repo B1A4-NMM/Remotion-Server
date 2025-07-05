@@ -1,9 +1,9 @@
-// src/diary/dto/create-diary.dto.ts
-import { IsString, IsNotEmpty, IsDate, IsEnum, IsOptional } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { IsString, IsNotEmpty, IsEnum, IsOptional, IsDefined } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { Weather } from '../../enums/weather.enum';
 import { BadRequestException } from '@nestjs/common';
+import { LocalDate } from 'js-joda';
 
 export class CreateDiaryDto {
   @ApiProperty({
@@ -18,14 +18,15 @@ export class CreateDiaryDto {
     description: '일기 작성일',
     example: '2024-01-01',
   })
-  @Type(() => Date)
+  @IsDefined()
   @Transform(({ value }) => {
-    const date = new Date(value);
-    if (isNaN(date.getTime())) throw new BadRequestException('Invalid date format');
-    return date;
+    try {
+      return LocalDate.parse(value);
+    } catch (e) {
+      throw new BadRequestException('Invalid date format');
+    }
   })
-  @IsDate()
-  writtenDate: Date;
+  writtenDate: LocalDate;
 
   @ApiProperty({
     description: '날씨, 안보내도 됨',

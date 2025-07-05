@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { CommonUtilService } from './util/common-util.service';
+import { LocalDate } from 'js-joda';
 
 @ApiExcludeController()
 @Controller()
@@ -15,6 +16,6 @@ export class AppController {
 
   @Get('test')
   getWeekDay(): string {
-    return this.util.getWeekDay(new Date());
+    return this.util.getWeekDay(LocalDate.now());
   }
 }

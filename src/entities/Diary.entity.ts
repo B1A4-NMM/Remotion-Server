@@ -1,3 +1,4 @@
+import { LocalDate } from 'js-joda';
 import { Entity, 
     PrimaryGeneratedColumn, 
     Column, 
@@ -5,6 +6,7 @@ import { Entity,
     ManyToOne, 
     JoinColumn, 
     OneToMany} from 'typeorm';
+import { LocalDateTransformer } from '../util/local-date.transformer';
 
 import { ShareGroup } from './ShareGroup.entity';   
 import { Member } from './Member.entity';
@@ -33,13 +35,11 @@ export class Diary {
     author! : Member;
     
     //실제 생성시간(자동)
-    @CreateDateColumn()
-    create_date! : Date;
+    @Column({ type:'date', transformer: new LocalDateTransformer() })
+    create_date! : LocalDate;
 
-    @Column({
-        type: 'date',
-    })
-    written_date! : Date;
+    @Column({ type: 'date', transformer: new LocalDateTransformer() })
+    written_date! : LocalDate;
 
     @Column({ type: 'text' })
     content! : string;

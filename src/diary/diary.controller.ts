@@ -33,7 +33,8 @@ import { S3Service } from '../s3/s3.service';
 import { CreateDiaryRes } from './dto/create-diary.res';
 import { CommonUtilService } from '../util/common-util.service';
 import * as util from 'node:util';
-import { ParseDatePipe } from '../pipe/parse-date.pipe';
+import { ParseLocalDatePipe } from '../pipe/parse-local-date.pipe';
+import { LocalDate } from 'js-joda';
 
 @Controller('diary')
 @ApiTags('일기')
@@ -89,9 +90,8 @@ export class DiaryController {
   @ApiBody({ type: DiaryListRes })
   @Get('date')
   @UseGuards(AuthGuard('jwt'))
-  async getDiaryByDate(@CurrentUser() user: any, @Query('date', ParseDatePipe) date: Date) {
+  async getDiaryByDate(@CurrentUser() user: any, @Query('date', ParseLocalDatePipe) date: LocalDate) {
     const memberId = user.id;
-    console.log(`date = ${date}`)
     return await this.diaryService.getDiaryByDate(memberId, date);
   }
 
