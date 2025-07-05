@@ -1,23 +1,36 @@
 import { EmotionBase, EmotionGroup } from '../../enums/emotion-type.enum';
+import { IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
-interface EmotionGroups {
+class EmotionGroups {
+  @ApiProperty({ enum: EmotionGroup })
   emotion: EmotionGroup;
+
+  @ApiProperty({ example: 5 })
   intensity: number;
 }
 
-interface PerDate {
+class PerDate {
+  @ApiProperty({ example: '2024-01-01' })
   date: Date;
+
+  @ApiProperty({ type: [EmotionGroups] })
   emotions: EmotionGroups[];
 }
 
 export class MemberSummaryRes {
-  //우울 경고
+  @ApiProperty({ example: false })
   depressionWarning: boolean;
-  //스트레스 경고
+
+  @ApiProperty({ example: false })
   stressWarning: boolean;
-  //불안 경고
+
+  @ApiProperty({ example: false })
   anxietyWarning: boolean;
 
-  emotionsPerDate: PerDate[] = []
-  period: number
+  @ApiProperty({ type: [PerDate] })
+  emotionsPerDate: PerDate[] = [];
+
+  @ApiProperty({ example: 7 })
+  period: number;
 }
