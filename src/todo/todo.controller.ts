@@ -20,7 +20,7 @@ app.get으로 한 것과 동일
 ============================================
 */
 
-@Controller('todo')
+@Controller('todos')
 @UseGuards(AuthGuard('jwt'))
 @ApiTags ('할 일 추가')
 export class TodoController {
@@ -38,19 +38,19 @@ export class TodoController {
     })
     @ApiResponse({ status: 400, description : 'Bad request'})
     async createTodo(@CurrentUser() user, @Body() dto : CreateTodoDto){
-        this.logger.log(`POST /todo 요청 들어옴: ${JSON.stringify(dto)}`)
-        console.log('[POST/todo] 요청 body :',dto);
+        this.logger.log(`POST  요청 들어옴: ${JSON.stringify(dto)}`)
+        //console.log('[POST/todo] 요청 body :',dto);
 
       
         const result =this.todoService.createTodos(user.id, dto);
 
-        console.log("응답 완료:",result);
+        //console.log("응답 완료:",result);
 
         return result;
     }
 
 
-
+    // 이 부분 캘린더 뷰로 수정
     @Get()
     @ApiOperation({ summary : "전체 Todo 조회",
     description: "User식별해서 전체 todo목록을 조회합니다."
@@ -62,8 +62,8 @@ export class TodoController {
     @ApiResponse({ status: 200, description: '할 일 조회 성공' })
     @ApiResponse({ status: 400, description : 'Bad request'})
     async getTodos(@CurrentUser() user){
-        
-        console.log("Todo 조회 성공")
+
+        //console.log("Todo 조회 성공")
         return this.todoService.getTodoByUserId(user.id);
     }
 

@@ -14,6 +14,7 @@ import { Activity } from './src/entities/Activity.entity';
 import { DiaryEmotion } from './src/entities/diary-emotion.entity';
 import { DiaryTodo } from './src/entities/diary-todo.entity';
 
+
 config();
 
 export const AppDataSource = new DataSource({

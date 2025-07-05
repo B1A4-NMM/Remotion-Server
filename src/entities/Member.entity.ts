@@ -6,7 +6,7 @@ import { UserShareGroup } from './user-share-group.entity';
 import { Todo } from './Todo.entity';
 import { SocialType } from '../enums/social-type.enum';
 import { MemberSummary } from './member-summary.entity';
-
+import { scheduled } from 'rxjs';
 
 @Entity()
 export class Member {
@@ -49,5 +49,6 @@ export class Member {
 
     @OneToMany(() => MemberSummary, (summary) => summary.member)
     memberSummaries!: MemberSummary[];
+
 
 }

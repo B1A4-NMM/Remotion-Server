@@ -16,6 +16,7 @@ import { EmotionSummaryScore } from './src/entities/emotion-summary-score.entity
 import { DiaryEmotion } from './src/entities/diary-emotion.entity';
 import { DiaryTodo } from './src/entities/diary-todo.entity';
 
+
 //__dirname + '/**/*.entity{.ts,.js}'
 
 
@@ -44,6 +45,7 @@ const config:TypeOrmModuleOptions = {
         EmotionSummaryScore,
         DiaryEmotion,
         DiaryTodo,
+
     ],
     synchronize : true, // 한번 true한 뒤로는 무조건 false
     autoLoadEntities:true,

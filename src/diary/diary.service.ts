@@ -53,7 +53,7 @@ export class DiaryService {
     memberId: string,
     dto: CreateDiaryDto,
     imageUrl?: string | null, // S3 이미지 경로
-  ): Promise<DiaryAnalysisDto> {
+  ) {
     this.logger.log('다이어리 생성');
     // 여기서 분석 결과 받아오고
     const result = await this.analysisDiaryService.analysisDiary(dto.content);
@@ -99,7 +99,7 @@ export class DiaryService {
 
     this.logger.log(`일기의 주인 : ${saveDiary.author.id}, 글쓴이 : ${memberId}`)
 
-    return this.getDiary(memberId, saveDiary.id);
+    return saveDiary.id;
   }
 
   /**
@@ -264,14 +264,24 @@ export class DiaryService {
     }
 
     //diaryTodo => TodoResDto로 매핑 (응답 주고 받을 때 통일 형식)
-    diary.diaryTodos.forEach((diaryTodo) => {
-      const todoDto = new TodoAnalysisDto();
-      console.log('todo 조회중');
-      todoDto.Todocontent = diaryTodo.content;
+    diary.diaryTodos.forEach((diaryTodo) =>{
+      const todoDto = new TodoAnalysisDto;
+      
+      todoDto.Todocontent =diaryTodo.content;
       result.todos.push(todoDto);
     });
 
     return result;
+  }
+
+  async deleteAll(memberId: string) {
+    const member = await this.memberService.findOne(memberId);
+    const diaries = await this.diaryRepository.find({
+      where: { author: member },
+    });
+    for (const diary of diaries) {
+      await this.diaryRepository.delete(diary.id);
+    }
   }
 
   /**
