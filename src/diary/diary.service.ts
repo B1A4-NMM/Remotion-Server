@@ -110,7 +110,7 @@ export class DiaryService {
     console.log(`member_id = ${member.id}`)
 
     const diaries = await this.diaryRepository.find({
-      where: { written_date: date },
+      where: { author : member ,written_date: date },
       relations: ['diaryTargets', 'diaryTargets.target', 'diaryEmotions'],
     });
 
