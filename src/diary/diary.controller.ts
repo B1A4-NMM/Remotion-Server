@@ -87,7 +87,14 @@ export class DiaryController {
   }
 
   @ApiOperation({ summary: '자신이 특정 날짜에 작성한 일기 받기' })
-  @ApiBody({ type: DiaryListRes })
+  @ApiQuery({
+    name: 'date',
+    required: true,
+    type: Date,
+    description: "조회할 날짜",
+    example: '2021-01-01',
+  })
+  @ApiResponse({type : DiaryListRes})
   @Get('date')
   @UseGuards(AuthGuard('jwt'))
   async getDiaryByDate(@CurrentUser() user: any, @Query('date', ParseLocalDatePipe) date: LocalDate) {
