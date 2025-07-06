@@ -21,7 +21,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { DiaryAnalysisDto } from '../analysis/dto/diary-analysis.dto';
+import { DiaryAnalysisDto } from './dto/diary-analysis.dto';
 import { DiaryService } from './diary.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';

@@ -23,7 +23,7 @@ import { TodoModule } from './todo/todo.module';
 import { DiarytodoModule } from './diarytodo/diarytodo.module';
 import { S3Service } from './s3/s3.service';
 import { UploadModule } from './upload/upload.module';
-import { AchievementClusterModule } from './achievement-cluster/achievement-cluster.module';
+import { AchievementModule } from './achievement-cluster/achievement.module';
 
 
 @Module({
@@ -48,7 +48,7 @@ import { AchievementClusterModule } from './achievement-cluster/achievement-clus
     TodoModule,
     DiarytodoModule,
     UploadModule,
-    AchievementClusterModule,
+    AchievementModule,
 
   ],
   controllers: [AppController],

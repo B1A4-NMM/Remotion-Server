@@ -9,7 +9,7 @@ import {
   getEmotionGroup,
 } from '../enums/emotion-type.enum';
 import { EmotionSummaryScore } from '../entities/emotion-summary-score.entity';
-import { DiaryAnalysisDto } from '../analysis/dto/diary-analysis.dto';
+import { DiaryAnalysisDto } from '../diary/dto/diary-analysis.dto';
 import { MemberSummaryRes } from './dto/member-summary.res';
 import { CommonUtilService } from '../util/common-util.service';
 import { LocalDate } from 'js-joda';

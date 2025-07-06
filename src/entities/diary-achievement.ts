@@ -1,21 +1,25 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { DiaryAchievementCluster } from './diary-achievement-cluster.entity';
+import { Diary } from './Diary.entity';
 
 @Entity()
 export class DiaryAchievement {
 
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
 
   @Column()
-  content: string
+  content: string;
 
   @Column('simple-json')
-  vector: number[]
+  vector: number[];
 
   @ManyToOne(() => DiaryAchievementCluster,
     (cluster) => cluster.achievements,
     { onDelete: 'CASCADE' })
   cluster: DiaryAchievementCluster;
+
+  @ManyToOne(() => Diary, {onDelete: 'CASCADE'})
+  diary: Diary;
 
 }

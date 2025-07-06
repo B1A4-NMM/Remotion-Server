@@ -24,7 +24,28 @@ export class QdrantService {
     }
   }
 
-  async createCollectionIfNotExist(name:string, vector_size:number) {
+  public async updateVector(collection:string ,id: string, vector: number[]) {
+    await this.client.updateVectors(collection, {
+      points: [{ id, vector }],
+    });
+  }
+
+  public async deleteAllVector(collection: string) {
+    try {
+      await this.client.delete(collection, {
+        filter: {},
+      });
+      this.logger.log(`All vectors deleted from collection: ${collection}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to delete all vectors from collection ${collection}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  async createCollectionIfNotExist(name: string, vector_size: number) {
     try {
       await this.client.getCollection(name);
     } catch {
@@ -35,15 +56,77 @@ export class QdrantService {
     }
   }
 
-  async upsertVector(name:string, id: string, vector: number[], payload: Record<string, any>) {
-    await this.client.upsert(name, {
+  async upsertVector(
+    collection: string,
+    id: string,
+    vector: number[],
+    payload: Record<string, any>,
+  ) {
+    await this.client.upsert(collection, {
       wait: true,
-      points: [{ id, vector }],
+      points: [{ id, vector, payload }],
     });
   }
 
-  async searchVector(name:string ,vector: number[], limit = 5) {
-    return this.client.search(name, { vector, limit });
+  async searchTopVectorByMember(
+    collection: string,
+    vector: number[],
+    memberId: string,
+    threshold: number,
+  ) {
+    return this.client.search(collection, {
+      vector,
+      limit: 1,
+      score_threshold: threshold,
+      filter: {
+        must: [
+          {
+            key: 'memberId',
+            match : {
+              value: memberId,
+            }
+          }
+        ],
+      },
+    });
+  }
+
+  async searchVectorByMember(
+    collection: string,
+    vector: number[],
+    memberId: string,
+    limit = 5,
+  ) {
+    return this.client.search(collection, {
+      vector,
+      limit: limit,
+      filter: {
+        must: [
+          {
+            key: 'memberId',
+            match : {
+              value: memberId,
+            }
+          }
+        ],
+      },
+    });
+  }
+
+  async searchTopVector(
+    collection: string,
+    vector: number[],
+    threshold: number,
+  ) {
+    return this.client.search(collection, {
+      vector,
+      limit: 1,
+      score_threshold: threshold,
+    });
+  }
+
+  async searchVector(collection: string, vector: number[], limit = 5) {
+    return this.client.search(collection, { vector, limit });
   }
 
   async upsert(id: string, vector: number[], payload: Record<string, any>) {

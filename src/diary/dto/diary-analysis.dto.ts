@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
 import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { EmotionType } from '../../enums/emotion-type.enum';
@@ -90,5 +90,11 @@ export class DiaryAnalysisDto {
   @ValidateNested()
   @Type(() => TodoAnalysisDto)
   todos: TodoAnalysisDto[] = []
+
+  @Exclude()
+  achievements: string[] = []
+
+  @Exclude()
+  shortComings: string[] = []
 
 }
