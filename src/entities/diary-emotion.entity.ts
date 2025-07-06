@@ -18,6 +18,7 @@ export class DiaryEmotion {
   })
   emotion! : EmotionType;
 
+
   @Column({
     type: 'enum',
     enum: EmotionBase,

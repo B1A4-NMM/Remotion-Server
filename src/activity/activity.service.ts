@@ -12,14 +12,17 @@ export class ActivityService {
 
   async createByDiary(dto: DiaryAnalysisDto, diary: Diary) {
 
-    dto.activity.forEach(activity => {
-      let entity = new Activity();
+    
+      for ( const activity of dto.activity ){
+
+      const entity = new Activity();
       entity.diary = diary
       entity.content = activity.activityContent
-      entity.strength = activity.strength ? activity.strength : null
-      this.repo.save(entity)
-    })
+      entity.strength = activity.strength ? activity.strength : null;
 
+      await this.repo.save(entity)
+    }
+  
   }
 
 }

@@ -23,6 +23,7 @@ import { TodoModule } from './todo/todo.module';
 import { DiarytodoModule } from './diarytodo/diarytodo.module';
 import { S3Service } from './s3/s3.service';
 import { UploadModule } from './upload/upload.module';
+import { StrengthModule } from './strength/strength.module';
 
 
 @Module({
@@ -33,11 +34,11 @@ import { UploadModule } from './upload/upload.module';
     TypeOrmModule.forRoot(typeormconfig),
     AuthModule,
     ClaudeModule,
-    VectorModule,
-    GraphModule,
+    //VectorModule,
+    //GraphModule,
     CommonUtilModule,
     AnalysisModule,
-    Neo4jModule,
+    //Neo4jModule,
     MemberModule,
     ActivityModule,
     TargetModule,
@@ -47,6 +48,7 @@ import { UploadModule } from './upload/upload.module';
     TodoModule,
     DiarytodoModule,
     UploadModule,
+    StrengthModule,
 
   ],
   controllers: [AppController],
