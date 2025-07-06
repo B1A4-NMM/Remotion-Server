@@ -34,7 +34,7 @@ import { StrengthModule } from './strength/strength.module';
     TypeOrmModule.forRoot(typeormconfig),
     AuthModule,
     ClaudeModule,
-    //VectorModule,
+    VectorModule,
     //GraphModule,
     CommonUtilModule,
     AnalysisModule,
