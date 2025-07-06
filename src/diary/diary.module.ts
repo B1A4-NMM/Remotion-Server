@@ -31,5 +31,6 @@ import { UploadModule } from '../upload/upload.module';
   ],
   controllers: [DiaryController],
   providers: [DiaryService],
+  exports:[DiaryService],
 })
 export class DiaryModule {}

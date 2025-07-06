@@ -28,7 +28,6 @@ export class TodoService {
 
         @InjectRepository(Todo) private readonly todoRepository : Repository<Todo>,
 
-
         @InjectRepository(DiaryTodo)
         private readonly diaryTodoRepository : Repository<DiaryTodo>
     ){}
