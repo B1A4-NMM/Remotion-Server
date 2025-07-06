@@ -3,11 +3,13 @@ import { AchievementClusterService } from './achievement-cluster.service';
 import { DiaryAnalysisDto } from '../diary/dto/diary-analysis.dto';
 import { Diary } from '../entities/Diary.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DiaryAchievement } from '../entities/diary-achievement';
+import { DiaryAchievement } from '../entities/diary-achievement.entity.';
 import { Repository } from 'typeorm';
 import { DiaryAchievementCluster } from '../entities/diary-achievement-cluster.entity';
 import { SimsceEmbedderService } from './simsce-embedder.service';
 import { Member } from '../entities/Member.entity';
+import { MemberService } from '../member/member.service';
+import { AchievementRes, AllAchievementRes } from '../member/dto/all-achievement.res';
 
 @Injectable()
 export class AchievementService {
@@ -18,8 +20,35 @@ export class AchievementService {
     private readonly achievementClusterRepo: Repository<DiaryAchievementCluster>,
     private readonly achievementClusterService: AchievementClusterService,
     private readonly embedder: SimsceEmbedderService,
+    private readonly memberService: MemberService,
   ) {}
 
+  /**
+   * 멤버를 인자로 받아 이 멤버의 모든 성취 클러스터를 가져옵니다
+   */
+  async getAllAchievementCluster(memberId:string) {
+    const member = await this.memberService.findOne(memberId)
+    const clusters = await this.achievementClusterRepo.find({
+      where: { author: member },
+    });
+
+    let res = new AllAchievementRes();
+    for (const cluster of clusters) {
+      let achievementRes = new AchievementRes();
+      achievementRes.id = cluster.id
+      achievementRes.label = cluster.label
+      achievementRes.count = cluster.clusteredCount
+      res.achievements.push(achievementRes)
+    }
+
+    return res;
+  }
+
+  /**
+   * 다이어리를 생성할 때, 같이 분석된 성취를 저장합니다
+   * 이미 클러스터가 존재하면 벡터 DB에는 저장하지 않고, RDB의 DiaryAchievement를 만들고 DiaryAchievementCluster에 추가
+   * 클러스터가 존재하지 않으면, 클러스터를 새로 만들고 RDB와 벡터 DB에 추가
+   */
   async createByDiary(dto: DiaryAnalysisDto, diary: Diary, member: Member) {
     const achievements = dto.achievements;
 
@@ -59,6 +88,7 @@ export class AchievementService {
     clusterEntity.label = achievement;
     clusterEntity.author = member;
     clusterEntity.centroid = created.vector;
+    clusterEntity.clusteredCount = 1
 
     await this.achievementClusterRepo.save(clusterEntity);
   }
@@ -95,6 +125,10 @@ export class AchievementService {
       id,
       avgVector,
     ); // 업데이트
+
+    clusterEntity.clusteredCount++ // 카운트 증가
+    await this.achievementClusterRepo.save(clusterEntity);
+
   }
 
   /**

@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { SocialType } from '../enums/social-type.enum';
 import { MEMBER_DAILY_LIMIT } from '../constants/member.constant';
 import { MemberSummary } from '../entities/member-summary.entity';
+import { AchievementService } from '../achievement-cluster/achievement.service';
 
 @Injectable()
 export class MemberService {
@@ -17,12 +18,12 @@ export class MemberService {
 
   create(dto: CreateMemberDto) {
     const member = new Member();
-    member.id = dto.id
-    member.email = dto.email
-    member.nickname = dto.nickname
-    member.social_type = dto.socialType
-    member.daily_limit = MEMBER_DAILY_LIMIT
-    return this.repo.save(member)
+    member.id = dto.id;
+    member.email = dto.email;
+    member.nickname = dto.nickname;
+    member.social_type = dto.socialType;
+    member.daily_limit = MEMBER_DAILY_LIMIT;
+    return this.repo.save(member);
   }
 
   findAll() {
@@ -38,7 +39,7 @@ export class MemberService {
   }
 
   findSocialMember(id: string, type: SocialType) {
-    return this.repo.findOneBy({id: id, social_type: type})
+    return this.repo.findOneBy({ id: id, social_type: type });
   }
 
   update(id: number, updateMemberDto: UpdateMemberDto) {
@@ -48,6 +49,4 @@ export class MemberService {
   remove(id: number) {
     return `This action removes a #${id} member`;
   }
-
-
 }

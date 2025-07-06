@@ -110,8 +110,6 @@ export class DiaryService {
   async getDiaryByDate(memberId: string, date: LocalDate) {
     const member = await this.memberService.findOne(memberId);
 
-    console.log(`member_id = ${member.id}`)
-
     const diaries = await this.diaryRepository.find({
       where: { author : member ,written_date: date },
       relations: ['diaryTargets', 'diaryTargets.target', 'diaryEmotions'],

@@ -1,6 +1,6 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
 import { Member } from './Member.entity';
-import { DiaryAchievement } from './diary-achievement';
+import { DiaryAchievement } from './diary-achievement.entity.';
 
 @Entity()
 export class DiaryAchievementCluster {
@@ -8,8 +8,12 @@ export class DiaryAchievementCluster {
   @PrimaryColumn()
   id: string
 
-  @ManyToOne(() => Member, )
+  @ManyToOne(() => Member, {onDelete: 'CASCADE'})
+  @JoinColumn({ name: 'author_id' })
   author:Member
+
+  @Column()
+  clusteredCount:number
 
   @Column()
   label:string

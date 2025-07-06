@@ -139,4 +139,12 @@ export class QdrantService {
   async search(vector: number[], limit = 5) {
     return this.client.search(this.collection, { vector, limit });
   }
+
+  async getVectorById(collection: string, id: string) {
+    return this.client.retrieve(collection, {
+      ids: [id],
+      with_payload: true,
+      with_vector: false,
+    });
+  }
 }

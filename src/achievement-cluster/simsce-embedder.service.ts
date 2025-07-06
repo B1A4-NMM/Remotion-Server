@@ -10,7 +10,6 @@ export class SimsceEmbedderService {
 
   async embed(text: string): Promise<number[]> {
     const embed_url = this.configService.get('SIMCSE_MODEL_URL');
-    console.log(`text = ${text}`)
     const cleanText = text.trim();
 
     if (!cleanText) {

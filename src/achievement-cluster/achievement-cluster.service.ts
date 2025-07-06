@@ -35,11 +35,24 @@ export class AchievementClusterService {
       memberId: memberId,
     });
 
-    return {id :id, vector: vector};
+    return {id :id, vector: vector, memberId: memberId};
   }
 
   public async updateAchievementClusterVector(id:string, vector: number[]) {
     await this.qdrantService.updateVector(this.collection, id, vector);
+  }
+
+  public async searchTextByMember(text: string, memberId: string) {
+    const vector = await this.simecseEmbedderService.embed(text);
+
+    const result = await this.qdrantService.searchVectorByMember(
+      this.collection,
+      vector,
+      memberId.toString(),
+      10,
+    );
+
+    return result;
   }
 
   //==============================================================================================================
@@ -80,25 +93,10 @@ export class AchievementClusterService {
   }
 
   async searchText(text: string) {
-    console.log(`search = ${text}`);
     const vector = await this.simecseEmbedderService.embed(text);
     const result = await this.search(vector);
     return result;
   }
 
-  async searchTextByMember(text: string, memberId: string) {
-    console.log(`search = ${text}, member = ${memberId}`);
-    const vector = await this.simecseEmbedderService.embed(text);
-    console.log(`vector = [${vector.slice(0, 5).join(', ')}...]`);
 
-    const result = await this.qdrantService.searchVectorByMember(
-      this.collection,
-      vector,
-      memberId,
-      10,
-    );
-
-    console.log('result =', JSON.stringify(result, null, 2));
-    return result;
-  }
 }

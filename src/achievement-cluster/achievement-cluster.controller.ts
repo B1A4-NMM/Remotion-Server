@@ -13,6 +13,7 @@ import { IsString } from 'class-validator';
 import { AuthGuard } from '@nestjs/passport';
 import { QdrantService } from '../vector/qdrant.service';
 import { CurrentUser } from '../auth/user.decorator';
+import { ApiExcludeController } from '@nestjs/swagger';
 
 class CreateVDTO {
   @IsString()
@@ -20,6 +21,7 @@ class CreateVDTO {
 }
 
 @Controller('acls')
+@ApiExcludeController()
 export class AchievementClusterController {
   constructor(
     private readonly service: AchievementClusterService,
@@ -49,7 +51,7 @@ export class AchievementClusterController {
   @Get('cluster')
   @UseGuards(AuthGuard('jwt'))
   searchCluster(@Query('q') q: string, @CurrentUser() user: any) {
-    console.log(`memberId = ${user.id}`)
     return this.service.searchTextByMember(q, user.id);
   }
+
 }
