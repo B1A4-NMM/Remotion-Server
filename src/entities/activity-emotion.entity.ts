@@ -6,7 +6,7 @@ export class ActivityEmotion {
   @PrimaryGeneratedColumn()
   id:number
 
-  @ManyToOne(())
+  //@ManyToOne(())
 
 
 }
