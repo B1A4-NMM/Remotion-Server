@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { QdrantClient } from '@qdrant/js-client-rest';
 import { QdrantService } from '../vector/qdrant.service';
-import { SimsceEmbedderService } from './simsce-embedder.service';
+import { SimsceEmbedderService } from '../vector/simsce-embedder.service';
 import { v4 as uuid } from 'uuid';
 import { THRESHOLD } from '../constants/threshold.constansts';
 
