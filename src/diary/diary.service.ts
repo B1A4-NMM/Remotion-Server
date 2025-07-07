@@ -35,21 +35,9 @@ export class DiaryService {
     private readonly memberService: MemberService,
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
-    private readonly memberSummaryService: MemberSummaryService,
-    private readonly activityService: ActivityService,
-    private readonly targetService: TargetService,
     private readonly emotionService: EmotionService,
-    private readonly diaryTodoService: DiarytodoService,
-    private readonly achievementService: AchievementService,
   ) {}
 
-  async getAllDiaryActivityCluster() {
-    const diaries = await this.diaryRepository.find({
-      relations: ['activities'],
-    });
-
-    return this.activityService.clusteringActivities(diaries)
-  }
 
   /**
    * 다이어리 생성 함수

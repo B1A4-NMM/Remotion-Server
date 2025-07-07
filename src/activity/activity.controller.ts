@@ -15,7 +15,7 @@ export class ActivityController {
   @UseGuards(AuthGuard('jwt'))
   async getCluster(@Query('period') period: number, @CurrentUser() user:any) {
     const memberId = user.id;
-    return this.activityService.getActivitiesByPeriod(period, memberId)
+    return this.activityService.getActivityClusterByPeriod(period, memberId)
   }
 
 }

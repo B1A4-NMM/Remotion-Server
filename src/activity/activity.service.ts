@@ -11,13 +11,14 @@ import { ActivityEmotion } from '../entities/activity-emotion.entity';
 import { ActivityAnalysis } from '../util/json.parser';
 import { CommonUtilService } from '../util/common-util.service';
 import { EmotionType, getEmotionGroup } from '../enums/emotion-type.enum';
+import { ClusteringResult } from '../util/cluster-json.parser';
 
 @Injectable()
 export class ActivityService {
   constructor(
     @InjectRepository(Activity) private readonly repo: Repository<Activity>,
     @InjectRepository(ActivityEmotion)
-    private readonly emotionRepo: Repository<ActivityEmotion>,
+    private readonly activityEmotionRepo: Repository<ActivityEmotion>,
     private readonly clusterService: ClustersService,
     private readonly utilService: CommonUtilService,
   ) {}
@@ -41,7 +42,7 @@ export class ActivityService {
           EmotionType,
           e.emotion,
         );
-        let entity: ActivityEmotion | null = await this.emotionRepo.findOne({
+        let entity: ActivityEmotion | null = await this.activityEmotionRepo.findOne({
           where: {
             activity: activityEntity,
             emotion,
@@ -52,7 +53,7 @@ export class ActivityService {
           entity = new ActivityEmotion();
           entity.activity = activityEntity;
           entity.emotion = emotion
-          entity.emotionBase = getEmotionGroup(entity.emotion);
+          entity.emotionGroup = getEmotionGroup(entity.emotion);
           entity.intensitySum = e.intensity;
           entity.count = 1;
         } else {
@@ -60,12 +61,12 @@ export class ActivityService {
           entity.count += 1;
         }
 
-        await this.emotionRepo.save(entity);
+        await this.activityEmotionRepo.save(entity);
       }
     }
   }
 
-  async getActivitiesByPeriod(period: number, authorId: string) {
+  async getActivityClusterByPeriod(period: number, authorId: string) {
     const today = LocalDate.now();
     const start = today.minusDays(period);
 
@@ -80,15 +81,13 @@ export class ActivityService {
       })
       .getMany();
 
-    return activities;
+    let result = await this.clusteringActivities(activities);
+    const parseResult: ClusteringResult = JSON.parse(JSON.stringify(result));
+
+    return parseResult;
   }
 
-  async clusteringActivities(diaries: Diary[]) {
-    let activities: Activity[] = [];
-
-    for (const diary of diaries) {
-      activities.push(...diary.activities);
-    }
+  async clusteringActivities(activities: Activity[]) {
 
     const req = new MakeClusterDto();
     for (const activity of activities) {

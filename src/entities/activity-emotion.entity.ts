@@ -24,7 +24,7 @@ export class ActivityEmotion {
     enum: EmotionGroup,
     default : EmotionGroup.안정,
   })
-  emotionBase: EmotionGroup;
+  emotionGroup: EmotionGroup;
 
   @Column()
   intensitySum: number;

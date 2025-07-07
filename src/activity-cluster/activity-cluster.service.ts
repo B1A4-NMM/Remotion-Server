@@ -27,7 +27,7 @@ export class ActivityClusterService {
     const start = today.minusDays(period)
 
     const clusters = await this.activityClusterRepo.find({
-      where: {author : {id : memberId}}
+      where: {author : {id : memberId}, }
     })
 
 
