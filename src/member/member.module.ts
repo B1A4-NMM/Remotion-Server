@@ -10,6 +10,7 @@ import { EmotionSummaryScore } from '../entities/emotion-summary-score.entity';
 import { EmotionModule } from '../emotion/emotion.module';
 import { AchievementModule } from '../achievement-cluster/achievement.module';
 import { VectorModule } from '../vector/vector.module';
+import { MemberCharacterService } from './member-character.service';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { VectorModule } from '../vector/vector.module';
     VectorModule
   ],
   controllers: [MemberController],
-  providers: [MemberService, MemberSummaryService],
-  exports: [MemberService, MemberSummaryService]
+  providers: [MemberService, MemberSummaryService, MemberCharacterService],
+  exports: [MemberService, MemberSummaryService,MemberCharacterService]
 })
 export class MemberModule {}

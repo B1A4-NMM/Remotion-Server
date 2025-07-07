@@ -1,28 +1,31 @@
-import { IsArray,IsString,IsBoolean, IsOptional }from 'class-validator'
+import { IsArray, IsString, IsBoolean, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTodoDto {
+  @ApiProperty({
+    example: '운동하기',
+    description: '할 일 제목',
+  })
+  @IsString()
+  title: string;
 
-    //userId는 @CurrentUser() 같은 방식으로 controller 에서 처리해주기
+  
+  @IsOptional()
+  @IsString()
+  date: string;
 
-    @IsString()
-    title: string;
+ 
+  @IsOptional()
+  @IsBoolean()
+  isRepeat?: boolean;
 
-    @IsOptional()
-    @IsString()
-    date : string;
+  
+  @IsOptional()
+  @IsString()
+  repeatRule?: string;
 
-    @IsOptional()
-    @IsBoolean()
-    isRepeat?: boolean;
-
-    @IsOptional()
-    @IsString()
-    repeatRule?: string;
-
-    @IsOptional()
-    @IsString()
-    repeatEndDate?: string;
-
-
-    
+  
+  @IsOptional()
+  @IsString()
+  repeatEndDate?: string;
 }

@@ -1,19 +1,21 @@
-import { StrengthService } from './strength.service';
-import { Body, Controller, Injectable, Post, Patch ,UseGuards, Get, Logger, Query, Param, Delete } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOkResponse, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
+import { StrengthService } from './strength.service';
+import { GetStrengthsResponseDto } from './dto/get-strengths-response.dto';
 
-
-
-@Controller('strength')
+@ApiTags('Strengths')
+@ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
+@Controller('strength')
 export class StrengthController {
   constructor(private readonly strengthService: StrengthService) {}
 
-
   @Get()
-  async getUserStrengths(@CurrentUser() user){
+  @ApiOperation({ summary: '회원의 강점 통계 요약 반환' })
+  @ApiOkResponse({ type: GetStrengthsResponseDto })
+  async getUserStrengths(@CurrentUser() user): Promise<GetStrengthsResponseDto> {
     return this.strengthService.getStrengthsSummaryByMember(user.id);
   }
 }
