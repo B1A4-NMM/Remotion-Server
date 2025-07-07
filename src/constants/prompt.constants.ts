@@ -49,7 +49,8 @@ C. RETURN **ONLY** the corrected JSON (no commentary)
 • approach="None"  → outcome="None"  
 
 3) TEXT FORMAT  
-For activity / situation / cause / approach / outcome / achievements / shortcomings / todo:  
+activity는 명사구로 끝나서는 안되고 동사로 끝나도록 명확한 문장 또는 구문으로 변환해야함
+For situation / cause / approach / outcome / achievements / shortcomings / todo:  
  - All *_text fields* = "**띄어쓰기 포함** 14자 이하 한국어 명사구". (예: "기술 미흡", "추가 논의", "운동 완료")
  - no “다” endings, no conjunctions(및·그리고·하지만…)  
 
@@ -73,6 +74,8 @@ For activity / situation / cause / approach / outcome / achievements / shortcomi
           ⇒ set
               state_emotions.state_emotion       = ["무난"];
               state_emotions.s_emotion_intensity = [4];
+              
+                
 
 
 SELF-CHECK (수정 완료 후)  
@@ -130,8 +133,9 @@ RETURN **ONLY valid JSON** that fits the schema above.
 
 ==============  1. ACTIVITY  ==============
 Definition = 작성자가 실재로 수행한 행위(의도·계획 제외).  
-Extract ALL regardless of importance.  
-예: 일하다·회의하다·수영·요리·대화 등.
+Extract ALL regardless of importance. 
+동사 없이 명사만 나열하기 금지. 반드시 동사로 뽑아야 함. 
+예: 일하다·회의하다·수영하기·요리하기·대화하기·도와주기 등.
 
 ==============  2. PROBLEM  ==============
 Problem must occur DURING the activity.  

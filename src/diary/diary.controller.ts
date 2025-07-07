@@ -130,6 +130,11 @@ export class DiaryController {
     return await this.diaryService.deleteAll(memberId);
   }
 
+  @Get('all/cluster')
+  async getAllActivityCluster() {
+    return await this.diaryService.getAllDiaryActivityCluster()
+  }
+
   // @ApiOperation({
   //   summary: '일기 전체 조회',
   //   description: '무한스크롤을 통해 일기를 조회할 수 있습니다',

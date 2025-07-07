@@ -6,7 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DiaryAchievement } from '../entities/diary-achievement.entity.';
 import { Repository } from 'typeorm';
 import { DiaryAchievementCluster } from '../entities/diary-achievement-cluster.entity';
-import { SimsceEmbedderService } from './simsce-embedder.service';
+import { SimsceEmbedderService } from '../vector/simsce-embedder.service';
 import { Member } from '../entities/Member.entity';
 import { MemberService } from '../member/member.service';
 import { AchievementRes, AllAchievementRes } from '../member/dto/all-achievement.res';

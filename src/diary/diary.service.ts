@@ -47,6 +47,14 @@ export class DiaryService {
     private readonly achievementService: AchievementService,
   ) {}
 
+  async getAllDiaryActivityCluster() {
+    const diaries = await this.diaryRepository.find({
+      relations: ['activities'],
+    });
+
+    return this.activityService.clusteringActivities(diaries)
+  }
+
   /**
    * 다이어리 생성 함수
    * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장
@@ -69,7 +77,7 @@ export class DiaryService {
     diary.written_date = dto.writtenDate;
     diary.content = dto.content;
     diary.title = 'demo';
-    diary.create_date = LocalDate.now()
+    diary.create_date = LocalDate.now();
     if (imageUrl) {
       diary.photo_path = imageUrl;
     }
@@ -81,14 +89,12 @@ export class DiaryService {
     // 일기에 연관된 정보들 저장
     await this.activityService.createByDiary(result, saveDiary); // 행동 저장
     await this.targetService.createByDiary(result, saveDiary, memberId); // 대상 저장
-    await this.emotionService.createDiaryStateEmotion( // 상태 감정 저장
+    await this.emotionService.createDiaryStateEmotion(
+      // 상태 감정 저장
       result.stateEmotion,
       diary,
     );
-    await this.emotionService.createDiarySelfEmotion(
-      result.selfEmotion,
-      diary
-    );
+    await this.emotionService.createDiarySelfEmotion(result.selfEmotion, diary);
 
     await this.memberSummaryService.updateSummaryFromDiary(
       result,
@@ -102,7 +108,9 @@ export class DiaryService {
       `생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`,
     );
 
-    this.logger.log(`일기의 주인 : ${saveDiary.author.id}, 글쓴이 : ${memberId}`)
+    this.logger.log(
+      `일기의 주인 : ${saveDiary.author.id}, 글쓴이 : ${memberId}`,
+    );
 
     return saveDiary.id;
   }
@@ -111,12 +119,12 @@ export class DiaryService {
     const member = await this.memberService.findOne(memberId);
 
     const diaries = await this.diaryRepository.find({
-      where: { author : member ,written_date: date },
+      where: { author: member, written_date: date },
       relations: ['diaryTargets', 'diaryTargets.target', 'diaryEmotions'],
     });
 
     const res = this.buildDiaryList(diaries);
-    return res
+    return res;
   }
 
   /**
@@ -254,10 +262,10 @@ export class DiaryService {
       dto.intensity = emotion.intensity;
       switch (emotion.emotionBase) {
         case EmotionBase.State:
-          result.stateEmotion.push(dto)
-          break
+          result.stateEmotion.push(dto);
+          break;
         case EmotionBase.Self:
-          result.selfEmotion.push(dto)
+          result.selfEmotion.push(dto);
       }
     }
 
@@ -272,15 +280,15 @@ export class DiaryService {
       }
 
       peopleDto.name = target.target.name;
-      peopleDto.count = target.target.count
+      peopleDto.count = target.target.count;
       result.people.push(peopleDto);
     }
 
     //diaryTodo => TodoResDto로 매핑 (응답 주고 받을 때 통일 형식)
-    diary.diaryTodos.forEach((diaryTodo) =>{
-      const todoDto = new TodoAnalysisDto;
-      
-      todoDto.Todocontent =diaryTodo.content;
+    diary.diaryTodos.forEach((diaryTodo) => {
+      const todoDto = new TodoAnalysisDto();
+
+      todoDto.Todocontent = diaryTodo.content;
       result.todos.push(todoDto);
     });
 

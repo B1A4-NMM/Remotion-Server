@@ -28,6 +28,20 @@ export class EmotionService {
     @InjectRepository(Diary)
     private readonly diaryRepository : Repository<Diary>,
   ) {}
+  
+  async getEmotionSummaryPeriod(memberId: string, period: number) {
+    const today = LocalDate.now();
+    const pastDate = today.minusDays(period);
+    
+    const diaries = await this.diaryRepository.find({
+      where: {
+        author: { id: memberId },
+        written_date: Between(pastDate, today)
+      },
+      relations: ['diaryEmotions', 'activities', 'diaryTargets', 'diaryTargets.target', 'diaryTargets.target.emotionTargets']
+    });
+    
+  }
 
   /**
    * 기간을 인자로 받아 해당 기간 내에 등장한 감정들이 어떤 요일에 등장했는지 반환
