@@ -15,6 +15,8 @@ import { TodoService } from '../todo/todo.service';
 import { Todo } from '../entities/Todo.entity';
 import { DiarytodoModule } from '../diarytodo/diarytodo.module';
 import { UploadModule } from '../upload/upload.module';
+import { AchievementService } from '../achievement-cluster/achievement.service';
+import { AchievementModule } from '../achievement-cluster/achievement.module';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { UploadModule } from '../upload/upload.module';
     TodoModule,
     DiarytodoModule,
     UploadModule,
+    AchievementModule
   ],
   controllers: [DiaryController],
   providers: [DiaryService],

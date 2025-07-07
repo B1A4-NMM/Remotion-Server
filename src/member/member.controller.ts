@@ -18,6 +18,7 @@ import { CurrentUser } from '../auth/user.decorator';
 import { MemberSummaryRes } from './dto/member-summary.res';
 import { EmotionService } from '../emotion/emotion.service';
 import { EmotionSummaryWeekdayRes } from './dto/emotion-summary-weekday.res';
+import { AchievementService } from '../achievement-cluster/achievement.service';
 
 @Controller('member')
 @ApiTags('사용자/회원')
@@ -25,8 +26,10 @@ export class MemberController {
   constructor(
     private readonly memberService: MemberService,
     private readonly memberSummaryService: MemberSummaryService,
-    private readonly emotionService: EmotionService
-  ) {}
+    private readonly emotionService: EmotionService,
+  ) {
+
+  }
 
   @Get('summary')
   @UseGuards(AuthGuard('jwt'))
@@ -89,5 +92,6 @@ export class MemberController {
     const memberId = user.id;
     return await this.emotionService.getEmotionSummaryWeekDay(memberId, period);
   }
+
 
 }

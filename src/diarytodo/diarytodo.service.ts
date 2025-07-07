@@ -20,7 +20,7 @@ import {
   EmotionAnalysisDto,
   PeopleAnalysisDto,
   TodoAnalysisDto,
-} from '../analysis/dto/diary-analysis.dto';
+} from '../diary/dto/diary-analysis.dto';
 import { LocalDate } from 'js-joda';
 
 @Injectable()

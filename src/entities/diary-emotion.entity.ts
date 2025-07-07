@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Diary } from './Diary.entity';
 import { EmotionBase, EmotionType } from '../enums/emotion-type.enum';
 
@@ -9,6 +9,7 @@ export class DiaryEmotion {
   id!: number;
 
   @ManyToOne(() => Diary, (diary) => diary.diaryEmotions, {onDelete: 'CASCADE'})
+  @JoinColumn({ name: 'diary_id' })
   diary!: Diary;
 
   @Column({

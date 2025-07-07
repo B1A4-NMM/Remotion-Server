@@ -7,5 +7,6 @@ import { QdrantService } from './qdrant.service';
 @Module({
   controllers: [VectorController],
   providers: [VectorService, EmbeddingService, QdrantService],
+  exports: [EmbeddingService, QdrantService]
 })
 export class VectorModule {}

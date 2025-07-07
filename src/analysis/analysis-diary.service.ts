@@ -6,7 +6,7 @@ import {
   EmotionAnalysisDto,
   PeopleAnalysisDto,
   TodoAnalysisDto,
-} from './dto/diary-analysis.dto';
+} from '../diary/dto/diary-analysis.dto';
 import {  EmotionInteraction, Person } from '../util/json.parser';
 import { CommonUtilService } from '../util/common-util.service';
 import { EmotionType } from '../enums/emotion-type.enum';
@@ -42,6 +42,8 @@ export class AnalysisDiaryService {
     diaryAnalysisDto.content = prompt; // 일기 내용
 
     diaryAnalysisDto.todos = this.todoAnalysis(reflection.todo)
+    diaryAnalysisDto.achievements = reflection.achievements;
+    diaryAnalysisDto.shortComings = reflection.shortcomings;
 
     return diaryAnalysisDto;
   }

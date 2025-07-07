@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Diary } from './Diary.entity';
 
 @Entity()
@@ -11,6 +11,7 @@ export class Activity {
   content: string;
 
   @ManyToOne(() => Diary, (diary) => diary.activities, {onDelete: 'CASCADE'} )
+  @JoinColumn({ name: 'diary_id' })
   diary: Diary;
 
   @Column({ type: 'varchar' ,nullable: true})

@@ -23,6 +23,7 @@ import { TodoModule } from './todo/todo.module';
 import { DiarytodoModule } from './diarytodo/diarytodo.module';
 import { S3Service } from './s3/s3.service';
 import { UploadModule } from './upload/upload.module';
+import { AchievementModule } from './achievement-cluster/achievement.module';
 import { StrengthModule } from './strength/strength.module';
 
 
@@ -49,6 +50,7 @@ import { StrengthModule } from './strength/strength.module';
     DiarytodoModule,
     UploadModule,
     StrengthModule,
+    AchievementModule,
 
   ],
   controllers: [AppController],

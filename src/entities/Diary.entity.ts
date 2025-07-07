@@ -34,7 +34,6 @@ export class Diary {
     @JoinColumn({ name : 'author_id' })
     author! : Member;
     
-    //실제 생성시간(자동)
     @Column({ type:'date', transformer: new LocalDateTransformer() })
     create_date! : LocalDate;
 

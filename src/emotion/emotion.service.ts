@@ -8,7 +8,7 @@ import {
   EmotionType,
   isEmotionType,
 } from '../enums/emotion-type.enum';
-import { EmotionAnalysisDto } from '../analysis/dto/diary-analysis.dto';
+import { EmotionAnalysisDto } from '../diary/dto/diary-analysis.dto';
 import { CommonUtilService } from '../util/common-util.service';
 import { DiaryEmotion } from '../entities/diary-emotion.entity';
 import { Diary } from '../entities/Diary.entity';
