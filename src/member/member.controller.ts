@@ -11,6 +11,8 @@ import {
 import { MemberService } from './member.service';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
+import { CharacterResponseDto } from './dto/member-character-response.dto';
+
 import { ApiExcludeController, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { MemberSummaryService } from './member-summary.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -19,6 +21,9 @@ import { MemberSummaryRes } from './dto/member-summary.res';
 import { EmotionService } from '../emotion/emotion.service';
 import { EmotionSummaryWeekdayRes } from './dto/emotion-summary-weekday.res';
 import { AchievementService } from '../achievement-cluster/achievement.service';
+import { EmotionBaseAnalysisResponseDto } from 'src/emotion/dto/emotion-base-analysis.dto';
+import { MemberCharacterService } from './member-character.service';
+
 
 @Controller('member')
 @ApiTags('사용자/회원')
@@ -27,6 +32,7 @@ export class MemberController {
     private readonly memberService: MemberService,
     private readonly memberSummaryService: MemberSummaryService,
     private readonly emotionService: EmotionService,
+    private readonly memberCharacterService : MemberCharacterService,
   ) {
 
   }
@@ -92,6 +98,43 @@ export class MemberController {
     const memberId = user.id;
     return await this.emotionService.getEmotionSummaryWeekDay(memberId, period);
   }
+  
+ 
+  // about-me 감정 base 3가지 데이터 조회 및 전송 로직
+
+  @Get('emotion/base-analysis')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({
+    summary: '요일별 감정 요약',
+    description: '기간 내 요일별로 등장한 감정들의 빈도를 조회합니다',
+  })
+  @ApiOperation({
+    summary: 'EmotionBase 별 감정 분석 조회',
+    description: '회원의 감정을 Relation, Self, State 세 가지 감정 베이스로 나누어 각각에 속한 감정들의 intensity와 count를 반환합니다.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'EmotionBase별 감정 분석 성공',
+    type: EmotionBaseAnalysisResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 실패',
+  })
+  async getEmotionBaseAnalysis(@CurrentUser() user : any ) {
+    return await this.emotionService.getEmotionBaseAnalysis(user.id);
+  }
+
+  @Get('character')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: '사용자 캐릭터 조회', description: 'EmotionBase 기반 감정 분석으로 캐릭터를 분류해 반환합니다.' })
+  @ApiResponse({ status: 200, description: '캐릭터 분석 결과', type: CharacterResponseDto })
+  async getCharacter(@CurrentUser() user: any,): Promise<CharacterResponseDto> {
+    const memberId = user.id;
+    return await this.memberCharacterService.getMemberCharacter(memberId);
+}
+
+  
 
 
 }
