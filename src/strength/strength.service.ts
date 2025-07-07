@@ -9,6 +9,7 @@ import { DiaryService } from '../diary/diary.service';
 import { Diary } from '../entities/Diary.entity'; 
 import { Activity } from '../entities/Activity.entity';
 import { strengthCategoryMap } from 'src/enums/strength-type.enum';
+import { GetStrengthsResponseDto } from './dto/get-strengths-response.dto';
 
 @Injectable()
 export class StrengthService {
@@ -28,7 +29,7 @@ export class StrengthService {
     ){}
 
 
-    async getStrengthsSummaryByMember(memberId : string){
+    async getStrengthsSummaryByMember(memberId : string):Promise<GetStrengthsResponseDto>{
         
         //DB조회는 비동기 처리(not 병렬)
         const activities =await this.activityRepository.find({
@@ -61,10 +62,7 @@ export class StrengthService {
             }
         }
 
-        return{
-            typeCount,
-            detailCount,
-        };
+       return new GetStrengthsResponseDto(typeCount,detailCount);
     }
 
 }
