@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Activity } from '../entities/Activity.entity';
 import { Repository } from 'typeorm';
-import { DiaryAnalysisDto } from '../analysis/dto/diary-analysis.dto';
+import { DiaryAnalysisDto } from '../diary/dto/diary-analysis.dto';
 import { Diary } from '../entities/Diary.entity';
 
 @Injectable()

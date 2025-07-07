@@ -1,4 +1,4 @@
-import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { MemberSummary } from './member-summary.entity';
 import { EmotionGroup } from '../enums/emotion-type.enum';
 
@@ -8,6 +8,7 @@ export class EmotionSummaryScore {
   id: number;
 
   @ManyToOne(() => MemberSummary, (summary) => summary.emotionScores, {onDelete: 'CASCADE'})
+  @JoinColumn({ name: 'summary_id' })
   summary: MemberSummary;
 
   @Column({

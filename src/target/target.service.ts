@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import {
   DiaryAnalysisDto,
   EmotionAnalysisDto,
-} from '../analysis/dto/diary-analysis.dto';
+} from '../diary/dto/diary-analysis.dto';
 import { Diary } from '../entities/Diary.entity';
 import { MemberService } from '../member/member.service';
 import { CommonUtilService } from '../util/common-util.service';

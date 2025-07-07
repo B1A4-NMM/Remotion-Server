@@ -5,7 +5,7 @@ import { CreateTodoDto } from './dto/create-todo.dto';
 import { TodoService } from './todo.service'
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
-import { TodoAnalysisDto } from '../analysis/dto/diary-analysis.dto';
+import { TodoAnalysisDto } from '../diary/dto/diary-analysis.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { GetTodosResponseDto } from './dto/get-todos-response.dto';
 

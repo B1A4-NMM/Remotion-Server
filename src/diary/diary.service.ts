@@ -19,11 +19,12 @@ import {
   EmotionAnalysisDto,
   PeopleAnalysisDto,
   TodoAnalysisDto,
-} from '../analysis/dto/diary-analysis.dto';
+} from './dto/diary-analysis.dto';
 import { MemberSummaryService } from '../member/member-summary.service';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { EmotionBase } from '../enums/emotion-type.enum';
 import { LocalDate } from 'js-joda';
+import { AchievementService } from '../achievement-cluster/achievement.service';
 
 @Injectable()
 export class DiaryService {
@@ -43,6 +44,7 @@ export class DiaryService {
     private readonly utilService: CommonUtilService,
     private readonly emotionService: EmotionService,
     private readonly diaryTodoService: DiarytodoService,
+    private readonly achievementService: AchievementService,
   ) {}
 
   /**
@@ -94,6 +96,7 @@ export class DiaryService {
       dto.writtenDate,
     );
     await this.diaryTodoService.createByDiary(result, saveDiary, member);
+    await this.achievementService.createByDiary(result, saveDiary, member);
 
     this.logger.log(
       `생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`,
@@ -106,8 +109,6 @@ export class DiaryService {
 
   async getDiaryByDate(memberId: string, date: LocalDate) {
     const member = await this.memberService.findOne(memberId);
-
-    console.log(`member_id = ${member.id}`)
 
     const diaries = await this.diaryRepository.find({
       where: { author : member ,written_date: date },
