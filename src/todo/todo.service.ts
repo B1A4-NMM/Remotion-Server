@@ -11,6 +11,7 @@ import { CreateTodoDto } from './dto/create-todo.dto';
 import { Todo } from '../entities/Todo.entity';
 import { DiaryTodo } from '../entities/diary-todo.entity';
 import { UpdateTodoDto } from './dto/update-todo.dto';
+import { LocalDate } from 'js-joda';
 
 
 
@@ -51,6 +52,8 @@ export class TodoService {
             repeatEndDate: dto.repeatEndDate,
             isCompleted: false,
             owner: member,
+            createdAt: LocalDate.now(),
+            updatedAt: LocalDate.now(),
           });
 
         
