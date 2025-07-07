@@ -24,6 +24,7 @@ import { DiarytodoModule } from './diarytodo/diarytodo.module';
 import { S3Service } from './s3/s3.service';
 import { UploadModule } from './upload/upload.module';
 import { AchievementModule } from './achievement-cluster/achievement.module';
+import { StrengthModule } from './strength/strength.module';
 
 
 @Module({
@@ -35,10 +36,10 @@ import { AchievementModule } from './achievement-cluster/achievement.module';
     AuthModule,
     ClaudeModule,
     VectorModule,
-    GraphModule,
+    //GraphModule,
     CommonUtilModule,
     AnalysisModule,
-    Neo4jModule,
+    //Neo4jModule,
     MemberModule,
     ActivityModule,
     TargetModule,
@@ -48,6 +49,7 @@ import { AchievementModule } from './achievement-cluster/achievement.module';
     TodoModule,
     DiarytodoModule,
     UploadModule,
+    StrengthModule,
     AchievementModule,
 
   ],

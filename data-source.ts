@@ -13,6 +13,8 @@ import { Todo } from './src/entities/Todo.entity';
 import { Activity } from './src/entities/Activity.entity';
 import { DiaryEmotion } from './src/entities/diary-emotion.entity';
 import { DiaryTodo } from './src/entities/diary-todo.entity';
+import { MemberSummary } from './src/entities/member-summary.entity';
+import { EmotionSummaryScore } from './src/entities/emotion-summary-score.entity';
 
 
 config();
@@ -35,6 +37,8 @@ export const AppDataSource = new DataSource({
     UserShareGroup,
     Todo,
     Activity,
+    MemberSummary,
+    EmotionSummaryScore,
     DiaryEmotion,
     DiaryTodo,
   ],

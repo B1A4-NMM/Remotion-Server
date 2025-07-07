@@ -34,5 +34,6 @@ import { AchievementModule } from '../achievement-cluster/achievement.module';
   ],
   controllers: [DiaryController],
   providers: [DiaryService],
+  exports:[DiaryService],
 })
 export class DiaryModule {}
