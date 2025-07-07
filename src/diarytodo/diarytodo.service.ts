@@ -25,27 +25,25 @@ import { LocalDate } from 'js-joda';
 
 @Injectable()
 export class DiarytodoService {
-    constructor(
-        @InjectRepository(DiaryTodo)
-        private readonly diaryTodoRepository: Repository<DiaryTodo>,   
-    ) {}
-    async createByDiary(result: DiaryAnalysisDto, diary: Diary, member: Member){
+  constructor(
+    @InjectRepository(DiaryTodo)
+    private readonly diaryTodoRepository: Repository<DiaryTodo>,
+  ) {}
 
-        if (result.todos.length === 0) return;
+  async createByDiary(result: string[], diary: Diary, member: Member) {
+    if (result.length === 0) return;
 
-        const diaryTodos = result.todos.map(todoResDto =>{
-            const dt = new DiaryTodo();
-            dt.content =todoResDto.Todocontent;
+    const diaryTodos = result.map((todo) => {
+      const dt = new DiaryTodo();
+      dt.content = todo;
 
-            //어떤 회원의 일기에 의해 생성된 todo인지 저장해야함
-            dt.createdAt = LocalDate.now()
-            dt.diary = diary;
-            dt.member =member;
-            return dt;
-    
-          });
+      //어떤 회원의 일기에 의해 생성된 todo인지 저장해야함
+      dt.createdAt = LocalDate.now();
+      dt.diary = diary;
+      dt.member = member;
+      return dt;
+    });
 
-          await this.diaryTodoRepository.save(diaryTodos);
-
-    }
+    await this.diaryTodoRepository.save(diaryTodos);
+  }
 }

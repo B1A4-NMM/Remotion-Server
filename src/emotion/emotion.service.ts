@@ -4,7 +4,7 @@ import { Between, Repository } from 'typeorm';
 import { EmotionTarget } from '../entities/emotion-target.entity';
 import { Target } from '../entities/Target.entity';
 import {
-  EmotionBase,
+  EmotionBase, EmotionGroup,
   EmotionType,
   isEmotionType,
 } from '../enums/emotion-type.enum';
@@ -15,6 +15,7 @@ import { Diary } from '../entities/Diary.entity';
 import { Emotions, EmotionSummaryWeekdayRes } from '../member/dto/emotion-summary-weekday.res';
 import { weekday } from '../constants/weekday.constant';
 import { LocalDate } from 'js-joda';
+import { CombinedEmotion, EmotionInteraction } from '../util/json.parser';
 
 @Injectable()
 export class EmotionService {
@@ -86,10 +87,10 @@ export class EmotionService {
    */
   async createOrUpdateEmotionTarget(
     target: Target,
-    dtos: EmotionAnalysisDto[],
+    emotions: CombinedEmotion[],
   ) {
-    for (const dto of dtos) {
-      const emotion = dto.emotionType;
+    for (const dto of emotions) {
+      const emotion = dto.emotion;
       const emotionIntensity = dto.intensity;
       let find = await this.findOneEmotionTarget(target, emotion);
       if (find === null) {
@@ -106,40 +107,40 @@ export class EmotionService {
   /**
    * diary-relation-emotion 엔티티 생성 함수
    */
-  async createDiaryEmotionForTarget(dtos: EmotionAnalysisDto[], diary: Diary) {
-    return this.createDiaryEmotionByBase(dtos, diary, EmotionBase.Relation);
+  async createDiaryEmotionForTarget(emotions: CombinedEmotion[], diary: Diary) {
+    return this.createDiaryEmotionByBase(emotions, diary, EmotionBase.Relation);
   }
 
   /**
    * diary-self-emotion 생성 함수
    */
-  async createDiarySelfEmotion(dtos: EmotionAnalysisDto[], diary: Diary) {
-    return this.createDiaryEmotionByBase(dtos, diary, EmotionBase.Self);
+  async createDiarySelfEmotion(emotions: CombinedEmotion[], diary: Diary) {
+    return this.createDiaryEmotionByBase(emotions, diary, EmotionBase.Self);
   }
 
   /**
    * diary-state-emotion 생성 함수
    */
-  async createDiaryStateEmotion(dtos: EmotionAnalysisDto[], diary: Diary) {
-    return this.createDiaryEmotionByBase(dtos, diary, EmotionBase.State);
+  async createDiaryStateEmotion(emotions: CombinedEmotion[], diary: Diary) {
+    return this.createDiaryEmotionByBase(emotions, diary, EmotionBase.State);
   }
 
   async createDiaryEmotionByBase(
-    dtos: EmotionAnalysisDto[],
+    emotions: CombinedEmotion[],
     diary: Diary,
     emotionBase: EmotionBase,
   ) {
-    for (const dto of dtos) {
-      let entity = await this.findOneDiaryEmotion(diary, dto.emotionType);
+    for (const emotion of emotions) {
+      let entity = await this.findOneDiaryEmotion(diary, emotion.emotion);
       if (entity === null) {
         entity = new DiaryEmotion(
           diary,
-          dto.emotionType,
+          emotion.emotion,
           emotionBase,
-          dto.intensity,
+          emotion.intensity,
         );
       } else {
-        entity.intensity += dto.intensity;
+        entity.intensity += emotion.intensity;
       }
       await this.diaryEmotionRepository.save(entity);
     }

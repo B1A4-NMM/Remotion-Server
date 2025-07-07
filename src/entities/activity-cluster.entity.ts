@@ -22,9 +22,6 @@ export class ActivityCluster {
   @Column('simple-json')
   centroid: number[]
 
-  @OneToMany(() => ActivityEmotion, (emotion) => emotion.activityCluster)
-  activityEmotions: ActivityEmotion[]
-
   @OneToMany(() => Activity, (activity) => activity.cluster)
   activities: Activity[]
 

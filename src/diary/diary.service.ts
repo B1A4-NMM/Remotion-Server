@@ -35,13 +35,9 @@ export class DiaryService {
     private readonly memberService: MemberService,
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
-    @InjectRepository(DiaryTodo)
-    private readonly diaryTodoRepository: Repository<DiaryTodo>,
     private readonly memberSummaryService: MemberSummaryService,
     private readonly activityService: ActivityService,
     private readonly targetService: TargetService,
-    private readonly todoService: TodoService,
-    private readonly utilService: CommonUtilService,
     private readonly emotionService: EmotionService,
     private readonly diaryTodoService: DiarytodoService,
     private readonly achievementService: AchievementService,
@@ -67,52 +63,17 @@ export class DiaryService {
   ) {
     this.logger.log('다이어리 생성');
     // 여기서 분석 결과 받아오고
-    const result = await this.analysisDiaryService.analysisDiary(dto.content);
-
-    // 주인 찾아서
-    const member = await this.memberService.findOne(memberId);
-    // 일기 만들어두고
-    const diary = new Diary();
-    diary.author = member;
-    diary.written_date = dto.writtenDate;
-    diary.content = dto.content;
-    diary.title = 'demo';
-    diary.create_date = LocalDate.now();
-    if (imageUrl) {
-      diary.photo_path = imageUrl;
-    }
-
-    // 여기서 일기 저장
-    const saveDiary = await this.diaryRepository.save(diary);
-
-    //activity & target & todo 은 여러개라서 따로 처리 => 다른 레이어라서 상관없음
-    // 일기에 연관된 정보들 저장
-    await this.activityService.createByDiary(result, saveDiary); // 행동 저장
-    await this.targetService.createByDiary(result, saveDiary, memberId); // 대상 저장
-    await this.emotionService.createDiaryStateEmotion(
-      // 상태 감정 저장
-      result.stateEmotion,
-      diary,
-    );
-    await this.emotionService.createDiarySelfEmotion(result.selfEmotion, diary);
-
-    await this.memberSummaryService.updateSummaryFromDiary(
-      result,
-      memberId,
-      dto.writtenDate,
-    );
-    await this.diaryTodoService.createByDiary(result, saveDiary, member);
-    await this.achievementService.createByDiary(result, saveDiary, member);
+    const result = await this.analysisDiaryService.analysisDiary(memberId, dto, imageUrl);
 
     this.logger.log(
-      `생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`,
+      `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
     );
 
     this.logger.log(
-      `일기의 주인 : ${saveDiary.author.id}, 글쓴이 : ${memberId}`,
+      `일기의 주인 : ${result.author.id}, 글쓴이 : ${memberId}`,
     );
 
-    return saveDiary.id;
+    return result.id;
   }
 
   async getDiaryByDate(memberId: string, date: LocalDate) {

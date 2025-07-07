@@ -1,3 +1,10 @@
+import { EmotionType } from '../enums/emotion-type.enum';
+
+export interface CombinedEmotion {
+  emotion: EmotionType;
+  intensity: number;
+}
+
 export interface EmotionInteraction {
   emotion: string[];
   emotion_intensity: number[];

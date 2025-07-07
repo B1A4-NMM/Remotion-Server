@@ -13,10 +13,6 @@ export class DiaryEmotion {
   @JoinColumn({ name: 'diary_id' })
   diary!: Diary;
 
-  @ManyToOne(() => Activity, (activity) => activity.emotions)
-  @JoinColumn({ name: 'activity_id' })
-  activity!: Activity;
-
   @Column({
     type: 'enum',
     enum: EmotionType,

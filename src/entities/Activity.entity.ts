@@ -27,7 +27,7 @@ export class Activity {
   @JoinColumn({ name: 'cluster_id' })
   cluster: ActivityCluster;
 
-  @OneToMany(() => DiaryEmotion, (emotion) => emotion.activity)
-  emotions: DiaryEmotion[];
+  @OneToMany(() => ActivityEmotion, (emotion) => emotion.activity)
+  emotions: ActivityEmotion[];
 
 }

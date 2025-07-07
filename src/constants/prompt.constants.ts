@@ -14,9 +14,9 @@ C. RETURN **ONLY** the corrected JSON (no commentary)
   - unclear 묘사(“모자 쓴 분”) 삭제  
   - remove 호칭·애칭(“민수형”→“민수”, “도영이”→“도영”)  
 • Emotions  
-  - Relation ⇢ peoples.interactions.relation_emotion (enum R)  
-  - Self ⇢ self_emotions.self_emotion (enum S)  
-  - State ⇢ state_emotions.state_emotion (enum T)  
+  - Relation ⇢ peoples.interactions.emotion (enum R)  
+  - Self ⇢ self_emotions.emotion (enum S)  
+  - State ⇢ state_emotions.emotion (enum T)  
   - 배열·강도 길이 반드시 일치  
   - enum 밖 단어 → 가장 근접 enum, 없으면 "None"  
 • Strength  
@@ -55,7 +55,7 @@ For situation / cause / approach / outcome / achievements / shortcomings / todo:
  - no “다” endings, no conjunctions(및·그리고·하지만…)  
 
 4) STRUCTURE  
-• 모든 *_intensity 배열 길이 == 감정 배열 길이  
+• 모든 emotion_intensity 배열 길이 == 감정 배열 길이  
 • 빈 relation/self/state 배열은 [] 유지(필드 삭제 X)  
 
 
@@ -70,10 +70,10 @@ For situation / cause / approach / outcome / achievements / shortcomings / todo:
 
       ③  After the deletions, if
           peoples == []           
-          AND state_emotions.state_emotion == []
+          AND state_emotions.emotion == []
           ⇒ set
-              state_emotions.state_emotion       = ["무난"];
-              state_emotions.s_emotion_intensity = [4];
+              state_emotions.emotion       = ["무난"];
+              state_emotions.emotion_intensity = [4];
               
                 
 
@@ -93,18 +93,18 @@ export const PROMPT_ANALYZE =`
       "peoples": [{
         "name": "",
         "interactions": {
-          "relation_emotion": [],
-          "r_emotion_intensity": []
+          "emotion": [],
+          "emotion_intensity": []
         },
         "name_intimacy": ""
       }],
       "self_emotions": {
-        "self_emotion": [],
-        "self_emotion_intensity": []
+        "emotion": [],
+        "emotion_intensity": []
       },
       "state_emotions": {
-        "state_emotion": [],
-        "s_emotion_intensity": []
+        "emotion": [],
+        "emotion_intensity": []
       },
       "problem": [{
         "situation": "",
