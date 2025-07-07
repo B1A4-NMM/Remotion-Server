@@ -9,10 +9,12 @@ import {
   getEmotionGroup,
 } from '../enums/emotion-type.enum';
 import { EmotionSummaryScore } from '../entities/emotion-summary-score.entity';
-import { DiaryAnalysisDto } from '../diary/dto/diary-analysis.dto';
+import { DiaryAnalysisDto, PeopleAnalysisDto } from '../diary/dto/diary-analysis.dto';
 import { MemberSummaryRes } from './dto/member-summary.res';
 import { CommonUtilService } from '../util/common-util.service';
 import { LocalDate } from 'js-joda';
+import { Member } from '../entities/Member.entity';
+import { CombinedEmotion } from '../util/json.parser';
 
 @Injectable()
 export class MemberSummaryService {
@@ -65,8 +67,7 @@ export class MemberSummaryService {
     return result;
   }
 
-  async findMemberSummaryIfNotExistCreate(memberId: string, date: LocalDate) {
-    const member = await this.memberService.findOne(memberId);
+  async findMemberSummaryIfNotExistCreate(member: Member, date: LocalDate) {
 
     let summary = await this.repo.findOne({
       where: { member: member, date: date },
@@ -103,14 +104,16 @@ export class MemberSummaryService {
   }
 
   async updateSummaryFromDiary(
-    dto: DiaryAnalysisDto,
-    memberId: string,
+    people: PeopleAnalysisDto[],
+    selfEmotions: CombinedEmotion[],
+    stateEmotions: CombinedEmotion[],
+    member: Member,
     date: LocalDate,
   ) {
-    for (const person of dto.people) {
+    for (const person of people) {
       for (const feel of person.feel) {
         await this.updateEmotion(
-          memberId,
+          member,
           date,
           feel.emotionType,
           feel.intensity,
@@ -118,33 +121,33 @@ export class MemberSummaryService {
       }
     }
 
-    for (const emotion of dto.selfEmotion) {
+    for (const emotion of selfEmotions) {
       await this.updateEmotion(
-        memberId,
+        member,
         date,
-        emotion.emotionType,
+        emotion.emotion,
         emotion.intensity,
       );
     }
 
-    for (const emotion of dto.stateEmotion) {
+    for (const emotion of stateEmotions) {
       await this.updateEmotion(
-        memberId,
+        member,
         date,
-        emotion.emotionType,
+        emotion.emotion,
         emotion.intensity,
       );
     }
   }
 
   async updateEmotion(
-    memberId: string,
+    member: Member,
     date: LocalDate,
     emotion: EmotionType,
     intensity: number,
   ) {
     const summary = await this.findMemberSummaryIfNotExistCreate(
-      memberId,
+      member,
       date,
     );
 

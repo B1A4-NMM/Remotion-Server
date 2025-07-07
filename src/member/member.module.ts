@@ -9,6 +9,7 @@ import { MemberSummaryService } from './member-summary.service';
 import { EmotionSummaryScore } from '../entities/emotion-summary-score.entity';
 import { EmotionModule } from '../emotion/emotion.module';
 import { AchievementModule } from '../achievement-cluster/achievement.module';
+import { VectorModule } from '../vector/vector.module';
 import { MemberCharacterService } from './member-character.service';
 
 @Module({
@@ -16,6 +17,7 @@ import { MemberCharacterService } from './member-character.service';
     Neo4jModule,
     TypeOrmModule.forFeature([Member, MemberSummary, EmotionSummaryScore]),
     EmotionModule,
+    VectorModule
   ],
   controllers: [MemberController],
   providers: [MemberService, MemberSummaryService, MemberCharacterService],

@@ -6,7 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DiaryAchievement } from '../entities/diary-achievement.entity.';
 import { Repository } from 'typeorm';
 import { DiaryAchievementCluster } from '../entities/diary-achievement-cluster.entity';
-import { SimsceEmbedderService } from './simsce-embedder.service';
+import { SimsceEmbedderService } from '../vector/simsce-embedder.service';
 import { Member } from '../entities/Member.entity';
 import { MemberService } from '../member/member.service';
 import { AchievementRes, AllAchievementRes } from '../member/dto/all-achievement.res';
@@ -49,8 +49,7 @@ export class AchievementService {
    * 이미 클러스터가 존재하면 벡터 DB에는 저장하지 않고, RDB의 DiaryAchievement를 만들고 DiaryAchievementCluster에 추가
    * 클러스터가 존재하지 않으면, 클러스터를 새로 만들고 RDB와 벡터 DB에 추가
    */
-  async createByDiary(dto: DiaryAnalysisDto, diary: Diary, member: Member) {
-    const achievements = dto.achievements;
+  async createByDiary(achievements: string[], diary: Diary, member: Member) {
 
     for (const achievement of achievements) {
       const result =

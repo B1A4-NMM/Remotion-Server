@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Diary } from './Diary.entity';
 import { EmotionBase, EmotionType } from '../enums/emotion-type.enum';
+import { Activity } from './Activity.entity';
 
 @Entity()
 export class DiaryEmotion {
