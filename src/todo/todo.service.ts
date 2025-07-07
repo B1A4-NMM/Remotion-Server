@@ -65,7 +65,7 @@ export class TodoService {
     
 
     // date나 repeat 업데이트 할 때 
-    async updateTodo(id: string, dto: UpdateTodoDto, memberId : string){
+    async updateTodo(id: number , dto: UpdateTodoDto, memberId : string){
         const todo = await this.todoRepository.findOne({
             where: {
                 id,
@@ -91,7 +91,7 @@ export class TodoService {
         return { message: '수정 완료', todo };
     }
 
-    async deleteTodo(id: string, memberId : string ){
+    async deleteTodo(id: number, memberId : string ){
         const todo = await this.todoRepository.findOne({
             where: {
                 id,

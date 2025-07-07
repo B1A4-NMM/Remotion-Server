@@ -18,8 +18,8 @@ import { Member } from './Member.entity';
 
 @Entity()
 export class Todo {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column()
   title: string;

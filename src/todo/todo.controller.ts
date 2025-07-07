@@ -79,7 +79,7 @@ export class TodoController {
     })
     @ApiResponse({ status: 400, description : 'Bad request'})
     async updateTodo(
-        @Param('id') id: string,
+        @Param('id') id: number,
         @Body() updateDto : UpdateTodoDto,
         @CurrentUser() user: any,
     ){
@@ -92,7 +92,7 @@ export class TodoController {
                  })
     @ApiResponse({ status: 400, description : 'Bad request'})
     @ApiOperation({ summary: '할 일 삭제' })
-    async deleteTodo(@Param('id') id:string,@CurrentUser() user : any){
+    async deleteTodo(@Param('id') id:number ,@CurrentUser() user : any){
         
         await this.todoService.deleteTodo(id, user.id);
 
