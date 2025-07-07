@@ -8,6 +8,7 @@ import { MemberSummary } from '../entities/member-summary.entity';
 import { MemberSummaryService } from './member-summary.service';
 import { EmotionSummaryScore } from '../entities/emotion-summary-score.entity';
 import { EmotionModule } from '../emotion/emotion.module';
+import { MemberCharacterService } from './member-character.service';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { EmotionModule } from '../emotion/emotion.module';
     EmotionModule
   ],
   controllers: [MemberController],
-  providers: [MemberService, MemberSummaryService],
-  exports: [MemberService, MemberSummaryService]
+  providers: [MemberService, MemberSummaryService, MemberCharacterService],
+  exports: [MemberService, MemberSummaryService,MemberCharacterService]
 })
 export class MemberModule {}
