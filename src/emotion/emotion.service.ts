@@ -128,6 +128,12 @@ export class EmotionService {
       }
     }
 
+    const total = result.reduce((sum, r) => sum + r.totalIntensity, 0);
+
+    for (const r of result) {
+      r.percentage = total > 0 ? parseFloat(((r.totalIntensity / total) * 100).toFixed(1)) : 0;
+    }
+
     return result;
   }
 
@@ -182,7 +188,11 @@ export class EmotionService {
       }
     }
 
+    // 예시: 환경변수에서 임계값 가져오기 (혹은 직접 상수로 지정)
+    const threshold = this.configService.get('TARGET_THRESHOLD') ?? 10;
+
     return Object.values(emotionSummary)
+      .filter((data) => data.totalIntensity > threshold)
       .map((data) => ({
         ...data,
         emotion: emotionGroup,

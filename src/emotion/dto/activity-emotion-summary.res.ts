@@ -16,4 +16,7 @@ export class ActivityEmotionSummaryRes {
 
   @ApiProperty({ description: '해당 감정이 나타난 횟수' })
   count: number;
+
+  @ApiProperty({ description: '정규화된 수치 0~100' })
+  percentage!: number;
 }
