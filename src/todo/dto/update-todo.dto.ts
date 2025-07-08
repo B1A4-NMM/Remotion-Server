@@ -23,6 +23,16 @@ export class UpdateTodoDto {
   date?: string;
 
 
+//3. 완료여부 수정
+  @ApiPropertyOptional({
+    example: false,
+    description: '완료 여부 변경',
+})
+@IsOptional()
+@IsBoolean()
+isCompleted?: boolean;
+
+
 //3. 반복여부 수정
   @ApiPropertyOptional({
     example: false,
