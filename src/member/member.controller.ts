@@ -105,10 +105,6 @@ export class MemberController {
   @Get('emotion/base-analysis')
   @UseGuards(AuthGuard('jwt'))
   @ApiOperation({
-    summary: '요일별 감정 요약',
-    description: '기간 내 요일별로 등장한 감정들의 빈도를 조회합니다',
-  })
-  @ApiOperation({
     summary: 'EmotionBase 별 감정 분석 조회',
     description: '회원의 감정을 Relation, Self, State 세 가지 감정 베이스로 나누어 각각에 속한 감정들의 intensity와 count를 반환합니다.',
   })
