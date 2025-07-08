@@ -57,7 +57,14 @@ export class YoutubeController {
   }
 
   @Post('getVideo')
+  @ApiOperation({
+    summary: '유튜브 영상 검색 및 저장',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '유튜브 영상 검색 및 저장이 완료되었습니다.',
+  })
   async getVideo() {
-   return await this.youtubeService.searchAndStoreVideos()
+    return await this.youtubeService.searchAndStoreVideos();
   }
 }
