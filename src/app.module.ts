@@ -30,6 +30,9 @@ import { MapModule } from './map/map.module';
 import { YoutubeModule } from './youtube/youtube.module';
 import { RecommendModule } from './recommend/recommend.module'; // RecommendModule 임포트 추가
 
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { NoCacheInterceptor } from './no-cache.interceptor';
+
 
 @Module({
   imports: [
@@ -61,6 +64,12 @@ import { RecommendModule } from './recommend/recommend.module'; // RecommendModu
     RecommendModule, // RecommendModule 추가
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide:APP_INTERCEPTOR,
+      useClass:NoCacheInterceptor,
+    },
+  ],
 })
 export class AppModule {}
