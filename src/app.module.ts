@@ -27,7 +27,8 @@ import { AchievementModule } from './achievement-cluster/achievement.module';
 import { StrengthModule } from './strength/strength.module';
 import { ActivityClusterModule } from './activity-cluster/activity-cluster.module';
 import { MapModule } from './map/map.module';
-import { YoutubeModule } from './youtube/youtube.module'; // YoutubeModule 임포트 추가
+import { YoutubeModule } from './youtube/youtube.module';
+import { RecommendModule } from './recommend/recommend.module'; // RecommendModule 임포트 추가
 
 
 @Module({
@@ -56,7 +57,8 @@ import { YoutubeModule } from './youtube/youtube.module'; // YoutubeModule 임�
     AchievementModule,
     ActivityClusterModule,
     MapModule,
-    YoutubeModule, // YoutubeModule 추가
+    YoutubeModule,
+    RecommendModule, // RecommendModule 추가
   ],
   controllers: [AppController],
   providers: [AppService],

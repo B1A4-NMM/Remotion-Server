@@ -1,6 +1,7 @@
-import { EmotionType } from '../enums/emotion-type.enum'; // EmotionType 임포트
+import { EmotionType } from '../enums/emotion-type.enum';
 
-export const EMOTION_YOUTUBE_KEYWORDS: Record<EmotionType, string[]> = {
+// Partial<Record<EmotionType, string[]>> 타입으로 변경
+export const EMOTION_YOUTUBE_KEYWORDS: Partial<Record<EmotionType, string[]>> = {
   // 긴장 그룹
   [EmotionType.긴장]: ['긴장 완화 명상', '긴장 풀어주는 음악', '긴장감 해소 운동'],
   [EmotionType.부담]: ['마음의 부담 내려놓기', '스트레스와 부담 관리', '부담감을 줄이는 방법'],

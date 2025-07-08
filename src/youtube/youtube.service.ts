@@ -38,18 +38,23 @@ export class YoutubeService {
       const emotionType: EmotionType = emotionTypeKey as EmotionType; // 타입 캐스팅
       const searchKeywords = EMOTION_YOUTUBE_KEYWORDS[emotionType];
 
-      for (const searchKeyword of searchKeywords) {
-        try {
-          const videoIds = await this.searchYoutubeVideos(searchKeyword);
-          for (const videoId of videoIds) {
-            await this.saveVideoId(emotionType, searchKeyword, videoId);
+      // searchKeywords가 undefined가 아닌 경우에만 순회
+      if (searchKeywords) {
+        for (const searchKeyword of searchKeywords) {
+          try {
+            const videoIds = await this.searchYoutubeVideos(searchKeyword);
+            for (const videoId of videoIds) {
+              await this.saveVideoId(emotionType, searchKeyword, videoId);
+            }
+          } catch (error) {
+            this.logger.error(
+              `Failed to search or store videos for keyword "${searchKeyword}" (EmotionType: ${emotionType}): ${error.message}`,
+              error.stack,
+            );
           }
-        } catch (error) {
-          this.logger.error(
-            `Failed to search or store videos for keyword "${searchKeyword}" (EmotionType: ${emotionType}): ${error.message}`,
-            error.stack,
-          );
         }
+      } else {
+        this.logger.warn(`No search keywords defined for EmotionType: ${emotionType}. Skipping.`);
       }
     }
     this.logger.log('YouTube video search and storage completed.');
@@ -81,8 +86,8 @@ export class YoutubeService {
   }
 
   private async saveVideoId(
-    emotionType: EmotionType, // 타입 변경
-    searchKeyword: string, // 타입 변경
+    emotionType: EmotionType,
+    searchKeyword: string,
     videoId: string,
   ): Promise<void> {
     const existingVideo = await this.youtubeApiRepository.findOne({
@@ -91,9 +96,9 @@ export class YoutubeService {
 
     if (!existingVideo) {
       const newVideo = this.youtubeApiRepository.create({
-        emotionType,
-        searchKeyword,
-        videoId,
+        emotion : emotionType,
+        keyword : searchKeyword,
+        videoId : videoId,
       });
       await this.youtubeApiRepository.save(newVideo);
       this.logger.log(
@@ -104,9 +109,9 @@ export class YoutubeService {
     }
   }
 
-  async getRandomVideoIdByEmotion(emotionType: EmotionType): Promise<string | null> { // 타입 변경
+  async getRandomVideoIdByEmotion(emotionType: EmotionType): Promise<string | null> {
     const videos = await this.youtubeApiRepository.find({
-      where: { emotionType },
+      where: { emotion : emotionType },
     });
 
     if (videos.length === 0) {
