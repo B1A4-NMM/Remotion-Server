@@ -3,4 +3,4 @@ cd /home/ubuntu/remotion-api
 npm run build
 pm2 stop remotion-api
 pm2 delete remotion-api
-pm2 start dist/src/main.js --name remotion-api
+pm2 start ecosystem.config.js
