@@ -78,12 +78,24 @@ export class TodoService {
             throw new NotFoundException('해당 Todo를 찾을 수 없습니다.');
         }
 
+        if(dto.title !== undefined){
+            todo.title = dto.title;
+        }
+
         if(dto.date !== undefined ){
             todo.date =dto.date; // 그냥 string으로 할당 ? 
         }
 
         if(dto.isRepeat !== undefined){
             todo.isRepeat =dto.isRepeat;
+        }
+
+        if(dto.repeatRule !== undefined){
+            todo.repeatRule = dto.repeatRule;
+        }
+
+        if(dto.repeatEndDate !=undefined){
+            todo.repeatEndDate = dto.repeatEndDate;
         }
 
         await this.todoRepository.save(todo);
