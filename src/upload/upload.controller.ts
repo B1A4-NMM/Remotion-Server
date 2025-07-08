@@ -2,17 +2,17 @@ import {
   Controller,
   Post,
   UploadedFile,
-  UploadedFiles, // 추가
+  UploadedFiles,
   UseInterceptors,
-  BadRequestException, // 추가
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express'; // FilesInterceptor 추가
 import { S3Service } from '../s3/s3.service';
 import { ApiExcludeController } from '@nestjs/swagger';
-import * as ffmpeg from 'fluent-ffmpeg'; // 추가
-import * as fs from 'fs'; // 추가
-import * as util from 'util'; // 추가
-import * as path from 'path'; // 추가
+import * as ffmpeg from 'fluent-ffmpeg';
+import * as fs from 'fs';
+import * as util from 'util';
+import * as path from 'path';
 
 const unlinkAsync = util.promisify(fs.unlink); // 추가
 

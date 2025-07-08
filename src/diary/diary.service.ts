@@ -4,14 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
 import { EmotionService } from '../emotion/emotion.service';
-import { TodoService } from '../todo/todo.service';
-import { ActivityService } from '../activity/activity.service';
-import { TargetService } from '../target/target.service';
-import { CommonUtilService } from '../util/common-util.service';
-import { DiarytodoService } from '../diarytodo/diarytodo.service';
 import { DiaryListRes, DiaryRes } from './dto/diary-list.res';
 import { DiaryHomeRes } from './dto/diary-home.res';
-import { DiaryTodo } from '../entities/diary-todo.entity';
 import { Diary } from '../entities/Diary.entity';
 import {
   ActivityAnalysisDto,
@@ -20,11 +14,9 @@ import {
   PeopleAnalysisDto,
   TodoAnalysisDto,
 } from './dto/diary-analysis.dto';
-import { MemberSummaryService } from '../member/member-summary.service';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { EmotionBase } from '../enums/emotion-type.enum';
 import { LocalDate } from 'js-joda';
-import { AchievementService } from '../achievement-cluster/achievement.service';
 
 @Injectable()
 export class DiaryService {
