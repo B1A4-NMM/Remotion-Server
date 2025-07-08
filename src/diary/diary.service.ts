@@ -139,6 +139,7 @@ export class DiaryService {
       diaryRes.diaryId = diary.id;
       diaryRes.title = diary.title;
       diaryRes.writtenDate = diary.written_date;
+      diaryRes.content = diary.content;
 
       for (const emotion of diary.diaryEmotions) {
         if (!diaryRes.emotions.includes(emotion.emotion))

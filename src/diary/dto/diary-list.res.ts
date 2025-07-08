@@ -12,6 +12,9 @@ export class DiaryRes {
   @ApiProperty({ example: '2023-12-25', description: '일기 작성일' })
   writtenDate: LocalDate;
 
+  @ApiProperty({ example: '아 코딩하기 귀찮다', description: '일기 내용' })
+  content: string
+
   @ApiProperty({
     type: [String],
     enum: EmotionType,
