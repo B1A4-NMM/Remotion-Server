@@ -11,9 +11,9 @@ export class EmotionRes {
 }
 
 export class DiaryHomeRes {
-  @ApiProperty({ type: [EmotionRes], description: '오늘의 감정 목록' })
+  @ApiProperty({ type: [EmotionRes], description: '이 날의 감정 목록' })
   todayEmotions: EmotionRes[] = [];
 
-  @ApiProperty({ type: [DiaryRes], description: '오늘 작성한 일기 목록' })
+  @ApiProperty({ type: [DiaryRes], description: '이 날 작성한 일기 목록' })
   todayDiaries: DiaryRes[] = [];
 }

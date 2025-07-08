@@ -444,7 +444,7 @@ export class EmotionService {
   /**
    * 사용자의 특정 날짜에 대한 감정의 합산을 반환
    */
-  private async getEmotionsByDate(memberId: string, date: string) {
+  async getEmotionsByDate(memberId: string, date: string) {
     const emotions = await this.sumIntensityByEmotionForDateAndOwner(
       date,
       memberId,

@@ -95,12 +95,12 @@ export class DiaryController {
     description: "조회할 날짜",
     example: '2021-01-01',
   })
-  @ApiResponse({type : DiaryListRes})
+  @ApiResponse({type : DiaryHomeRes})
   @Get('date')
   @UseGuards(AuthGuard('jwt'))
   async getDiaryByDate(@CurrentUser() user: any, @Query('date', ParseLocalDatePipe) date: LocalDate) {
     const memberId = user.id;
-    return await this.diaryService.getDiaryByDate(memberId, date);
+    return await this.diaryService.getDiaryInfoByDate(memberId, date);
   }
 
   @ApiOperation({

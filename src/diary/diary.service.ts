@@ -88,6 +88,18 @@ export class DiaryService {
   }
 
   /**
+   * 날짜와 멤버 정보를 받아 다른 날짜의 일기 정보 출력
+   */
+  async getDiaryInfoByDate(memberId: string, date: LocalDate) {
+    const diaries = await this.getDiaryByDate(memberId, date);
+    const emotions = await this.emotionService.getEmotionsByDate(memberId, date.toString())
+    const result = new DiaryHomeRes();
+    result.todayDiaries = diaries.diaries;
+    result.todayEmotions = emotions
+    return result;
+  }
+
+  /**
    *  홈 화면에서 보여질 정보들을 추출
    *  RETURN [ 오늘의 감정 , 오늘 작성한 일기 (감정, 대상) ]
    */
