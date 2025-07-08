@@ -406,11 +406,8 @@ export class EmotionService {
     );
   }
 
-  /**
-   * Target을 인자로 받아, 해당 Target의 감정 중 가장 큰 것 하나만 반환합니다
-   */
-  async highestEmotionToTarget(target: Target) {
-    const row = await this.emotionTargetRepository
+  async topEmotionsToTarget(target: Target, limit: number) {
+    const rows = await this.emotionTargetRepository
       .createQueryBuilder('et')
       .innerJoin('et.target', 't')
       .select('et.emotion', 'emotion')
@@ -418,10 +415,25 @@ export class EmotionService {
       .where('t.id = :targetId', { targetId: target.id })
       .groupBy('et.emotion')
       .orderBy('totalIntensity', 'DESC')
-      .limit(1)
-      .getRawOne<{ emotion: EmotionType; totalIntensity: string }>();
+      .limit(limit)
+      .getRawMany<{ emotion: EmotionType; totalIntensity: string }>();
 
-    return row ? (row.emotion as EmotionType) : null;
+    return rows.map((row) => ({
+      emotion: row.emotion as EmotionType,
+      totalIntensity: Number(row.totalIntensity),
+    }));
+  }
+
+  async topEmotionsToTagetSecond(target: Target) {
+    const emotions = await this.topEmotionsToTarget(target, 2);
+    return emotions
+  }
+
+  /**
+   * Target을 인자로 받아, 해당 Target의 감정 중 가장 큰 것 하나만 반환합니다
+   */
+  async highestEmotionToTarget(target: Target) {
+    return await this.topEmotionsToTarget(target, 1)[0];
   }
 
   async getTodayEmotions(memberId: string) {
