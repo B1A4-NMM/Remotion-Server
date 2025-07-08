@@ -30,6 +30,18 @@ export class DiaryService {
     private readonly emotionService: EmotionService,
   ) {}
 
+  async deleteDiary(memberId: string, id: number) {
+    const diary = await this.diaryRepository.findOneOrFail({
+      where: { id: id },
+    });
+
+    if (diary.author.id != memberId) {
+      throw new NotFoundException('해당 일기의 주인이 아닙니다')
+    }
+
+    return await this.diaryRepository.delete(diary.id);
+  }
+
   /**
    * 다이어리 생성 함수
    * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장

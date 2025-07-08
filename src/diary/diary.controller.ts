@@ -43,7 +43,7 @@ export class DiaryController {
   constructor(
     private readonly diaryService: DiaryService,
     private readonly s3Service: S3Service,
-    private readonly util: CommonUtilService
+    private readonly util: CommonUtilService,
   ) {}
 
   @Post()
@@ -92,13 +92,16 @@ export class DiaryController {
     name: 'date',
     required: true,
     type: Date,
-    description: "조회할 날짜",
+    description: '조회할 날짜',
     example: '2021-01-01',
   })
-  @ApiResponse({type : DiaryHomeRes})
+  @ApiResponse({ type: DiaryHomeRes })
   @Get('date')
   @UseGuards(AuthGuard('jwt'))
-  async getDiaryByDate(@CurrentUser() user: any, @Query('date', ParseLocalDatePipe) date: LocalDate) {
+  async getDiaryByDate(
+    @CurrentUser() user: any,
+    @Query('date', ParseLocalDatePipe) date: LocalDate,
+  ) {
     const memberId = user.id;
     return await this.diaryService.getDiaryInfoByDate(memberId, date);
   }
@@ -115,26 +118,42 @@ export class DiaryController {
     return this.diaryService.getHomeDiaries(memberId);
   }
 
+  @ApiOperation({ summary: '특정 일기 가공 데이터 조회' })
+  @ApiResponse({ type: DiaryAnalysisDto })
+  @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
+  async getDiary(@CurrentUser() user, @Param('id') id: string) {
+    const memberId: string = user.id;
+    return await this.diaryService.getDiary(memberId, +id);
+  }
+
   @ApiOperation({ summary: '특정 일기 json 데이터 조회' })
   @ApiResponse({
     status: 200,
     description: '일기 분석 결과',
     schema: DiaryAnalysisSchema,
   })
-  @Get(':id')
+  @Get('json/:id')
   @UseGuards(AuthGuard('jwt'))
   async getDiaryToJson(@CurrentUser() user, @Param('id') id: string) {
     const memberId: string = user.id;
     return await this.diaryService.getDiaryJson(memberId, +id);
   }
 
-  @ApiOperation({ summary: '특정 일기 가공 데이터 조회' })
-  @ApiResponse({ type: DiaryAnalysisDto })
-  @Get('process/:id')
+  @ApiOperation({ summary: '일기 삭제' })
+  @ApiParam({
+    name: 'id',
+    description: '삭제할 일기의 ID',
+    type: 'string',
+    required: true,
+  })
+  @ApiResponse({ status: 200, description: '일기 삭제 성공' })
+  @ApiResponse({ status: 404, description: '해당 일기의 주인이 아닙니다' })
+  @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
-  async getDiary(@CurrentUser() user, @Param('id') id: string) {
+  async deleteDiary(@CurrentUser() user: any, @Param('id') id: string) {
     const memberId: string = user.id;
-    return await this.diaryService.getDiary(memberId, +id);
+    return await this.diaryService.deleteDiary(memberId, +id);
   }
 
   @Delete('all')
