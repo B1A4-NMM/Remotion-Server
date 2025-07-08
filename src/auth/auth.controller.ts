@@ -44,7 +44,7 @@ export class AuthController {
     return res.redirect(url)
   }
 
-  @ApiExcludeEndpoint()
+  @ApiOperation({summary: "로그인 테스트", description: "로그인되어 있다면 200 OK, 그렇지 않다면 401 Unauthorized 반환"})
   @Get('test')
   @UseGuards(AuthGuard('jwt')) // JWT가 없으면 401 Unauthorized
   async testJwt(@CurrentUser() user) {
