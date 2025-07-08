@@ -98,6 +98,10 @@ export class TodoService {
             todo.repeatEndDate = dto.repeatEndDate;
         }
 
+        if(dto.isCompleted !=undefined){
+            todo.isCompleted =dto.isCompleted;
+        }
+
         await this.todoRepository.save(todo);
         
         return { message: '수정 완료', todo };
