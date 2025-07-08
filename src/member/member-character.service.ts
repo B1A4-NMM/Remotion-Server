@@ -38,6 +38,18 @@ export class MemberCharacterService {
         const emotionBaseResult =await this.emotionService.getEmotionBaseAnalysis(memberId);
         this.logger.verbose(`Emotion 분석 결과: ${JSON.stringify(emotionBaseResult)}`);
         
+        const hasSufficientData =
+        emotionBaseResult.Relation?.length &&
+        emotionBaseResult.State?.length &&
+        emotionBaseResult.Self?.length;
+
+    if (!hasSufficientData) {
+      this.logger.warn(
+        '분석 가능한 감정 데이터가 부족하여 캐릭터를 unknown으로 반환합니다.'
+      );
+      return { character: 'unknown' };
+    }
+
         const character=this.classifyCharacter(emotionBaseResult);
         this.logger.log(`분류된 캐릭터: ${character}`);
 
