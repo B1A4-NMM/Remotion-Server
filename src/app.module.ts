@@ -28,6 +28,9 @@ import { StrengthModule } from './strength/strength.module';
 import { ActivityClusterModule } from './activity-cluster/activity-cluster.module';
 import { MapModule } from './map/map.module';
 
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { NoCacheInterceptor } from './no-cache.interceptor';
+
 
 @Module({
   imports: [
@@ -57,6 +60,12 @@ import { MapModule } from './map/map.module';
     MapModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide:APP_INTERCEPTOR,
+      useClass:NoCacheInterceptor,
+    },
+  ],
 })
 export class AppModule {}
