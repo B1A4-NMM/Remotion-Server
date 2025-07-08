@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsDefined,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { Weather } from '../../enums/weather.enum';
 import { BadRequestException } from '@nestjs/common';
@@ -50,12 +50,14 @@ export class CreateDiaryDto {
     example: 37.5665,
   })
   @IsOptional()
+  @Type(() => Number)
   latitude: number;
 
   @ApiProperty({
     description: '경도, 위치를 추가하지 않았다면 보내지 않아도 됩니다',
     example: 126.978,
   })
+  @Type(() => Number)
   @IsOptional()
   longitude: number;
 }

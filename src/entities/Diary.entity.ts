@@ -76,11 +76,11 @@ export class Diary {
     diaryTodos: DiaryTodo[];
 
     //위도
-    @Column({ nullable : true })
+    @Column({ type:'double' , nullable : true })
     latitude? : number;
 
     //경도
-    @Column({ nullable : true })
+    @Column({ type:'double' ,nullable : true })
     longitude? : number;
 
     
