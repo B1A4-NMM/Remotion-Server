@@ -1,4 +1,4 @@
-import { Injectable,Logger } from '@nestjs/common';
+import { Injectable,Logger,BadRequestException } from '@nestjs/common';
 import {
     ConnectedRelationEmotions,
     DistancedRelationEmotions,
@@ -47,6 +47,10 @@ export class MemberCharacterService {
 
     
     private classifyCharacter(result: EmotionBaseAnalysisResponseDto): string {
+        // ✅ 감정 데이터 유효성 검사
+        if (!result.Relation?.length || !result.State?.length || !result.Self?.length) {
+            throw new BadRequestException('분석 가능한 감정 데이터가 부족합니다. 최소 3가지 감정 베이스가 필요합니다.');
+      }
 
         const pickTopEmotion =(emotions : EmotionBaseAnalysisDto[], base:string ):EmotionBaseAnalysisDto=>{
             const sorted = emotions.sort((a, b) => {
