@@ -25,6 +25,8 @@ import { S3Service } from './s3/s3.service';
 import { UploadModule } from './upload/upload.module';
 import { AchievementModule } from './achievement-cluster/achievement.module';
 import { StrengthModule } from './strength/strength.module';
+import { ActivityClusterModule } from './activity-cluster/activity-cluster.module';
+import { MapModule } from './map/map.module';
 
 
 @Module({
@@ -51,7 +53,8 @@ import { StrengthModule } from './strength/strength.module';
     UploadModule,
     StrengthModule,
     AchievementModule,
-
+    ActivityClusterModule,
+    MapModule
   ],
   controllers: [AppController],
   providers: [AppService],

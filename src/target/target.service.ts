@@ -17,6 +17,8 @@ import { EmotionType } from '../enums/emotion-type.enum';
 import { MemberSummaryService } from '../member/member-summary.service';
 import { DiaryEmotionGroupingDto } from '../member/dto/diary-emotion-grouping.dto';
 import { LocalDate } from 'js-joda';
+import { CombinedEmotion, EmotionInteraction, Person } from '../util/json.parser';
+import { Member } from '../entities/Member.entity';
 
 @Injectable()
 export class TargetService {
@@ -36,11 +38,9 @@ export class TargetService {
    * 대상을 저장한 후, 대상에 나타난 감정을 같이 저장
    * 이후 다이어리-감정 엔티티도 같이 저장함 -> 수정이 필요할지도?
    */
-  async createByDiary(dto: DiaryAnalysisDto, diary: Diary, memberId: string) {
-    const member = await this.memberService.findOne(memberId);
-
-    for (const person of dto.people) {
-      let target = await this.findOne(memberId, person.name);
+  async createByDiary(people: Person[], diary: Diary, member: Member) {
+    for (const person of people) {
+      let target = await this.findOne(member, person.name);
       if (target === null) {
         // 대상이 없다면 생성
         target = new Target(
@@ -48,13 +48,12 @@ export class TargetService {
           1,
           LocalDate.now(),
           TargetRelation.ETC,
-          await this.calculateAffection(person.feel),
+          await this.calculateAffection(person.interactions),
           member,
         );
-
       } else {
         // 있으면 갱신
-        target.affection += await this.calculateAffection(person.feel);
+        target.affection += await this.calculateAffection(person.interactions);
         target.recent_date = LocalDate.now();
         target.count += 1;
         // DONE : emotionTarget도 갱신해야할듯
@@ -62,8 +61,17 @@ export class TargetService {
 
       target = await this.targetRepository.save(target);
       await this.createDiaryTarget(target, diary);
-      await this.emotionService.createDiaryEmotionForTarget(person.feel, diary);
-      await this.emotionService.createOrUpdateEmotionTarget(target, person.feel);
+      const feelToTarget: CombinedEmotion[] = people.flatMap((p) => [
+        ...this.util.toCombinedEmotionTyped(p.interactions),
+      ]);
+      await this.emotionService.createDiaryEmotionForTarget(
+        feelToTarget,
+        diary,
+      );
+      await this.emotionService.createOrUpdateEmotionTarget(
+        target,
+        feelToTarget,
+      );
     }
   }
 
@@ -78,9 +86,7 @@ export class TargetService {
     }
   }
 
-  async findOne(memberId: string, targetName: string) {
-    const member = await this.memberService.findOne(memberId);
-
+  async findOne(member: Member, targetName: string) {
     return await this.targetRepository.findOneBy({
       member: member,
       name: targetName,
@@ -104,10 +110,15 @@ export class TargetService {
    * 감정에 따라 심적거리를 계산하는 함수
    * 해당 감정에 나타난 강도를 나누어 더하는 식으로 계산함
    */
-  async calculateAffection(emotions: EmotionAnalysisDto[]) {
+  async calculateAffection(emotions: EmotionInteraction) {
     let affection = 0;
 
-    for (const { emotionType, intensity } of emotions) {
+    const combinedEmotions = this.util.toCombinedEmotionTyped(emotions);
+
+    for (const emotion of combinedEmotions) {
+      const emotionType = emotion.emotion;
+      const intensity = emotion.intensity;
+
       switch (emotionType) {
         // 긍정적 affection
         case EmotionType.사랑:
@@ -152,5 +163,4 @@ export class TargetService {
 
     return affection;
   }
-
 }

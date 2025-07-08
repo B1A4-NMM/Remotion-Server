@@ -35,16 +35,7 @@ export class DiaryService {
     private readonly memberService: MemberService,
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
-    @InjectRepository(DiaryTodo)
-    private readonly diaryTodoRepository: Repository<DiaryTodo>,
-    private readonly memberSummaryService: MemberSummaryService,
-    private readonly activityService: ActivityService,
-    private readonly targetService: TargetService,
-    private readonly todoService: TodoService,
-    private readonly utilService: CommonUtilService,
     private readonly emotionService: EmotionService,
-    private readonly diaryTodoService: DiarytodoService,
-    private readonly achievementService: AchievementService,
   ) {}
 
   /**
@@ -58,65 +49,31 @@ export class DiaryService {
     imageUrl?: string | null,
   ) {
     this.logger.log('다이어리 생성');
-    // 여기서 분석 결과 받아오고
-    const result = await this.analysisDiaryService.analysisDiary(dto.content);
-
-    // 주인 찾아서
-    const member = await this.memberService.findOne(memberId);
-    // 일기 만들어두고
-    const diary = new Diary();
-    diary.author = member;
-    diary.written_date = dto.writtenDate;
-    diary.content = dto.content;
-    diary.title = 'demo';
-    diary.create_date = LocalDate.now()
-    if (imageUrl) {
-      diary.photo_path = imageUrl;
-    }
-
-    // 여기서 일기 저장
-    const saveDiary = await this.diaryRepository.save(diary);
-
-    //activity & target & todo 은 여러개라서 따로 처리 => 다른 레이어라서 상관없음
-    // 일기에 연관된 정보들 저장
-    await this.activityService.createByDiary(result, saveDiary); // 행동 저장
-    await this.targetService.createByDiary(result, saveDiary, memberId); // 대상 저장
-    await this.emotionService.createDiaryStateEmotion( // 상태 감정 저장
-      result.stateEmotion,
-      diary,
-    );
-    await this.emotionService.createDiarySelfEmotion(
-      result.selfEmotion,
-      diary
-    );
-
-    await this.memberSummaryService.updateSummaryFromDiary(
-      result,
+    const result = await this.analysisDiaryService.analysisDiary(
       memberId,
-      dto.writtenDate,
+      dto,
+      imageUrl,
     );
-    await this.diaryTodoService.createByDiary(result, saveDiary, member);
-    await this.achievementService.createByDiary(result, saveDiary, member);
 
     this.logger.log(
-      `생성 다이어리 { id : ${saveDiary.id}, author : ${member.nickname} }`,
+      `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
     );
 
-    this.logger.log(`일기의 주인 : ${saveDiary.author.id}, 글쓴이 : ${memberId}`)
+    this.logger.log(`일기의 주인 : ${result.author.id}, 글쓴이 : ${memberId}`);
 
-    return saveDiary.id;
+    return result.id;
   }
 
   async getDiaryByDate(memberId: string, date: LocalDate) {
     const member = await this.memberService.findOne(memberId);
 
     const diaries = await this.diaryRepository.find({
-      where: { author : member ,written_date: date },
+      where: { author: member, written_date: date },
       relations: ['diaryTargets', 'diaryTargets.target', 'diaryEmotions'],
     });
 
     const res = this.buildDiaryList(diaries);
-    return res
+    return res;
   }
 
   /**
@@ -198,6 +155,18 @@ export class DiaryService {
     return res;
   }
 
+  async getDiaryJson(memberId: string, id: number) {
+    const diary = await this.diaryRepository.findOneOrFail({
+      where: { id: id },
+    });
+
+    if (diary.author.id != memberId) {
+      throw new NotFoundException('해당 일기의 주인이 아닙니다');
+    }
+
+    return diary.metadata
+  }
+
   /**
    * id로 작성한 일기 하나를 보여줌.
    * 분석한 결과도 같이 dto로 전달
@@ -254,10 +223,10 @@ export class DiaryService {
       dto.intensity = emotion.intensity;
       switch (emotion.emotionBase) {
         case EmotionBase.State:
-          result.stateEmotion.push(dto)
-          break
+          result.stateEmotion.push(dto);
+          break;
         case EmotionBase.Self:
-          result.selfEmotion.push(dto)
+          result.selfEmotion.push(dto);
       }
     }
 
@@ -272,15 +241,15 @@ export class DiaryService {
       }
 
       peopleDto.name = target.target.name;
-      peopleDto.count = target.target.count
+      peopleDto.count = target.target.count;
       result.people.push(peopleDto);
     }
 
     //diaryTodo => TodoResDto로 매핑 (응답 주고 받을 때 통일 형식)
-    diary.diaryTodos.forEach((diaryTodo) =>{
-      const todoDto = new TodoAnalysisDto;
-      
-      todoDto.Todocontent =diaryTodo.content;
+    diary.diaryTodos.forEach((diaryTodo) => {
+      const todoDto = new TodoAnalysisDto();
+
+      todoDto.Todocontent = diaryTodo.content;
       result.todos.push(todoDto);
     });
 

@@ -1,20 +1,36 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, In, Repository } from 'typeorm';
 import { EmotionTarget } from '../entities/emotion-target.entity';
 import { Target } from '../entities/Target.entity';
 import {
   EmotionBase,
+  EmotionGroup,
+  EmotionGroupMap,
   EmotionType,
   isEmotionType,
+  getEmotionBase,
 } from '../enums/emotion-type.enum';
+
 import { EmotionAnalysisDto } from '../diary/dto/diary-analysis.dto';
+import { EmotionBaseAnalysisDto, EmotionBaseAnalysisResponseDto } from './dto/emotion-base-analysis.dto';
+import { Emotions, EmotionSummaryWeekdayRes } from '../member/dto/emotion-summary-weekday.res';
+
 import { CommonUtilService } from '../util/common-util.service';
 import { DiaryEmotion } from '../entities/diary-emotion.entity';
 import { Diary } from '../entities/Diary.entity';
-import { Emotions, EmotionSummaryWeekdayRes } from '../member/dto/emotion-summary-weekday.res';
+
 import { weekday } from '../constants/weekday.constant';
 import { LocalDate } from 'js-joda';
+import { CombinedEmotion, EmotionInteraction } from '../util/json.parser';
+import { EmotionSummaryPeriodRes } from './dto/emotion-summary-period.res';
+import { TargetEmotionSummaryRes } from './dto/target-emotion-summary.res';
+import { ActivityService } from '../activity/activity.service';
+import { ActivityEmotionSummaryRes } from './dto/activity-emotion-summary.res';
+import { ClusteringResult } from '../util/cluster-json.parser';
+import { Activity } from '../entities/Activity.entity';
+import { EmotionAnalysisPeriodRes } from './dto/emotion-analysis-period.res';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class EmotionService {
@@ -24,10 +40,211 @@ export class EmotionService {
     @InjectRepository(DiaryEmotion)
     private readonly diaryEmotionRepository: Repository<DiaryEmotion>,
     private readonly util: CommonUtilService,
-
+    private readonly activityService: ActivityService,
+    @InjectRepository(Activity)
+    private readonly activityRepository: Repository<Activity>,
     @InjectRepository(Diary)
-    private readonly diaryRepository : Repository<Diary>,
+    private readonly diaryRepository: Repository<Diary>,
+    private readonly configService: ConfigService
   ) {}
+
+  async getEmotionAnalysis(memberId: string, period:number, emotion:EmotionGroup) {
+    let res = new EmotionAnalysisPeriodRes();
+    res.date = await this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, emotion)
+    res.activities = await this.getActivityEmotionSummaryByPeriodAndEmotionGroup(memberId, period, emotion)
+    res.people = await this.getTargetEmotionSummaryByPeriodAndEmotionGroup(memberId, period, emotion)
+    return res;
+  }
+
+  /**
+   * 기간과 감정 그룹을 받아 해당 기간 내에 행동을 통해 받은 감정 그룹들을 합산하여 반환합니다
+   */
+  async getActivityEmotionSummaryByPeriodAndEmotionGroup(
+    memberId: string,
+    period: number,
+    emotionGroup: EmotionGroup,
+  ): Promise<ActivityEmotionSummaryRes[]> {
+    const today = LocalDate.now();
+    const pastDate = today.minusDays(period);
+
+    const diaries = await this.diaryRepository.find({
+      where: {
+        author: { id: memberId },
+        written_date: Between(pastDate, today),
+      },
+      relations: ['activities'],
+    });
+
+    // 1. 모든 활동 펼치기
+    const allActivities = diaries.flatMap((diary) => diary.activities);
+
+    // 2. 클러스터링 실행
+    const clusters: ClusteringResult = await this.activityService.clusteringActivities(allActivities);
+
+    // 3. 클러스터 안의 모든 activity id 수집
+    const allActivityIds = clusters.clusters.flatMap((cluster) =>
+      cluster.sentences.map((s) => s.id),
+    );
+
+    // 4. 한번에 전체 조회 (중복 제거)
+    const uniqueIds = Array.from(new Set(allActivityIds));
+    const activities = await this.activityRepository.find({
+      where: { id: In(uniqueIds) },
+      relations: ['emotions'],
+    });
+
+    // 5. id → activity 매핑
+    const activityMap = new Map<number, Activity>();
+    for (const activity of activities) {
+      activityMap.set(activity.id, activity);
+    }
+
+    // 6. 감정 요약 계산
+    const result: ActivityEmotionSummaryRes[] = [];
+
+    for (const cluster of clusters.clusters) {
+      const res = new ActivityEmotionSummaryRes();
+      const label = cluster.representative_sentence.text;
+
+      res.activityContent = label;
+      res.activityId = cluster.representative_sentence.id;
+      res.emotion = emotionGroup;
+      res.totalIntensity = 0;
+      res.count = 0;
+
+      for (const sentence of cluster.sentences) {
+        const activity = activityMap.get(sentence.id);
+        if (!activity) continue;
+
+        for (const emotion of activity.emotions) {
+          if (emotion.emotionGroup !== emotionGroup) continue;
+          res.totalIntensity += emotion.intensitySum;
+          res.count += emotion.count;
+        }
+      }
+
+      const threshold = this.configService.get('ACTIVITY_THRESHOLD');
+
+      if (res.count > 0 && res.totalIntensity > threshold) {
+        result.push(res);
+      }
+    }
+
+    const total = result.reduce((sum, r) => sum + r.totalIntensity, 0);
+
+    for (const r of result) {
+      r.percentage = total > 0 ? parseFloat(((r.totalIntensity / total) * 100).toFixed(1)) : 0;
+    }
+
+    return result;
+  }
+
+  /**
+   * 기간과 감정 그룹을 받아서 그 기간 내에 등장한 인물들에게 느꼈던 감정 그룹들을 반환
+   */
+  async getTargetEmotionSummaryByPeriodAndEmotionGroup(
+    memberId: string,
+    period: number,
+    emotionGroup: EmotionGroup,
+  ): Promise<TargetEmotionSummaryRes[]> {
+    const today = LocalDate.now();
+    const pastDate = today.minusDays(period);
+
+    const diaries = await this.diaryRepository.find({
+      where: {
+        author: { id: memberId },
+        written_date: Between(pastDate, today),
+      },
+      relations: [
+        'diaryTargets',
+        'diaryTargets.target',
+        'diaryTargets.target.emotionTargets',
+      ],
+    });
+
+    const emotionSummary: Record<
+      string,
+      { targetId: number; targetName: string; totalIntensity: number; count: number }
+    > = {};
+
+    for (const diary of diaries) {
+      for (const diaryTarget of diary.diaryTargets) {
+        for (const emotionTarget of diaryTarget.target.emotionTargets) {
+          const emotionType = emotionTarget.emotion;
+          const currentEmotionGroup = EmotionGroupMap[emotionType];
+
+          if (currentEmotionGroup === emotionGroup) {
+            const key = diaryTarget.target.id.toString();
+            if (!emotionSummary[key]) {
+              emotionSummary[key] = {
+                targetId: diaryTarget.target.id,
+                targetName: diaryTarget.target.name,
+                totalIntensity: 0,
+                count: 0,
+              };
+            }
+            emotionSummary[key].totalIntensity += emotionTarget.emotion_intensity;
+            emotionSummary[key].count += emotionTarget.count;
+          }
+        }
+      }
+    }
+
+    // 예시: 환경변수에서 임계값 가져오기 (혹은 직접 상수로 지정)
+    const threshold = this.configService.get('TARGET_THRESHOLD') ?? 10;
+
+    return Object.values(emotionSummary)
+      .filter((data) => data.totalIntensity > threshold)
+      .map((data) => ({
+        ...data,
+        emotion: emotionGroup,
+      }))
+      .sort((a, b) => b.totalIntensity - a.totalIntensity)
+      .slice(0, 3);
+  }
+
+  /**
+   * 기간과 감정 그룹을 받아 해당 기간 내의 그룹에 속하는 감정들만 가져옵니다
+   */
+  async getEmotionSummaryPeriodByEmotionGroup(
+    memberId: string,
+    period: number,
+    emotionGroup: EmotionGroup,
+  ): Promise<EmotionSummaryPeriodRes[]> {
+    const today = LocalDate.now();
+    const pastDate = today.minusDays(period);
+
+    const diaries = await this.diaryRepository.find({
+      where: {
+        author: { id: memberId },
+        written_date: Between(pastDate, today),
+      },
+      relations: ['diaryEmotions'],
+    });
+
+    const emotionSummary: Record<string, { date: LocalDate; intensity: number; count: number }> = {};
+
+    for (const diary of diaries) {
+      for (const diaryEmotion of diary.diaryEmotions) {
+        const emotionType = diaryEmotion.emotion;
+        const currentEmotionGroup = EmotionGroupMap[emotionType];
+
+        if (currentEmotionGroup === emotionGroup) {
+          const key = diary.written_date.toString();
+          if (!emotionSummary[key]) {
+            emotionSummary[key] = { date: diary.written_date, intensity: 0, count: 0 };
+          }
+          emotionSummary[key].intensity += diaryEmotion.intensity;
+          emotionSummary[key].count += 1;
+        }
+      }
+    }
+
+    return Object.values(emotionSummary).map((data) => ({
+      ...data,
+      emotionGroup: emotionGroup,
+    }));
+  }
 
   /**
    * 기간을 인자로 받아 해당 기간 내에 등장한 감정들이 어떤 요일에 등장했는지 반환
@@ -72,10 +289,10 @@ export class EmotionService {
    */
   async createOrUpdateEmotionTarget(
     target: Target,
-    dtos: EmotionAnalysisDto[],
+    emotions: CombinedEmotion[],
   ) {
-    for (const dto of dtos) {
-      const emotion = dto.emotionType;
+    for (const dto of emotions) {
+      const emotion = dto.emotion;
       const emotionIntensity = dto.intensity;
       let find = await this.findOneEmotionTarget(target, emotion);
       if (find === null) {
@@ -92,40 +309,40 @@ export class EmotionService {
   /**
    * diary-relation-emotion 엔티티 생성 함수
    */
-  async createDiaryEmotionForTarget(dtos: EmotionAnalysisDto[], diary: Diary) {
-    return this.createDiaryEmotionByBase(dtos, diary, EmotionBase.Relation);
+  async createDiaryEmotionForTarget(emotions: CombinedEmotion[], diary: Diary) {
+    return this.createDiaryEmotionByBase(emotions, diary, EmotionBase.Relation);
   }
 
   /**
    * diary-self-emotion 생성 함수
    */
-  async createDiarySelfEmotion(dtos: EmotionAnalysisDto[], diary: Diary) {
-    return this.createDiaryEmotionByBase(dtos, diary, EmotionBase.Self);
+  async createDiarySelfEmotion(emotions: CombinedEmotion[], diary: Diary) {
+    return this.createDiaryEmotionByBase(emotions, diary, EmotionBase.Self);
   }
 
   /**
    * diary-state-emotion 생성 함수
    */
-  async createDiaryStateEmotion(dtos: EmotionAnalysisDto[], diary: Diary) {
-    return this.createDiaryEmotionByBase(dtos, diary, EmotionBase.State);
+  async createDiaryStateEmotion(emotions: CombinedEmotion[], diary: Diary) {
+    return this.createDiaryEmotionByBase(emotions, diary, EmotionBase.State);
   }
 
   async createDiaryEmotionByBase(
-    dtos: EmotionAnalysisDto[],
+    emotions: CombinedEmotion[],
     diary: Diary,
     emotionBase: EmotionBase,
   ) {
-    for (const dto of dtos) {
-      let entity = await this.findOneDiaryEmotion(diary, dto.emotionType);
+    for (const emotion of emotions) {
+      let entity = await this.findOneDiaryEmotion(diary, emotion.emotion);
       if (entity === null) {
         entity = new DiaryEmotion(
           diary,
-          dto.emotionType,
+          emotion.emotion,
           emotionBase,
-          dto.intensity,
+          emotion.intensity,
         );
       } else {
-        entity.intensity += dto.intensity;
+        entity.intensity += emotion.intensity;
       }
       await this.diaryEmotionRepository.save(entity);
     }
@@ -275,6 +492,62 @@ export class EmotionService {
     
     return results;
   }
+
+
+  //about-me에 보내줄 emotionBase에 따른 emotiontype 분석 로직
+
+  async getEmotionBaseAnalysis(memberId: string):Promise<EmotionBaseAnalysisResponseDto>{
+    
+    
+    //1.DB에서 집계 데이터를 한번에 조회
+    const rawResult =await this.diaryEmotionRepository
+    .createQueryBuilder('emotion')
+    .select('emotion.emotionBase', 'emotionBase')
+    .addSelect('emotion.emotion', 'emotion')
+    .addSelect('SUM(emotion.intensity)', 'intensity')
+    .addSelect('COUNT(*)', 'count')
+    .innerJoin('emotion.diary', 'diary')
+    .where('diary.author_id = :memberId', { memberId })
+    .groupBy('emotion.emotionBase')
+    .addGroupBy('emotion.emotion')
+    .getRawMany<{
+
+      emotionBase: EmotionBase;
+      emotion: EmotionType;
+      intensity: string;
+      count: string;
+
+    }>();
+
+    //2.초기화된 반환 DTO 구조
+    const result: EmotionBaseAnalysisResponseDto = {
+      Relation: [],
+      Self: [],
+      State: [],
+    };
+
+    //3.rawResult 순회하면서 해당 base에 맞는 배열에 값 push하기
+
+    for (const row of rawResult){
+      const base = row.emotionBase as EmotionBase;
+      const emotion = row.emotion as EmotionType;
+
+      const dto: EmotionBaseAnalysisDto= {
+        emotion,
+        //db에서 string형으로 주기 때문에 float,int형으로 바꿔주기
+        intensity:Math.round(parseFloat(row.intensity) * 1000)/1000,
+        count: parseInt(row.count),
+
+      };
+
+      result[base].push(dto);
+    }
+
+    return result;
+  }
+
+
+
   
 
    

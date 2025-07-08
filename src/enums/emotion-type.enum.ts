@@ -159,6 +159,7 @@ export const RelationEmotions: EmotionType[] = [
   EmotionType.유대,
   EmotionType.사랑,
   EmotionType.공감,
+
   EmotionType.질투,
   EmotionType.시기,
   EmotionType.분노,
@@ -179,6 +180,7 @@ export const SelfEmotions: EmotionType[] = [
   EmotionType.뿌듯함,
   EmotionType.성취감,
   EmotionType.만족감,
+
   EmotionType.부끄러움,
   EmotionType.수치,
   EmotionType.죄책감,
@@ -193,15 +195,21 @@ export const StateEmotions: EmotionType[] = [
   EmotionType.기쁨,
   EmotionType.즐거움,
   EmotionType.설렘,
+  EmotionType.기대,
+  EmotionType.흥분,
+  EmotionType.활력,
+
   EmotionType.평온,
   EmotionType.편안,
   EmotionType.안정,
   EmotionType.차분,
-  EmotionType.기대,
+
   EmotionType.긴장,
   EmotionType.불안,
   EmotionType.초조,
   EmotionType.부담,
+  EmotionType.놀람,
+
   EmotionType.피로,
   EmotionType.지침,
   EmotionType.무기력,
@@ -210,16 +218,136 @@ export const StateEmotions: EmotionType[] = [
   EmotionType.외로움,
   EmotionType.우울,
   EmotionType.슬픔,
-  EmotionType.놀람,
-  EmotionType.흥분,
-  EmotionType.활력,
+  
+
 ];
+
+
+//연결-거리 감정 나누기 
+
+
+// 🤝 연결 지향 감정 (긍정적인 관계감)
+export const ConnectedRelationEmotions: EmotionType[] = [
+  EmotionType.감사,
+  EmotionType.존경,
+  EmotionType.신뢰,
+  EmotionType.애정,
+  EmotionType.친밀,
+  EmotionType.유대,
+  EmotionType.사랑,
+  EmotionType.공감,
+];
+
+// 🧊 거리 지향 감정 (부정적인 관계감)
+export const DistancedRelationEmotions: EmotionType[] = [
+  EmotionType.질투,
+  EmotionType.시기,
+  EmotionType.분노,
+  EmotionType.짜증,
+  EmotionType.실망,
+  EmotionType.억울,
+  EmotionType.속상,
+  EmotionType.상처,
+  EmotionType.배신감,
+  EmotionType.경멸,
+  EmotionType.거부감,
+  EmotionType.불쾌,
+];
+
+
+
+// 긍정-부정 감정 나누기 - Self
+export const PositiveSelfEmotions: EmotionType[] = [
+  EmotionType.자긍심,
+  EmotionType.자신감,
+  EmotionType.뿌듯함,
+  EmotionType.성취감,
+  EmotionType.만족감,
+];
+
+export const NegativeSelfEmotions: EmotionType[] = [
+  EmotionType.부끄러움,
+  EmotionType.수치,
+  EmotionType.죄책감,
+  EmotionType.후회,
+  EmotionType.뉘우침,
+  EmotionType.창피,
+  EmotionType.굴욕,
+];
+
+
+
+
+//캐릭터 라벨링을 위한 감정 분류
 
 // 치환 함수
 export function getEmotionGroup(emotion: EmotionType): EmotionGroup {
   return EmotionGroupMap[emotion] ?? EmotionGroup.활력;
 }
 
+
+//emtoion-base 분류 함수, not dto용 , service안의 로직에서 사용
+export function getEmotionBase(emotion: EmotionType): EmotionBase | null {
+  if (RelationEmotions.includes(emotion)) return EmotionBase.Relation;
+  if (SelfEmotions.includes(emotion)) return EmotionBase.Self;
+  if (StateEmotions.includes(emotion)) return EmotionBase.State;
+  return null;
+}
+
+
 export function isEmotionType(value: string): value is EmotionType {
   return (Object.values(EmotionType) as string[]).includes(value);
 }
+
+// 캐릭터 분류를 위한 감정 라벨링 함수들
+
+
+//1.relation 라벨링 
+export function getRelationLabel(emotion: EmotionType): '연결' | '거리' {
+  if (ConnectedRelationEmotions.includes(emotion)) return '연결';
+  if (DistancedRelationEmotions.includes(emotion)) return '거리';
+  throw new Error(`정의되지 않은 Relation 감정: ${emotion}`);
+}
+
+
+//2.state 라벨링
+const ExcitedEmotions = new Set<EmotionType>([ 
+  EmotionType.활력,
+  EmotionType.설렘,
+  EmotionType.기쁨,
+  EmotionType.기대,
+  EmotionType.즐거움,
+  EmotionType.행복,
+  EmotionType.흥분,
+]);
+
+const NervousEmotions = new Set<EmotionType>([
+  EmotionType.긴장,
+  EmotionType.불안,
+  EmotionType.초조,
+  EmotionType.부담,
+  EmotionType.놀람,
+]);
+const ClamEmotions = new Set<EmotionType>([
+  EmotionType.평온,
+  EmotionType.편안,
+  EmotionType.안정,
+  EmotionType.차분,
+]);
+
+export function getStateLabel(emotion: EmotionType): '고양' | '긴장' | '평온' | '무기력' {
+  if (ExcitedEmotions.has(emotion)) return '고양';
+  if (NervousEmotions.has(emotion)) return '긴장';
+  if (ClamEmotions.has(emotion)) return '평온';
+  return '무기력' //else 일 때 
+}
+
+export function getSelfLabel(emotion: EmotionType): '긍정' | '부정' {
+  if (PositiveSelfEmotions.includes(emotion)) return '긍정';
+  if (NegativeSelfEmotions.includes(emotion)) return '부정';
+  throw new Error(`정의되지 않은 relation 감정: ${emotion}`);
+}
+
+
+
+
