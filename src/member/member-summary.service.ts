@@ -9,15 +9,18 @@ import {
   getEmotionGroup,
 } from '../enums/emotion-type.enum';
 import { EmotionSummaryScore } from '../entities/emotion-summary-score.entity';
-import { DiaryAnalysisDto, PeopleAnalysisDto } from '../diary/dto/diary-analysis.dto';
 import { MemberSummaryRes } from './dto/member-summary.res';
 import { CommonUtilService } from '../util/common-util.service';
 import { LocalDate } from 'js-joda';
 import { Member } from '../entities/Member.entity';
 import { CombinedEmotion } from '../util/json.parser';
+import * as process from 'node:process';
+import { PeopleAnalysisDto } from '../diary/dto/diary-analysis.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MemberSummaryService {
+
   constructor(
     @InjectRepository(MemberSummary)
     private readonly repo: Repository<MemberSummary>,
@@ -25,7 +28,9 @@ export class MemberSummaryService {
     private readonly emotionSummaryRepo: Repository<EmotionSummaryScore>,
     private readonly memberService: MemberService,
     private readonly util: CommonUtilService,
+    private readonly configService: ConfigService
   ) {}
+
 
   async findMemberSummaryByPeriod(memberId: string, period: number) {
     const member = await this.memberService.findOne(memberId);
@@ -45,13 +50,30 @@ export class MemberSummaryService {
     period: number,
   ): Promise<MemberSummaryRes> {
     const result = new MemberSummaryRes();
+    result.period = period;
+    result.depressionWarning = false;
+    result.stressWarning = false;
+    result.anxietyWarning = false;
+
+    const totalEmotionScores: Record<EmotionGroup, number> = {
+      [EmotionGroup.우울]: 0,
+      [EmotionGroup.스트레스]: 0,
+      [EmotionGroup.불안]: 0,
+      [EmotionGroup.안정]: 0,
+      [EmotionGroup.활력]: 0,
+      [EmotionGroup.유대]: 0,
+    };
+
     for (const summary of summaries) {
       const date = summary.date;
       const emotionArr: any[] = [];
-      for (const emotionGroup of summary.emotionScores) {
+      for (const emotionScore of summary.emotionScores) {
+        // EmotionGroup별로 score 합산
+        totalEmotionScores[emotionScore.emotion] += emotionScore.score;
+
         emotionArr.push({
-          emotion: emotionGroup.emotion,
-          score: emotionGroup.score / emotionGroup.count,
+          emotion: emotionScore.emotion,
+          score: emotionScore.score / emotionScore.count, // 평균 점수
         });
       }
       result.emotionsPerDate.push({
@@ -59,10 +81,21 @@ export class MemberSummaryService {
         emotions: emotionArr,
       });
     }
-    result.period = period;
-    result.depressionWarning = false;
-    result.stressWarning = false;
-    result.anxietyWarning = false;
+
+    // 임계값 검사 및 경고 플래그 설정
+    let threshold = this.configService.get('WARNING_THRESHOLD');
+    if (totalEmotionScores[EmotionGroup.우울] > threshold
+    ) {
+      result.depressionWarning = true;
+    }
+    if (totalEmotionScores[EmotionGroup.스트레스] > threshold
+    ) {
+      result.stressWarning = true;
+    }
+    if (totalEmotionScores[EmotionGroup.불안] > threshold
+    ) {
+      result.anxietyWarning = true;
+    }
 
     return result;
   }
