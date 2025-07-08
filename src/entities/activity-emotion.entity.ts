@@ -26,6 +26,13 @@ export class ActivityEmotion {
   })
   emotionGroup: EmotionGroup;
 
+  @Column({
+    type: 'enum',
+    enum: EmotionBase,
+    default : EmotionBase.Self,
+  })
+  emotionBase: EmotionBase;
+
   @Column()
   intensitySum: number;
 

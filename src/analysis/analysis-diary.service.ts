@@ -51,32 +51,6 @@ export class AnalysisDiaryService {
   ) {
     const result = await this.promptService.serializeAnalysis(dto.content);
 
-    // // 다이어리 응답 DTO
-    // let diaryAnalysisDto = new DiaryAnalysisDto();
-    // const activities = result.activity_analysis;
-    // const reflection = result.reflection;
-    //
-    // for (const activity of activities) {
-    //   let activityAnalysisDto = new ActivityAnalysisDto();
-    //   activityAnalysisDto.activityContent = activity.activity;
-    //   activityAnalysisDto.strength = activity.strength === 'None' ? null : activity.strength;
-    //
-    //   diaryAnalysisDto.activity.push(activityAnalysisDto);
-    //
-    //   diaryAnalysisDto.people.push(...this.peopleAnalysis(activity.peoples));
-    //   diaryAnalysisDto.selfEmotion.push(...this.emotionAnalysis(activity.self_emotions))
-    //   diaryAnalysisDto.stateEmotion.push(...this.emotionAnalysis(activity.state_emotions))
-    // }
-    //
-    // diaryAnalysisDto.title = '[가제] 오늘의 일기'; // 일기 타이틀
-    // diaryAnalysisDto.content = prompt; // 일기 내용
-    //
-    // diaryAnalysisDto.todos = this.todoAnalysis(reflection.todo)
-    // diaryAnalysisDto.achievements = reflection.achievements;
-    // diaryAnalysisDto.shortComings = reflection.shortcomings;
-    //
-    // return diaryAnalysisDto;
-
     let author = await this.memberService.findOne(memberId);
     const activity_analysis = result.activity_analysis;
     const reflection = result.reflection;
@@ -87,6 +61,7 @@ export class AnalysisDiaryService {
     diary.content = dto.content;
     diary.title = 'demo';
     diary.create_date = LocalDate.now();
+    diary.metadata = JSON.stringify(result);
     if (dto.weather !== undefined) diary.weather = dto.weather;
     if (dto.latitude !== undefined) diary.latitude = dto.latitude;
     if (dto.longitude !== undefined) diary.longitude = dto.longitude;
