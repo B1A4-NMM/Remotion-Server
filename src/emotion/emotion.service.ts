@@ -9,15 +9,17 @@ import {
   EmotionGroupMap,
   EmotionType,
   isEmotionType,
+  getEmotionBase,
 } from '../enums/emotion-type.enum';
+
 import { EmotionAnalysisDto } from '../diary/dto/diary-analysis.dto';
+import { EmotionBaseAnalysisDto, EmotionBaseAnalysisResponseDto } from './dto/emotion-base-analysis.dto';
+import { Emotions, EmotionSummaryWeekdayRes } from '../member/dto/emotion-summary-weekday.res';
+
 import { CommonUtilService } from '../util/common-util.service';
 import { DiaryEmotion } from '../entities/diary-emotion.entity';
 import { Diary } from '../entities/Diary.entity';
-import {
-  Emotions,
-  EmotionSummaryWeekdayRes,
-} from '../member/dto/emotion-summary-weekday.res';
+
 import { weekday } from '../constants/weekday.constant';
 import { LocalDate } from 'js-joda';
 import { CombinedEmotion, EmotionInteraction } from '../util/json.parser';
@@ -490,6 +492,62 @@ export class EmotionService {
     
     return results;
   }
+
+
+  //about-me에 보내줄 emotionBase에 따른 emotiontype 분석 로직
+
+  async getEmotionBaseAnalysis(memberId: string):Promise<EmotionBaseAnalysisResponseDto>{
+    
+    
+    //1.DB에서 집계 데이터를 한번에 조회
+    const rawResult =await this.diaryEmotionRepository
+    .createQueryBuilder('emotion')
+    .select('emotion.emotionBase', 'emotionBase')
+    .addSelect('emotion.emotion', 'emotion')
+    .addSelect('SUM(emotion.intensity)', 'intensity')
+    .addSelect('COUNT(*)', 'count')
+    .innerJoin('emotion.diary', 'diary')
+    .where('diary.author_id = :memberId', { memberId })
+    .groupBy('emotion.emotionBase')
+    .addGroupBy('emotion.emotion')
+    .getRawMany<{
+
+      emotionBase: EmotionBase;
+      emotion: EmotionType;
+      intensity: string;
+      count: string;
+
+    }>();
+
+    //2.초기화된 반환 DTO 구조
+    const result: EmotionBaseAnalysisResponseDto = {
+      Relation: [],
+      Self: [],
+      State: [],
+    };
+
+    //3.rawResult 순회하면서 해당 base에 맞는 배열에 값 push하기
+
+    for (const row of rawResult){
+      const base = row.emotionBase as EmotionBase;
+      const emotion = row.emotion as EmotionType;
+
+      const dto: EmotionBaseAnalysisDto= {
+        emotion,
+        //db에서 string형으로 주기 때문에 float,int형으로 바꿔주기
+        intensity:Math.round(parseFloat(row.intensity) * 1000)/1000,
+        count: parseInt(row.count),
+
+      };
+
+      result[base].push(dto);
+    }
+
+    return result;
+  }
+
+
+
   
 
    
