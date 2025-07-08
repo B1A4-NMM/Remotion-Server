@@ -8,7 +8,7 @@ import { DiaryService } from '../diary/diary.service';
 
 import { Diary } from '../entities/Diary.entity'; 
 import { Activity } from '../entities/Activity.entity';
-import { strengthCategoryMap } from 'src/enums/strength-type.enum';
+import { StrengthType, strengthCategoryMap } from 'src/enums/strength-type.enum';
 import { GetStrengthsResponseDto } from './dto/get-strengths-response.dto';
 
 @Injectable()
@@ -38,7 +38,7 @@ export class StrengthService {
         });
 
         const typeCount: Record<string,number> = {};
-        const detailCount: Record<string,number> = {};
+        const detailCount: Record<string, Record<string,number>> = {};
 
         for(const activity of activities){
             
@@ -48,18 +48,23 @@ export class StrengthService {
             */
             if (!activity.strength) continue;
 
-            const strengthName = activity.strength;
-            const type = strengthCategoryMap[strengthName];
+            const strength = activity.strength as StrengthType;
+            const type = strengthCategoryMap[strength];
 
             //for문 돌면서 카운트 +1 해준다. 
 
-            //상세 감정 카운트
-            detailCount[strengthName] = (detailCount[strengthName] || 0 ) +1;
-
-            //감정 상세 카운트
+            //typeCount(유형별 총 개수)
             if(type){
-                typeCount[type]=(typeCount[type] || 0) +1;
+
+                //1.유형별 상세 카운트 초기화 및 증가
+                if(!detailCount[type]){
+                    detailCount[type] = {};
+                }
+                detailCount[type][strength] =(detailCount[type][strength] || 0) + 1;
+
             }
+            typeCount[type] = (typeCount[type] || 0) +1;
+            
         }
 
        return new GetStrengthsResponseDto(typeCount,detailCount);
