@@ -83,5 +83,8 @@ export class Diary {
     @Column({ type:'double' ,nullable : true })
     longitude? : number;
 
+    @Column({type: 'json', nullable: true})
+    metadata! : any;
+
     
 }

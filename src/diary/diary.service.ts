@@ -38,7 +38,6 @@ export class DiaryService {
     private readonly emotionService: EmotionService,
   ) {}
 
-
   /**
    * 다이어리 생성 함수
    * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장
@@ -50,15 +49,17 @@ export class DiaryService {
     imageUrl?: string | null,
   ) {
     this.logger.log('다이어리 생성');
-    const result = await this.analysisDiaryService.analysisDiary(memberId, dto, imageUrl);
+    const result = await this.analysisDiaryService.analysisDiary(
+      memberId,
+      dto,
+      imageUrl,
+    );
 
     this.logger.log(
       `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
     );
 
-    this.logger.log(
-      `일기의 주인 : ${result.author.id}, 글쓴이 : ${memberId}`,
-    );
+    this.logger.log(`일기의 주인 : ${result.author.id}, 글쓴이 : ${memberId}`);
 
     return result.id;
   }
@@ -152,6 +153,18 @@ export class DiaryService {
       res.diaries.push(diaryRes);
     }
     return res;
+  }
+
+  async getDiaryJson(memberId: string, id: number) {
+    const diary = await this.diaryRepository.findOneOrFail({
+      where: { id: id },
+    });
+
+    if (diary.author.id != memberId) {
+      throw new NotFoundException('해당 일기의 주인이 아닙니다');
+    }
+
+    return diary.metadata
   }
 
   /**

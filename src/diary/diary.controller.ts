@@ -35,6 +35,7 @@ import { CommonUtilService } from '../util/common-util.service';
 import * as util from 'node:util';
 import { ParseLocalDatePipe } from '../pipe/parse-local-date.pipe';
 import { LocalDate } from 'js-joda';
+import { DiaryAnalysisSchema } from '../constants/swagger-scheme.constant';
 
 @Controller('diary')
 @ApiTags('일기')
@@ -114,9 +115,22 @@ export class DiaryController {
     return this.diaryService.getHomeDiaries(memberId);
   }
 
-  @ApiOperation({ summary: '특정 일기 조회' })
-  @ApiBody({ type: DiaryAnalysisDto })
+  @ApiOperation({ summary: '특정 일기 json 데이터 조회' })
+  @ApiResponse({
+    status: 200,
+    description: '일기 분석 결과',
+    schema: DiaryAnalysisSchema,
+  })
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
+  async getDiaryToJson(@CurrentUser() user, @Param('id') id: string) {
+    const memberId: string = user.id;
+    return await this.diaryService.getDiaryJson(memberId, +id);
+  }
+
+  @ApiOperation({ summary: '특정 일기 가공 데이터 조회' })
+  @ApiResponse({ type: DiaryAnalysisDto })
+  @Get('process/:id')
   @UseGuards(AuthGuard('jwt'))
   async getDiary(@CurrentUser() user, @Param('id') id: string) {
     const memberId: string = user.id;
