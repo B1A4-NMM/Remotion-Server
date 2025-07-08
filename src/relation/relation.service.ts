@@ -27,11 +27,12 @@ export class RelationService {
     let res = new RelationGraphDto();
 
     for (const target of result) {
-      let emotion = await this.emotionService.highestEmotionToTarget(target);
+      let emotion = await this.emotionService.topEmotionsToTagetSecond(target);
       res.relations.push({
         name: target.name,
         affection: target.affection,
-        highestEmotion: emotion,
+        highestEmotion: emotion[0].emotion,
+        secondEmotion: emotion[1]?.emotion ?? null ,
         count: target.count
       });
     }
