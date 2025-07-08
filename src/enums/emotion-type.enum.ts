@@ -345,7 +345,7 @@ export function getStateLabel(emotion: EmotionType): '고양' | '긴장' | '평�
 export function getSelfLabel(emotion: EmotionType): '긍정' | '부정' {
   if (PositiveSelfEmotions.includes(emotion)) return '긍정';
   if (NegativeSelfEmotions.includes(emotion)) return '부정';
-  throw new Error(`정의되지 않은 relation 감정: ${emotion}`);
+  return '긍정'
 }
 
 
