@@ -7,7 +7,11 @@ import {
   PeopleAnalysisDto,
   TodoAnalysisDto,
 } from '../diary/dto/diary-analysis.dto';
-import { CombinedEmotion, EmotionInteraction, Person } from '../util/json.parser';
+import {
+  CombinedEmotion,
+  EmotionInteraction,
+  Person,
+} from '../util/json.parser';
 import { CommonUtilService } from '../util/common-util.service';
 import { EmotionType } from '../enums/emotion-type.enum';
 import { MemberService } from '../member/member.service';
@@ -38,10 +42,12 @@ export class AnalysisDiaryService {
     private readonly emotionService: EmotionService,
     private readonly diaryTodoService: DiarytodoService,
     private readonly achievementService: AchievementService,
-  ) {
-  }
+  ) {}
 
-  async analysisDiary(memberId: string, dto: CreateDiaryDto, imageUrl?: string | null,
+  async analysisDiary(
+    memberId: string,
+    dto: CreateDiaryDto,
+    imageUrl?: string | null,
   ) {
     const result = await this.promptService.serializeAnalysis(dto.content);
 
@@ -77,36 +83,48 @@ export class AnalysisDiaryService {
 
     const diary = new Diary();
     diary.author = author;
-    diary.written_date = dto.writtenDate
+    diary.written_date = dto.writtenDate;
     diary.content = dto.content;
-    diary.title = 'demo'
-    diary.create_date = LocalDate.now()
+    diary.title = 'demo';
+    diary.create_date = LocalDate.now();
+    if (dto.weather !== undefined) diary.weather = dto.weather;
+    if (dto.latitude !== undefined) diary.latitude = dto.latitude;
+    if (dto.longitude !== undefined) diary.longitude = dto.longitude;
     if (imageUrl) {
-      diary.photo_path = imageUrl
+      diary.photo_path = imageUrl;
     }
 
     const saveDiary = await this.diaryRepository.save(diary);
-    const allPeopleInDiary = activity_analysis.flatMap(a => a.peoples)
+    const allPeopleInDiary = activity_analysis.flatMap((a) => a.peoples);
     const selfEmotions: CombinedEmotion[] = activity_analysis.flatMap((a) => [
       ...this.util.toCombinedEmotionTyped(a.self_emotions),
-    ])
+    ]);
     const stateEmotions: CombinedEmotion[] = activity_analysis.flatMap((a) => [
       ...this.util.toCombinedEmotionTyped(a.state_emotions),
-    ])
+    ]);
 
     const activities = activity_analysis;
-     await this.activityService.createByDiary(activities ,saveDiary)
-    await this.targetService.createByDiary(allPeopleInDiary, saveDiary, author)
-    await this.emotionService.createDiaryStateEmotion(stateEmotions, saveDiary)
-    await this.emotionService.createDiarySelfEmotion(selfEmotions, saveDiary)
+    await this.activityService.createByDiary(activities, saveDiary);
+    await this.targetService.createByDiary(allPeopleInDiary, saveDiary, author);
+    await this.emotionService.createDiaryStateEmotion(stateEmotions, saveDiary);
+    await this.emotionService.createDiarySelfEmotion(selfEmotions, saveDiary);
     await this.memberSummaryService.updateSummaryFromDiary(
       this.peopleAnalysis(allPeopleInDiary),
       selfEmotions,
       stateEmotions,
       author,
-      dto.writtenDate)
-    await this.diaryTodoService.createByDiary(reflection.todo, saveDiary, author)
-    await this.achievementService.createByDiary(reflection.achievements, saveDiary, author)
+      dto.writtenDate,
+    );
+    await this.diaryTodoService.createByDiary(
+      reflection.todo,
+      saveDiary,
+      author,
+    );
+    await this.achievementService.createByDiary(
+      reflection.achievements,
+      saveDiary,
+      author,
+    );
 
     return saveDiary;
   }
@@ -127,7 +145,12 @@ export class AnalysisDiaryService {
     let dtos: PeopleAnalysisDto[] = [];
 
     for (const person of people) {
-      if (person.name === undefined || person.name === null || person.name === '없음') continue;
+      if (
+        person.name === undefined ||
+        person.name === null ||
+        person.name === '없음'
+      )
+        continue;
       let peopleAnalysisDto = new PeopleAnalysisDto();
       peopleAnalysisDto.name = person.name;
       const emotionInteraction = person.interactions;
@@ -140,12 +163,14 @@ export class AnalysisDiaryService {
 
   private emotionAnalysis(emotion: EmotionInteraction) {
     let dtos: EmotionAnalysisDto[] = [];
-    if (!emotion.emotion)
-      return [];
+    if (!emotion.emotion) return [];
 
     for (let i = 0; i < emotion.emotion.length; i++) {
       const dto = new EmotionAnalysisDto();
-      let emotionType = this.util.parseEnumValue(EmotionType, emotion.emotion[i]);
+      let emotionType = this.util.parseEnumValue(
+        EmotionType,
+        emotion.emotion[i],
+      );
       // @ts-ignore
       if (emotionType === 'DEFAULT') {
         emotionType = EmotionType.무난;

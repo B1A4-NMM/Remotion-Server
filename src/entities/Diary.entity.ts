@@ -75,6 +75,13 @@ export class Diary {
     @OneToMany(() => DiaryTodo, (diaryTodo) => diaryTodo.diary, { cascade: true })
     diaryTodos: DiaryTodo[];
 
+    //위도
+    @Column({ type:'double' , nullable : true })
+    latitude? : number;
+
+    //경도
+    @Column({ type:'double' ,nullable : true })
+    longitude? : number;
 
     
 }

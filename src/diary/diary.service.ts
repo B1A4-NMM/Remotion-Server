@@ -50,7 +50,6 @@ export class DiaryService {
     imageUrl?: string | null,
   ) {
     this.logger.log('다이어리 생성');
-    // 여기서 분석 결과 받아오고
     const result = await this.analysisDiaryService.analysisDiary(memberId, dto, imageUrl);
 
     this.logger.log(
