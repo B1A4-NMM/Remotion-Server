@@ -104,8 +104,6 @@ export class ActivityService {
       req.sentences.push(dto);
     }
 
-    this.logger.log("req = " + req);
-
     const result = this.clusterService.getClusters(req);
     return result;
   }
