@@ -104,7 +104,7 @@ export class EmotionService {
     // 1. 모든 활동 펼치기
     const allActivities = diaries.flatMap((diary) => diary.activities);
 
-    this.logger.log(allActivities);
+    this.logger.log("행동 : " + allActivities);
     if (allActivities.length === 0) return result;
 
     // 2. 클러스터링 실행

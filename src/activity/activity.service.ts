@@ -94,6 +94,8 @@ export class ActivityService {
 
   async clusteringActivities(activities: Activity[]) {
 
+    if (activities.length === 0) return [];
+
     const req = new MakeClusterDto();
     for (const activity of activities) {
       let dto = new SentenceDto();
@@ -102,7 +104,7 @@ export class ActivityService {
       req.sentences.push(dto);
     }
 
-    this.logger.log(req);
+    this.logger.log("req = " + req);
 
     const result = this.clusterService.getClusters(req);
     return result;
