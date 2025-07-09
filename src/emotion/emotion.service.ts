@@ -99,11 +99,13 @@ export class EmotionService {
       },
       relations: ['activities'],
     });
+    const result: ActivityEmotionSummaryRes[] = [];
 
     // 1. 모든 활동 펼치기
     const allActivities = diaries.flatMap((diary) => diary.activities);
 
     this.logger.log(allActivities);
+    if (allActivities.length === 0) return result;
 
     // 2. 클러스터링 실행
     const clusters: ClusteringResult =
@@ -128,7 +130,6 @@ export class EmotionService {
     }
 
     // 6. 감정 요약 계산
-    const result: ActivityEmotionSummaryRes[] = [];
 
     for (const cluster of clusters.clusters) {
       const res = new ActivityEmotionSummaryRes();
