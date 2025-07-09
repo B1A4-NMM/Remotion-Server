@@ -32,6 +32,9 @@ export class RecommendController {
       return { videoId: [], message: 'No recommended video found for the given period and emotions.' };
     }
 
-    return { videoId, message: 'Recommended video found.' };
+    let res = new RecommendVideoDto();
+    res.videoId = videoId;
+    res.message = `${period}일 내의 추천 영상입니다`;
+    return res;
   }
 }

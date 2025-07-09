@@ -117,6 +117,12 @@ export const EmotionGroupMap: Record<EmotionType, EmotionGroup | null> = {
   피로: EmotionGroup.스트레스,
   지침: EmotionGroup.스트레스,
   놀람: EmotionGroup.스트레스,
+  굴욕: EmotionGroup.스트레스,
+  분노: EmotionGroup.스트레스,
+  거부감: EmotionGroup.스트레스,
+  불쾌: EmotionGroup.스트레스,
+  짜증: EmotionGroup.스트레스,
+  경멸: EmotionGroup.스트레스,
 
   // 불안
   불안: EmotionGroup.불안,
@@ -141,12 +147,6 @@ export const EmotionGroupMap: Record<EmotionType, EmotionGroup | null> = {
   후회: EmotionGroup.우울,
   뉘우침: EmotionGroup.우울,
   죄책감: EmotionGroup.우울,
-  굴욕: EmotionGroup.우울,
-  분노: EmotionGroup.우울,
-  짜증: EmotionGroup.우울,
-  경멸: EmotionGroup.우울,
-  거부감: EmotionGroup.우울,
-  불쾌: EmotionGroup.우울,
   슬픔: EmotionGroup.우울
 };
 
