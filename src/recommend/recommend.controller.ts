@@ -24,12 +24,12 @@ export class RecommendController {
   async getRecommendedVideo(
     @CurrentUser() member: Member,
     @Query('period', ParseIntPipe) period: number, // ParseIntPipe 추가
-  ): Promise<RecommendVideoDto> {
+  ): Promise<{ videoId: string[]; message: string }> {
     this.logger.log(`User ${member.id} requested recommended video for period: ${period} days`);
     const videoId = await this.recommendService.getRecommendedVideoId(member, period);
 
     if (!videoId) {
-      return { videoId: null, message: 'No recommended video found for the given period and emotions.' };
+      return { videoId: [], message: 'No recommended video found for the given period and emotions.' };
     }
 
     return { videoId, message: 'Recommended video found.' };

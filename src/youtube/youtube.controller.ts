@@ -31,7 +31,7 @@ export class YoutubeController {
   })
   async getRandomVideoId(
     @Query('emotion') emotionType: EmotionType,
-  ): Promise<{ videoId: string }> {
+  ): Promise<{ videoId: string[] }> {
     // 타입 변경
     this.logger.log(
       `Request for random video ID for emotion type: ${emotionType}`,

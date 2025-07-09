@@ -109,7 +109,7 @@ export class YoutubeService {
     }
   }
 
-  async getRandomVideoIdByEmotion(emotionType: EmotionType): Promise<string | null> {
+  async getRandomVideoIdByEmotion(emotionType: EmotionType): Promise<string[] | null> {
     const videos = await this.youtubeApiRepository.find({
       where: { emotion : emotionType },
     });
@@ -119,7 +119,13 @@ export class YoutubeService {
       return null;
     }
 
-    const randomIndex = Math.floor(Math.random() * videos.length);
-    return videos[randomIndex].videoId;
+    const result:string[] = []
+
+    for (let i = 0; i < 3; i++) {
+      const randomIndex = Math.floor(Math.random() * videos.length);
+      result.push(videos[randomIndex].videoId)
+    }
+
+    return result
   }
 }

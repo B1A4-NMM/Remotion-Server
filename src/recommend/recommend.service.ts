@@ -16,7 +16,7 @@ export class RecommendService {
     private readonly youtubeService: YoutubeService,
   ) {}
 
-  async getRecommendedVideoId(member: Member, periodDays: number): Promise<string | null> { // period를 periodDays로 변경하고 타입 number로 변경
+  async getRecommendedVideoId(member: Member, periodDays: number): Promise<string[] | null> { // period를 periodDays로 변경하고 타입 number로 변경
     const memberId = member.id;
 
     // 1. 기간 파싱 및 다이어리 조회
