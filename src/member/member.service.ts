@@ -9,11 +9,13 @@ import { SocialType } from '../enums/social-type.enum';
 import { MEMBER_DAILY_LIMIT } from '../constants/member.constant';
 import { MemberSummary } from '../entities/member-summary.entity';
 import { AchievementService } from '../achievement-cluster/achievement.service';
+import { MemberSummaryService } from './member-summary.service';
 
 @Injectable()
 export class MemberService {
   constructor(
     @InjectRepository(Member) private readonly repo: Repository<Member>,
+    private readonly summaryService: MemberSummaryService,
   ) {}
 
   create(dto: CreateMemberDto) {
@@ -48,5 +50,9 @@ export class MemberService {
 
   remove(id: number) {
     return `This action removes a #${id} member`;
+  }
+
+  createMemberSummaryRes(summary: any, period: number) {
+    return this.summaryService.createMemberSummaryRes(summary, period);
   }
 }

@@ -26,19 +26,18 @@ export class MemberSummaryService {
     private readonly repo: Repository<MemberSummary>,
     @InjectRepository(EmotionSummaryScore)
     private readonly emotionSummaryRepo: Repository<EmotionSummaryScore>,
-    private readonly memberService: MemberService,
     private readonly util: CommonUtilService,
     private readonly configService: ConfigService
   ) {}
 
 
+
   async findMemberSummaryByPeriod(memberId: string, period: number) {
-    const member = await this.memberService.findOne(memberId);
     const today = LocalDate.now();
     const end = today.minusDays(period);
 
     const result = await this.repo.find({
-      where: { member: member, date: Between(end, today) },
+      where: { member: {id: memberId}, date: Between(end, today) },
       relations: ['emotionScores'],
     });
 
@@ -82,8 +81,13 @@ export class MemberSummaryService {
       });
     }
 
+    console.log("스트레스 종합 : " + totalEmotionScores[EmotionGroup.스트레스])
+    console.log("우울 종합 : " + totalEmotionScores[EmotionGroup.스트레스])
+    console.log("불안 종합 : " + totalEmotionScores[EmotionGroup.스트레스])
+
     // 임계값 검사 및 경고 플래그 설정
     let threshold = this.configService.get('WARNING_THRESHOLD');
+    console.log("임계값 = " + threshold)
     if (totalEmotionScores[EmotionGroup.우울] > threshold
     ) {
       result.depressionWarning = true;

@@ -36,6 +36,7 @@ import * as util from 'node:util';
 import { ParseLocalDatePipe } from '../pipe/parse-local-date.pipe';
 import { LocalDate } from 'js-joda';
 import { DiaryAnalysisSchema } from '../constants/swagger-scheme.constant';
+import { MemberSummaryRes } from '../member/dto/member-summary.res';
 
 @Controller('diary')
 @ApiTags('일기')
@@ -76,6 +77,40 @@ export class DiaryController {
       imageUrl,
     );
     return new CreateDiaryRes(createId);
+  }
+
+  @Get('date/emotion/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: '특정 일기 기준으로 기간별 감정 변화 조회' })
+  @ApiParam({
+    name: 'id',
+    description: '기준이 되는 일기의 ID',
+    type: 'string',
+    required: true,
+  })
+  @ApiQuery({
+    name: 'period',
+    description: '조회할 기간(일)',
+    type: 'number',
+    required: true,
+    example: 7,
+  })
+  @ApiResponse({
+    status: 200,
+    description: '기간별 감정 분석 결과',
+    type: MemberSummaryRes,
+  })
+  async getDiaryByDateAndEmotion(
+    @Query('period') period: number,
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+  ) {
+    const memberId = user.id;
+    return await this.diaryService.findMemberSummaryByDateAndPeriod(
+      memberId,
+      +id,
+      period,
+    );
   }
 
   @ApiOperation({ summary: '자신이 작성한 모든 일기 받기' })

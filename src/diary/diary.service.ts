@@ -17,6 +17,7 @@ import {
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { EmotionBase } from '../enums/emotion-type.enum';
 import { LocalDate } from 'js-joda';
+import { MemberSummary } from '../entities/member-summary.entity';
 
 @Injectable()
 export class DiaryService {
@@ -28,7 +29,24 @@ export class DiaryService {
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
     private readonly emotionService: EmotionService,
+    @InjectRepository(MemberSummary)
+    private readonly summaryRepo: Repository<MemberSummary>,
   ) {}
+
+  async findMemberSummaryByDateAndPeriod(memberId: string, diaryId:number, period: number) {
+
+    const diary = await this.diaryRepository.findOneOrFail({where: {id: diaryId}})
+    const date = diary.written_date;
+
+    const member = await this.memberService.findOne(memberId);
+    const end = date.minusDays(period);
+    const summary = await this.summaryRepo.find({
+      where: { member: member, date: Between(end, date) },
+      relations: ['emotionScores'],
+    });
+
+    return this.memberService.createMemberSummaryRes(summary, period)
+  }
 
   async deleteDiary(memberId: string, id: number) {
     const diary = await this.diaryRepository.findOneOrFail({

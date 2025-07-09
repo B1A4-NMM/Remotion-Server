@@ -7,10 +7,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Diary } from '../entities/Diary.entity';
 import { EmotionModule } from '../emotion/emotion.module';
 import { UploadModule } from '../upload/upload.module';
+import { MemberSummaryService } from '../member/member-summary.service';
+import { MemberSummary } from '../entities/member-summary.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Diary]),
+    TypeOrmModule.forFeature([Diary, MemberSummary]),
     AnalysisModule,
     MemberModule,
     EmotionModule,
