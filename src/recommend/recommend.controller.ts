@@ -26,15 +26,16 @@ export class RecommendController {
     @Query('period', ParseIntPipe) period: number, // ParseIntPipe 추가
   ): Promise<{ videoId: string[]; message: string }> {
     this.logger.log(`User ${member.id} requested recommended video for period: ${period} days`);
-    const videoId = await this.recommendService.getRecommendedVideoId(member, period);
+    const result = await this.recommendService.getRecommendedVideoId(member, period);
 
-    if (!videoId) {
+    if (!result?.videoId?.length) {
       return { videoId: [], message: 'No recommended video found for the given period and emotions.' };
     }
 
     let res = new RecommendVideoDto();
-    res.videoId = videoId;
-    res.message = `${period}일 내의 추천 영상입니다`;
+    res.videoId = result.videoId;
+    res.emotion = result.mostFrequentEmotion;
+    res.message = `${period}일 내의 ${result.mostFrequentEmotion} 추천 영상입니다`;
     return res;
   }
 }
