@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Activity } from '../entities/Activity.entity';
 import { Repository } from 'typeorm';
@@ -15,6 +15,9 @@ import { ClusteringResult } from '../util/cluster-json.parser';
 
 @Injectable()
 export class ActivityService {
+
+  private readonly logger = new Logger(ActivityService.name);
+
   constructor(
     @InjectRepository(Activity) private readonly repo: Repository<Activity>,
     @InjectRepository(ActivityEmotion)
@@ -81,6 +84,8 @@ export class ActivityService {
       })
       .getMany();
 
+    if (activities.length === 0) return [];
+
     let result = await this.clusteringActivities(activities);
     const parseResult: ClusteringResult = JSON.parse(JSON.stringify(result));
 
@@ -96,6 +101,8 @@ export class ActivityService {
       dto.id = activity.id;
       req.sentences.push(dto);
     }
+
+    this.logger.log(req);
 
     const result = this.clusterService.getClusters(req);
     return result;
