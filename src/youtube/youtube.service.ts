@@ -29,6 +29,8 @@ export class YoutubeService {
   @Cron('0 0 * * *') // 매 자정마다 실행
   async handleCron() {
     this.logger.log('Calling searchAndStoreVideos() via cron job.');
+    const env = this.configService.get<string>('ENVIRONMENT')!;
+    if (env === 'develop' || env === 'production') {}
     await this.searchAndStoreVideos();
   }
 
@@ -42,9 +44,14 @@ export class YoutubeService {
       if (searchKeywords) {
         for (const searchKeyword of searchKeywords) {
           try {
-            const videoIds = await this.searchYoutubeVideos(searchKeyword);
-            for (const videoId of videoIds) {
-              await this.saveVideoId(emotionType, searchKeyword, videoId);
+            const videos = await this.searchYoutubeVideos(searchKeyword);
+            for (const video of videos) {
+              await this.saveVideo(
+                emotionType,
+                searchKeyword,
+                video.videoId,
+                video.title,
+              );
             }
           } catch (error) {
             this.logger.error(
@@ -60,7 +67,9 @@ export class YoutubeService {
     this.logger.log('YouTube video search and storage completed.');
   }
 
-  private async searchYoutubeVideos(query: string): Promise<string[]> {
+  private async searchYoutubeVideos(
+    query: string,
+  ): Promise<{ videoId: string; title: string }[]> {
     const YOUTUBE_API_URL = 'https://www.googleapis.com/youtube/v3/search';
     const params = {
       key: this.YOUTUBE_API_KEY,
@@ -76,7 +85,10 @@ export class YoutubeService {
       );
       return response.data.items
         .filter((item) => item.id.videoId)
-        .map((item) => item.id.videoId);
+        .map((item) => ({
+          videoId: item.id.videoId,
+          title: item.snippet.title,
+        }));
     } catch (error) {
       this.logger.error(
         `Error searching YouTube for "${query}": ${error.message}`,
@@ -85,10 +97,11 @@ export class YoutubeService {
     }
   }
 
-  private async saveVideoId(
+  private async saveVideo(
     emotionType: EmotionType,
     searchKeyword: string,
     videoId: string,
+    title: string,
   ): Promise<void> {
     const existingVideo = await this.youtubeApiRepository.findOne({
       where: { videoId },
@@ -96,13 +109,14 @@ export class YoutubeService {
 
     if (!existingVideo) {
       const newVideo = this.youtubeApiRepository.create({
-        emotion : emotionType,
-        keyword : searchKeyword,
-        videoId : videoId,
+        emotion: emotionType,
+        keyword: searchKeyword,
+        videoId: videoId,
+        title: title,
       });
       await this.youtubeApiRepository.save(newVideo);
       this.logger.log(
-        `Saved new video ID: ${videoId} for EmotionType: ${emotionType}, SearchKeyword: ${searchKeyword}`,
+        `저장된 비디오: "${title}" (ID: ${videoId}) for EmotionType: ${emotionType}, SearchKeyword: ${searchKeyword}`,
       );
     } else {
       this.logger.debug(`Video ID ${videoId} already exists. Skipping.`);

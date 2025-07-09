@@ -9,6 +9,9 @@ export class YoutubeApi {
   @Column({ unique: true })
   videoId!: string;
 
+  @Column()
+  title!: string;
+
   @Column({ type: 'enum', enum: EmotionType }) // EmotionType enum 사용
   emotion!: EmotionType; // 컬럼 이름 변경
 
