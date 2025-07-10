@@ -8,6 +8,8 @@ import { SocialType } from '../enums/social-type.enum';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { ApiExcludeController, ApiExcludeEndpoint, ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';
+import { GoogleAuthGuard } from './google-auth.guard';
+import { KakaoAuthGuard } from './kakao-auth.guard';
 
 @Controller('auth')
 @ApiTags('소셜 로그인')
@@ -23,7 +25,7 @@ export class AuthController {
       "로그인이 성공하면 /getaccess?access={jwt} 로 리다이렉트 됩니다." +
       "쿼리스트링을 통해 액세스 토큰을 받을 수 있습니다"})
   @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleAuthGuard)
   async googleLogin() {
     return 'redirecting to Google...';
   }
@@ -39,9 +41,14 @@ export class AuthController {
       nickname: user.name,
       type: SocialType.GOOGLE,
     }); // JWT 반환
-    const url = this.configService.get('FRONTEND_URL') + `?access=${jwt.access_token}`
 
-    return res.redirect(url)
+    // ✅ 프론트에서 넘긴 state (redirect_uri)가 user.state에 들어있음
+    const redirectUri = decodeURIComponent(user.state || this.configService.get('FRONTEND_URL'));
+
+    // ✅ /getaccess 경로 포함해서 리다이렉트
+    const url = `${redirectUri}/getaccess?access=${jwt.access_token}`;
+
+    return res.redirect(url);
   }
 
   @ApiOperation({summary: "로그인 테스트", description: "로그인되어 있다면 200 OK, 그렇지 않다면 401 Unauthorized 반환"})
@@ -61,8 +68,9 @@ export class AuthController {
       "로그인이 성공하면 /getaccess?access={jwt} 로 리다이렉트 됩니다." +
       "쿼리스트링을 통해 액세스 토큰을 받을 수 있습니다"})
   @Get('/kakao')
-  @UseGuards(AuthGuard('kakao'))
+  @UseGuards(KakaoAuthGuard)
   async kakaoLogin(@Req() req: Request) {
+
     // 이 부분은 Passport의 AuthGuard에 의해 카카오 로그인 페이지로 리다이렉트
   }
 
@@ -72,13 +80,20 @@ export class AuthController {
   async kakaoCallback(
     @Query('code') kakaoAuthResCode: string,
     @Res() res: Response,
+    @Req() req: any,
     ) {
     // Authorization Code 받기
     const { jwtToken } =
       await this.authService.signInWithKakao(kakaoAuthResCode);
 
-    const url = this.configService.get('FRONTEND_URL') + `?access=${jwtToken.access_token}`
+    // ✅ 프론트에서 넘긴 state (redirect_uri)가 user.state에 들어있음
+    const redirectUri = decodeURIComponent(req.session.state || this.configService.get('FRONTEND_URL'));
 
-    return res.redirect(url)
+    // ✅ /getaccess 경로 포함해서 리다이렉트
+    const url = `${redirectUri}/getaccess?access=${jwtToken.access_token}`;
+    console.log(`redirect uri = ${redirectUri}`)
+
+    delete req.session.state; // 세션에 담겨있는 리다이렉트 경로 삭제
+    return res.redirect(url);
   }
 }
