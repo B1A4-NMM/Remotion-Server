@@ -3,6 +3,10 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { winstonLogger } from './logger/winston-logger.service';
+import * as session from 'express-session';
+import * as cookieParser from 'cookie-parser';
+
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, );
@@ -12,6 +16,18 @@ async function bootstrap() {
       transform: true,
       whitelist: true,
       forbidNonWhitelisted: true,
+    }),
+  );
+
+  app.use(cookieParser()); // 세션을 위해 필요
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || 'super-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: false, // HTTPS일 경우 true
+      },
     }),
   );
 

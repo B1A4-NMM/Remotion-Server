@@ -14,16 +14,18 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientSecret: configService.get('GOOGLE_CLIENT_SECRET'),
       callbackURL: configService.get('GOOGLE_REDIRECT_URI'),
       scope: ['profile', 'email'],
+      passReqToCallback: true,
     });
   }
 
-  async validate(accessToken: string, refreshToken: string, profile: any, done: VerifyCallback): Promise<any> {
+  async validate(req:any, accessToken: string, refreshToken: string, profile: any, done: VerifyCallback): Promise<any> {
     const { name, emails, id, displayName } = profile;
     const user = {
       id : id,
       email: emails[0].value,
       name: displayName,
       provider: 'google',
+      state: req.query.state,
     };
     done(null, user);
   }
