@@ -198,34 +198,34 @@ export class DiaryController {
     return await this.diaryService.deleteAll(memberId);
   }
 
-  // @ApiOperation({
-  //   summary: '일기 전체 조회',
-  //   description: '무한스크롤을 통해 일기를 조회할 수 있습니다',
-  // })
-  // @ApiBody({ type: DiaryListRes })
-  // @ApiQuery({
-  //   name: 'limit',
-  //   required: false,
-  //   description: '한 번에 가져올 일기 개수',
-  //   type: Number,
-  //   example: 10,
-  // })
-  // @ApiQuery({
-  //   name: 'cursor',
-  //   required: false,
-  //   description: '마지막으로 가져온 일기의 ID, 이 ID를 커서에 넣어 보내세요',
-  //   type: Number,
-  //   example: 0,
-  // })
-  // @Get()
-  // @UseGuards(AuthGuard('jwt'))
-  // async diaryInfinite(
-  //   @CurrentUser() user,
-  //   @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-  //   @Query('cursor', new DefaultValuePipe(0), ParseIntPipe) cursorId: number,
-  // ) {
-  //   const cursor = cursorId > 0 ? { id: cursorId } : undefined;
-  //   const memberId = user.id;
-  //   return this.diaryService.getDiariesInfinite(memberId, limit, cursor);
-  // }
+  @ApiOperation({
+    summary: '일기 전체 조회',
+    description: '무한스크롤을 통해 일기를 조회할 수 있습니다',
+  })
+  @ApiBody({ type: DiaryListRes })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: '한 번에 가져올 일기 개수',
+    type: Number,
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: '마지막으로 가져온 일기의 ID, 이 ID를 커서에 넣어 보내세요',
+    type: Number,
+    example: 0,
+  })
+  @Get()
+  @UseGuards(AuthGuard('jwt'))
+  async diaryInfinite(
+    @CurrentUser() user,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('cursor', new DefaultValuePipe(0), ParseIntPipe) cursorId: number,
+  ) {
+    const cursor = cursorId > 0 ? { id: cursorId } : undefined;
+    const memberId = user.id;
+    return this.diaryService.getDiariesInfinite(memberId, limit, cursor);
+  }
 }

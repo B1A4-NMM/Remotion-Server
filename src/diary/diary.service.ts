@@ -89,6 +89,9 @@ export class DiaryService {
     return result.id;
   }
 
+  /**
+   * 멤버 아이디와 날짜를 받아 해당되는 다이어리 하나를 반환합니다
+   */
   async getDiaryByDate(memberId: string, date: LocalDate) {
     const member = await this.memberService.findOne(memberId);
 
@@ -193,6 +196,9 @@ export class DiaryService {
     return res;
   }
 
+  /**
+   * 해당 다이어리에 저장되어있는 json 본문을 반환합니다
+   */
   async getDiaryJson(memberId: string, id: number) {
     const diary = await this.diaryRepository.findOneOrFail({
       where: { id: id },
@@ -294,6 +300,9 @@ export class DiaryService {
     return result;
   }
 
+  /**
+   * 이 멤버의 모든 다이어리를 삭제합니다
+   */
   async deleteAll(memberId: string) {
     const member = await this.memberService.findOne(memberId);
     const diaries = await this.diaryRepository.find({
