@@ -18,6 +18,7 @@ import { SentenceParserModule } from '../sentence-parser/sentence-parser.module'
     MemberModule,
     EmotionModule,
     UploadModule,
+    SentenceParserModule,
   ],
   controllers: [DiaryController],
   providers: [DiaryService],

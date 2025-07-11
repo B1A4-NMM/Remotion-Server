@@ -23,6 +23,8 @@ export class VectorService {
     return { ok: true };
   }
 
+
+
   async search(query: string) {
     const queryVector = await this.embedder.embed_query(query);
 

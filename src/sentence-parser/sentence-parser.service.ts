@@ -59,10 +59,23 @@ export class SentenceParserService {
       this.collection,
       vector,
       memberId.toString(),
-      20,
+      100,
     );
 
-    const candidates = hits
+    if (hits.length === 0) return [];
+
+    const dedupedByDiaryId: any[] = [];
+    const seen = new Set<number>();
+    for (const hit of hits) {
+      const diaryId = hit.payload?.diary_id as number;
+      if (diaryId && !seen.has(diaryId)) {
+        seen.add(diaryId);
+        dedupedByDiaryId.push(hit);
+      }
+      if (dedupedByDiaryId.length >= 20) break;
+    }
+
+    const candidates = dedupedByDiaryId
       .filter((hit) => hit?.payload?.sentence)
       .map((hit) => ({
         id: hit.id,
@@ -95,6 +108,10 @@ export class SentenceParserService {
     return final.slice(0, 5); // Top-K 개수 제한
   }
 
+  async deleteAllByDiaryId(diaryId: number) {
+    await this.qdrantService.deleteAllByCondition(this.collection, 'diary_id', diaryId)
+  }
+
   /**
    * 문장을 qdrant에 저장합니다
    */
@@ -102,7 +119,7 @@ export class SentenceParserService {
     sentences: string[],
     author: Member,
     date: LocalDate,
-    diaryId:number
+    diaryId: number,
   ) {
     for (const sentence of sentences) {
       const payload = {

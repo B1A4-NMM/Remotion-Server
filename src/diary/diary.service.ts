@@ -18,6 +18,7 @@ import { CreateDiaryDto } from './dto/create-diary.dto';
 import { EmotionBase } from '../enums/emotion-type.enum';
 import { LocalDate } from 'js-joda';
 import { MemberSummary } from '../entities/member-summary.entity';
+import { SentenceParserService } from '../sentence-parser/sentence-parser.service';
 
 @Injectable()
 export class DiaryService {
@@ -31,6 +32,7 @@ export class DiaryService {
     private readonly emotionService: EmotionService,
     @InjectRepository(MemberSummary)
     private readonly summaryRepo: Repository<MemberSummary>,
+    private readonly sentenceParserService: SentenceParserService,
   ) {}
 
   async findMemberSummaryByDateAndPeriod(memberId: string, diaryId:number, period: number) {
@@ -57,6 +59,7 @@ export class DiaryService {
       throw new NotFoundException('해당 일기의 주인이 아닙니다')
     }
 
+    await this.sentenceParserService.deleteAllByDiaryId(diary.id)
     return await this.diaryRepository.delete(diary.id);
   }
 

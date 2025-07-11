@@ -24,7 +24,7 @@ export class QdrantService {
     }
   }
 
-  public async updateVector(collection:string ,id: string, vector: number[]) {
+  public async updateVector(collection: string, id: string, vector: number[]) {
     await this.client.updateVectors(collection, {
       points: [{ id, vector }],
     });
@@ -82,10 +82,10 @@ export class QdrantService {
         must: [
           {
             key: 'memberId',
-            match : {
+            match: {
               value: memberId,
-            }
-          }
+            },
+          },
         ],
       },
     });
@@ -104,10 +104,10 @@ export class QdrantService {
         must: [
           {
             key: 'memberId',
-            match : {
+            match: {
               value: memberId,
-            }
-          }
+            },
+          },
         ],
       },
     });
@@ -136,7 +136,7 @@ export class QdrantService {
     });
   }
 
-  async search(vector: number[], limit = 5, collection:string = this.collection) {
+  async search(vector: number[], limit = 5, collection: string = this.collection) {
     return this.client.search(collection, { vector, limit });
   }
 
@@ -147,4 +147,26 @@ export class QdrantService {
       with_vector: false,
     });
   }
+
+  async deleteAllByCondition(
+    collection: string,
+    key: string,
+    value: number
+  ) {
+
+    await this.client.delete(collection, {
+      wait: true,
+      filter: {
+        must: [
+          {
+            key: key,
+            match: {
+              value: value,
+            },
+          },
+        ],
+      }
+    })
+  }
+
 }
