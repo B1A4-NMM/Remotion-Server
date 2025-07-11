@@ -32,6 +32,7 @@ import { RecommendModule } from './recommend/recommend.module'; // RecommendModu
 
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { NoCacheInterceptor } from './no-cache.interceptor';
+import { SentenceParserModule } from './sentence-parser/sentence-parser.module';
 
 
 @Module({
@@ -61,7 +62,8 @@ import { NoCacheInterceptor } from './no-cache.interceptor';
     ActivityClusterModule,
     MapModule,
     YoutubeModule,
-    RecommendModule, // RecommendModule 추가
+    RecommendModule,
+    SentenceParserModule, // RecommendModule 추가
   ],
   controllers: [AppController],
   providers: [

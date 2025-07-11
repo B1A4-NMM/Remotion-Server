@@ -60,7 +60,7 @@ export class QdrantService {
     collection: string,
     id: string,
     vector: number[],
-    payload: Record<string, any>,
+    payload: any,
   ) {
     await this.client.upsert(collection, {
       wait: true,
@@ -136,8 +136,8 @@ export class QdrantService {
     });
   }
 
-  async search(vector: number[], limit = 5) {
-    return this.client.search(this.collection, { vector, limit });
+  async search(vector: number[], limit = 5, collection:string = this.collection) {
+    return this.client.search(collection, { vector, limit });
   }
 
   async getVectorById(collection: string, id: string) {

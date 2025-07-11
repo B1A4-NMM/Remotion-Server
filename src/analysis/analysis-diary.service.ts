@@ -27,6 +27,7 @@ import { AchievementService } from '../achievement-cluster/achievement.service';
 import { CreateDiaryDto } from '../diary/dto/create-diary.dto';
 import { LocalDate } from 'js-joda';
 import { auth } from 'neo4j-driver';
+import { SentenceParserService } from '../sentence-parser/sentence-parser.service';
 
 @Injectable()
 export class AnalysisDiaryService {
@@ -42,6 +43,7 @@ export class AnalysisDiaryService {
     private readonly emotionService: EmotionService,
     private readonly diaryTodoService: DiarytodoService,
     private readonly achievementService: AchievementService,
+    private readonly sentenceParserService: SentenceParserService,
   ) {}
 
   async analysisDiary(
@@ -100,6 +102,9 @@ export class AnalysisDiaryService {
       saveDiary,
       author,
     );
+    await this.sentenceParserService.createByDiary(
+      saveDiary
+    )
 
     return saveDiary;
   }
