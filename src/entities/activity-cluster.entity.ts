@@ -7,7 +7,7 @@ import { Activity } from './Activity.entity';
 export class ActivityCluster {
 
   @PrimaryColumn()
-  id: number
+  id: string
 
   @ManyToOne(() => Member, {onDelete: 'CASCADE'})
   @JoinColumn({ name: 'author_id' })

@@ -2,22 +2,18 @@ import { LocalDate } from 'js-joda';
 import { Entity, 
     PrimaryGeneratedColumn, 
     Column, 
-    CreateDateColumn, 
-    ManyToOne, 
+    ManyToOne,
     JoinColumn, 
     OneToMany} from 'typeorm';
 import { LocalDateTransformer } from '../util/local-date.transformer';
 
 import { ShareGroup } from './ShareGroup.entity';   
 import { Member } from './Member.entity';
-import { Target } from './Target.entity';
 import { Weather } from '../enums/weather.enum';
 import { DiaryTarget } from './diary-target.entity';
 import { Activity } from './Activity.entity';
 import { DiaryEmotion } from './diary-emotion.entity';
 import { DiaryTodo } from './diary-todo.entity';
-
-
 
 @Entity()
 export class Diary {
@@ -50,7 +46,7 @@ export class Diary {
     @Column({
         type:'enum',
         enum: Weather,
-        default : Weather.SUNNY,
+        default : Weather.NONE,
     })
     weather! : Weather;
 
