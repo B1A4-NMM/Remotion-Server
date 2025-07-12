@@ -6,7 +6,7 @@ import { RecommendService } from './recommend.service';
 import { RecommendVideoDto } from './dto/recommend-video.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 
-@ApiTags('Recommend')
+@ApiTags('추천')
 @Controller('recommend')
 export class RecommendController {
   private readonly logger = new Logger(RecommendController.name);

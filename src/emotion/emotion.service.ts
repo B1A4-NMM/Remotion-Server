@@ -56,6 +56,9 @@ export class EmotionService {
     private readonly configService: ConfigService,
   ) {}
 
+  /**
+   * 기간,멤버,감정 그룹을 인자로 받아 멤버와 연관된 해당 기간 내의 감정 그룹들을 반환합니다
+   */
   async getEmotionAnalysis(
     memberId: string,
     period: number,
@@ -104,7 +107,7 @@ export class EmotionService {
     // 1. 모든 활동 펼치기
     const allActivities = diaries.flatMap((diary) => diary.activities);
 
-    this.logger.log("행동 : " + allActivities);
+    this.logger.log('행동 : ' + allActivities);
     if (allActivities.length === 0) return result;
 
     // 2. 클러스터링 실행
@@ -372,13 +375,16 @@ export class EmotionService {
     return this.createDiaryEmotionByBase(emotions, diary, EmotionBase.State);
   }
 
+  /**
+   * emotionBase에 따라 감정 생성
+   */
   async createDiaryEmotionByBase(
     emotions: CombinedEmotion[],
     diary: Diary,
     emotionBase: EmotionBase,
   ) {
     for (const emotion of emotions) {
-      let entity = await this.findOneDiaryEmotion(diary, emotion.emotion);
+      let entity = await this.findOneDiaryEmotionByEmotionType(diary, emotion.emotion);
       if (entity === null) {
         entity = new DiaryEmotion(
           diary,
@@ -394,9 +400,9 @@ export class EmotionService {
   }
 
   /**
-   * diary-emotion 찾는 함수
+   * diary-emotion을 type에 따라 찾는 함수
    */
-  findOneDiaryEmotion(diary: Diary, emotion: EmotionType) {
+  findOneDiaryEmotionByEmotionType(diary: Diary, emotion: EmotionType) {
     if (!isEmotionType(emotion)) {
       throw new NotFoundException('emotion type is not valid');
     }
@@ -404,6 +410,14 @@ export class EmotionService {
       where: {
         diary: { id: diary.id },
         emotion: emotion,
+      },
+    });
+  }
+
+  findAllDiaryEmotions(diary: Diary) {
+    return this.diaryEmotionRepository.find({
+      where: {
+        diary: { id: diary.id },
       },
     });
   }
@@ -449,6 +463,9 @@ export class EmotionService {
       }>();
   }
 
+  /**
+   * 대상을 인자로 받아 대상에게 받은 감정들의 intensity의 합으로 순위를 매겨 limit개 만큼 가져옵니다
+   */
   async topEmotionsToTarget(target: Target, limit: number) {
     const rows = await this.emotionTargetRepository
       .createQueryBuilder('et')
@@ -480,16 +497,16 @@ export class EmotionService {
   }
 
   async getTodayEmotions(memberId: string) {
-    const date = LocalDate.now().toString();
+    const date = LocalDate.now();
     return this.getEmotionsByDate(memberId, date);
   }
 
   /**
    * 사용자의 특정 날짜에 대한 감정의 합산을 반환
    */
-  async getEmotionsByDate(memberId: string, date: string) {
+  async getEmotionsByDate(memberId: string, date: LocalDate) {
     const emotions = await this.sumIntensityByEmotionForDateAndOwner(
-      date,
+      date.toString(),
       memberId,
     );
     const result: any[] = [];
@@ -504,7 +521,6 @@ export class EmotionService {
   }
 
   // 감정 추출하는 로직인데 특정 날짜의 추출 감정들중 intensity 가장 높은거
-
   async getRepresentEmotionByDiary(
     diaryId: number,
   ): Promise<EmotionType | null> {
@@ -525,18 +541,16 @@ export class EmotionService {
   //비동기,병렬 처리
   async getAllEmotionsGroupedByDateRange(
     userId: string,
-    from: string,
-    to: string,
+    startDate: LocalDate,
+    endDate: LocalDate,
   ) {
-    const startDate = new Date(from);
-    const endDate = new Date(to);
-    const dates: string[] = [];
+    const dates: LocalDate[] = [];
+    let currentDate = startDate;
 
-    //날짜 범위 내 모든 날짜 문자열로 저장
-    while (startDate <= endDate) {
-      const isoDate = startDate.toISOString().split('T')[0];
-      dates.push(isoDate);
-      startDate.setDate(startDate.getDate() + 1);
+    //날짜 범위 내 모든 날짜 LocalDate로 저장
+    while (currentDate.isBefore(endDate) || currentDate.isEqual(endDate)) {
+      dates.push(currentDate);
+      currentDate = currentDate.plusDays(1);
     }
 
     //병렬 처리로 모든 날짜에 대해 감정 데이터 조회
@@ -552,7 +566,6 @@ export class EmotionService {
   }
 
   //about-me에 보내줄 emotionBase에 따른 emotiontype 분석 로직
-
   async getEmotionBaseAnalysis(
     memberId: string,
   ): Promise<EmotionBaseAnalysisResponseDto> {
@@ -582,7 +595,6 @@ export class EmotionService {
     };
 
     //3.rawResult 순회하면서 해당 base에 맞는 배열에 값 push하기
-
     for (const row of rawResult) {
       const base = row.emotionBase as EmotionBase;
       const emotion = row.emotion as EmotionType;

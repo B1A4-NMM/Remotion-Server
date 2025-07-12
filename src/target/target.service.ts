@@ -163,4 +163,14 @@ export class TargetService {
 
     return affection;
   }
+
+  async getTargetByDiary(diary: Diary) {
+    const diaryTargets = await this.diaryTargetRepository.find({
+      where: {diary: {id : diary.id}},
+      relations: ['target']
+    })
+
+    const targets = diaryTargets.map(target => target.target)
+    return targets
+  }
 }

@@ -1,10 +1,17 @@
 import { Controller, Get, Query, NotFoundException, Logger, BadRequestException, Post } from '@nestjs/common';
 import { YoutubeService } from './youtube.service';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiQuery,
+  ApiExcludeEndpoint,
+  ApiExcludeController,
+} from '@nestjs/swagger';
 import { EmotionType } from '../enums/emotion-type.enum'; // EmotionType 임포트
 
-@ApiTags('Youtube')
 @Controller('youtube')
+@ApiExcludeController()
 export class YoutubeController {
   private readonly logger = new Logger(YoutubeController.name);
 

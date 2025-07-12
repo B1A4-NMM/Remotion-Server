@@ -27,8 +27,8 @@ export class Todo {
   @Column({ default: false })
   isCompleted: boolean;
 
-  @Column({ type: 'date', nullable: true })
-  date!: string;
+  @Column({ type: 'date', nullable: true, transformer: new LocalDateTransformer() })
+  date!: LocalDate;
 
   @Column({ default: false })
   isRepeat: boolean;
@@ -36,8 +36,8 @@ export class Todo {
   @Column({ nullable: true })
   repeatRule: string;
 
-  @Column({ type: 'date', nullable: true })
-  repeatEndDate: string;
+  @Column({ type: 'date', nullable: true, transformer: new LocalDateTransformer() })
+  repeatEndDate: LocalDate;
   
   //이 entity가 호출되면 이 시간 기준으로 저장해줌 service에서 따로 처리 필요없음
   @Column({ type: 'date',  transformer: new LocalDateTransformer() })

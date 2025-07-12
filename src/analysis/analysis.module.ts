@@ -16,6 +16,7 @@ import { TodoModule } from '../todo/todo.module';
 import { DiarytodoModule } from '../diarytodo/diarytodo.module';
 import { UploadModule } from '../upload/upload.module';
 import { AchievementModule } from '../achievement-cluster/achievement.module';
+import { SentenceParserModule } from '../sentence-parser/sentence-parser.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AchievementModule } from '../achievement-cluster/achievement.module';
     DiarytodoModule,
     UploadModule,
     AchievementModule,
+    SentenceParserModule
   ],
   controllers: [],
   providers: [AnalysisService, AnalysisDiaryService],

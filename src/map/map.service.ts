@@ -22,7 +22,7 @@ export class MapService {
     for (const diary of result) {
       let dto = new DiaryMapInfo();
       dto.diaryId = diary.id
-      dto.photo_path = diary.photo_path
+      dto.photo_path = diary.photo_path[0]
       dto.latitude = diary.latitude! // null이 아님을 보장
       dto.longitude = diary.longitude!
       dto.content = diary.content.slice(0, 100) + "..."

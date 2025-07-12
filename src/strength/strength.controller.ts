@@ -5,7 +5,7 @@ import { CurrentUser } from '../auth/user.decorator';
 import { StrengthService } from './strength.service';
 import { GetStrengthsResponseDto } from './dto/get-strengths-response.dto';
 
-@ApiTags('Strengths')
+@ApiTags('강점')
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
 @Controller('strength')

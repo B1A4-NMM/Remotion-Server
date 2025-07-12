@@ -60,7 +60,7 @@ export class DiaryAnalysisDto {
 
   @ApiProperty({example: 'https://remotion-photo.s3.ap-northeast-2.amazonaws.com/bcdc2b34-a81e-4d51-be65-d14c4423e193.jpg'})
   @IsString()
-  photo_path?: string | null;
+  photo_path?: string[] | null;
 
   @ApiProperty({example: '오늘은 출근하고 개발하다가 커피 마셨다'})
   @IsString()

@@ -1,5 +1,5 @@
 import { EmotionType } from '../../enums/emotion-type.enum';
-import { DiaryRes } from './diary-list.res';
+import { DiaryRes } from './diary-home-list.res';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class EmotionRes {
