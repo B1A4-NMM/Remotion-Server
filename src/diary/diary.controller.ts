@@ -38,6 +38,7 @@ import { MemberSummaryRes } from '../member/dto/member-summary.res';
 import { UploadService } from '../upload/upload.service';
 import { CreateDiaryWithMediaDto } from './dto/create-diary-swagger.dto';
 import { InfiniteScrollRes } from './dto/infinite-scroll.res';
+import { SearchDiaryRes } from './dto/search-diary.res';
 
 @Controller('diary')
 @ApiBearerAuth('access-token')
@@ -46,7 +47,7 @@ export class DiaryController {
   constructor(
     private readonly diaryService: DiaryService,
     private readonly s3Service: S3Service,
-    private readonly uploadService: UploadService
+    private readonly uploadService: UploadService,
   ) {}
 
   @Post()
@@ -62,17 +63,20 @@ export class DiaryController {
     type: CreateDiaryWithMediaDto,
   })
   @UseGuards(AuthGuard('jwt'))
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'photo', maxCount: 10 },
-    { name: 'audios' },
-  ]))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'photo', maxCount: 10 },
+      { name: 'audios' },
+    ]),
+  )
   async create(
     @CurrentUser() user: any,
     @Body() body: CreateDiaryDto,
-    @UploadedFiles() files: {
+    @UploadedFiles()
+    files: {
       photo?: Express.Multer.File[];
       audios?: Express.Multer.File[];
-    }
+    },
   ) {
     let imageUrl: string[] | null = null;
     let audioUrl: string | null = null;
@@ -81,8 +85,8 @@ export class DiaryController {
     }
 
     if (files.audios) {
-      const result = await this.uploadService.uploadAudiosToS3(files.audios)
-      audioUrl = result.urls[0]
+      const result = await this.uploadService.uploadAudiosToS3(files.audios);
+      audioUrl = result.urls[0];
     }
 
     const memberId = user.id;
@@ -91,7 +95,7 @@ export class DiaryController {
       memberId,
       body,
       imageUrl,
-      audioUrl
+      audioUrl,
     );
     return new CreateDiaryRes(createId);
   }
@@ -206,6 +210,24 @@ export class DiaryController {
     return await this.diaryService.deleteAll(memberId);
   }
 
+  @Get('search')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({
+    summary: '일기 검색',
+    description: '키워드를 통해 가장 유사한 문장을 가진 일기들을 조회합니다',
+  })
+  @ApiQuery({
+    name: 'q',
+    required: true,
+    type: String,
+    description: '검색 키워드',
+  })
+  @ApiResponse({ type: SearchDiaryRes })
+  async diarySearch(@CurrentUser() user: any, @Query('q') q: string) {
+    const memberId = user.id;
+    return await this.diaryService.getSearchDiary(memberId, q);
+  }
+
   @ApiOperation({
     summary: '일기 전체 무한스크롤 조회',
     description: '무한스크롤을 통해 일기를 조회할 수 있습니다',
@@ -224,7 +246,7 @@ export class DiaryController {
     type: Number,
     example: 0,
   })
-  @ApiResponse({type: InfiniteScrollRes})
+  @ApiResponse({ type: InfiniteScrollRes })
   @Get('home')
   @UseGuards(AuthGuard('jwt'))
   async diaryInfinite(

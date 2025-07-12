@@ -166,7 +166,7 @@ export class TargetService {
 
   async getTargetByDiary(diary: Diary) {
     const diaryTargets = await this.diaryTargetRepository.find({
-      where: {diary: {id : diary.id}},
+      where: { diary: { id: diary.id } },
       relations: ['target']
     })
 
