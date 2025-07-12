@@ -541,14 +541,14 @@ export class EmotionService {
   //비동기,병렬 처리
   async getAllEmotionsGroupedByDateRange(
     userId: string,
-    from: LocalDate,
-    to: LocalDate,
+    startDate: LocalDate,
+    endDate: LocalDate,
   ) {
     const dates: LocalDate[] = [];
-    let currentDate = from;
+    let currentDate = startDate;
 
     //날짜 범위 내 모든 날짜 LocalDate로 저장
-    while (currentDate.isBefore(to) || currentDate.isEqual(to)) {
+    while (currentDate.isBefore(endDate) || currentDate.isEqual(endDate)) {
       dates.push(currentDate);
       currentDate = currentDate.plusDays(1);
     }

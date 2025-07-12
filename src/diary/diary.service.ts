@@ -21,6 +21,7 @@ import { MemberSummary } from '../entities/member-summary.entity';
 import { SentenceParserService } from '../sentence-parser/sentence-parser.service';
 import { TargetService } from '../target/target.service';
 import { Member } from '../entities/Member.entity';
+import { InfiniteScrollRes } from './dto/infinite-scroll.res';
 
 @Injectable()
 export class DiaryService {
@@ -337,50 +338,40 @@ export class DiaryService {
   async getDiariesInfinite(
     memberId: string,
     limit: number,
-    cursor?: { id: number },
-  ): Promise<{
-    items: DiaryHomeListRes;
-    hasMore: boolean;
-    nextCursor: { writtenDate: LocalDate; id: number } | null;
-  }> {
-    // 요청마다 limit+1 개 가져와서 hasMore 판별
-    const take = limit + 1;
+    cursor?: number,
+  ) {
+    const skip = cursor ? cursor * limit : 0;
+    const take = limit + 1; // Check for more items
 
-    // QueryBuilder 셋업
     const qb = this.diaryRepository
       .createQueryBuilder('d')
       .where('d.author_id = :memberId', { memberId })
       .orderBy('d.written_date', 'DESC')
       .addOrderBy('d.id', 'DESC')
+      .skip(skip)
       .take(take);
-
-    // cursor가 있으면 이후(더 아래) 데이터만
-    if (cursor) {
-      qb.andWhere(`(d.id < :id)`, { id: cursor.id });
-    }
 
     const rows = await qb.getMany();
 
-    // hasMore, nextCursor 계산
     const hasMore = rows.length === take;
     const diaries = hasMore ? rows.slice(0, -1) : rows;
 
-    const nextCursor: { writtenDate: LocalDate; id: number } | null = hasMore
-      ? {
-          writtenDate: diaries[diaries.length - 1].written_date,
-          id: diaries[diaries.length - 1].id,
-        }
-      : null;
+    const nextCursor: number | null = hasMore ? (cursor || 0) + 1 : null;
 
     const diaryRes = await Promise.all(
       diaries.map((diary) => this.createDiaryHomeRes(diary)),
     );
     const items = new DiaryHomeListRes();
     items.diaries = diaryRes;
-    items.continuousWritingDate = await this.getContinuousWritingDate(memberId)
-    items.totalDiaryCount = await this.getWritingDiaryCount(memberId)
+    items.continuousWritingDate = await this.getContinuousWritingDate(memberId);
+    items.totalDiaryCount = await this.getWritingDiaryCount(memberId);
+    items.emotionCountByMonth = await this.getEmotionsCountByMonth(memberId);
 
-    return { items, hasMore, nextCursor };
+    return new InfiniteScrollRes(
+      items,
+      hasMore,
+      nextCursor
+    );
   }
 
   /**
@@ -414,28 +405,28 @@ export class DiaryService {
   /**
    * 어제까지 연속적으로 일기를 써온 날의 수를 집계하여 반환합니다
    */
-  private async getContinuousWritingDate(memberId:string) {
+  private async getContinuousWritingDate(memberId: string) {
     const today = LocalDate.now();
     let count = 0;
     let findDate = today.minusDays(1);
     let exists = await this.diaryRepository.findOne({
-      where : {
-        author : {id : memberId},
-        written_date : findDate
+      where: {
+        author: { id: memberId },
+        written_date: findDate,
       },
-      select: ['id']
-    })
+      select: ['id'],
+    });
 
     while (exists) {
-      count++
+      count++;
       findDate = findDate.minusDays(1);
       exists = await this.diaryRepository.findOne({
-        where : {
-          author : {id : memberId},
-          written_date : findDate
+        where: {
+          author: { id: memberId },
+          written_date: findDate,
         },
-        select: ['id']
-      })
+        select: ['id'],
+      });
     }
 
     return count;
@@ -444,14 +435,33 @@ export class DiaryService {
   /**
    * 멤버가 이때까지 써온 일기의 갯수를 집계하여 반환합니다
    */
-  private async getWritingDiaryCount(memberId:string) {
+  private async getWritingDiaryCount(memberId: string) {
     const ids = await this.diaryRepository.find({
       where: {
-        author: {id: memberId}
+        author: { id: memberId },
       },
-      select: ['id']
-    })
+      select: ['id'],
+    });
 
     return ids.length;
+  }
+
+  /**
+   * 이 달에 받은 감정들의 갯수를 집계하여 반환합니다
+   */
+  private async getEmotionsCountByMonth(memberId: string) {
+    const today = LocalDate.now();
+    const startDate = today.withDayOfMonth(1);
+    const result = await this.emotionService.getAllEmotionsGroupedByDateRange(memberId, startDate, today);
+
+    const allEmotions: string[] = [];
+    result.forEach(dayData => {
+      dayData.emotions.forEach(emotion => {
+        allEmotions.push(emotion.emotion);
+      });
+    });
+
+    const uniqueEmotions = new Set(allEmotions);
+    return uniqueEmotions.size;
   }
 }
