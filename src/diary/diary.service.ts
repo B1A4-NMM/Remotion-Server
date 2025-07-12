@@ -64,7 +64,7 @@ export class DiaryService {
   }
 
   /**
-   * 일기를 삭제합니다. 일기의 주인이 아닐 경우 에러가 발생합니다 
+   * 일기를 삭제합니다. 일기의 주인이 아닐 경우 에러가 발생합니다
    */
   async deleteDiary(memberId: string, id: number) {
     const diary = await this.diaryRepository.findOneOrFail({
@@ -91,16 +91,11 @@ export class DiaryService {
     audioUrl?: string | null,
   ) {
     this.logger.log('다이어리 생성');
-    const result = await this.analysisDiaryService.analysisAndSaveDiary(
-      memberId,
-      dto,
-      imageUrl,
-      audioUrl,
-    );
-    await this.analysisDiaryService.analysisAndSaveDiaryRoutine(
-      memberId,
-      dto.content,
-    );
+
+    const [result, routine] = await Promise.all([
+      this.analysisDiaryService.analysisAndSaveDiary(memberId, dto, imageUrl, audioUrl),
+      this.analysisDiaryService.analysisAndSaveDiaryRoutine(memberId, dto.content),
+    ]);
 
     this.logger.log(
       `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,

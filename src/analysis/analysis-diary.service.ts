@@ -123,10 +123,10 @@ export class AnalysisDiaryService {
     const response = await this.promptService.serializeRoutine(content);
 
     if (response.anger != 'None') {
-      await this.saveRoutine(member, response.anger, RoutineEnum.ANGER);
+      await this.saveRoutine(member, response.anger, RoutineEnum.STRESS);
     }
     if (response.nervous != 'None') {
-      await this.saveRoutine(member, response.nervous, RoutineEnum.NERVOUS);
+      await this.saveRoutine(member, response.nervous, RoutineEnum.ANXIETY);
     }
     if (response.depression != 'None') {
       await this.saveRoutine(member, response.depression, RoutineEnum.DEPRESSION);

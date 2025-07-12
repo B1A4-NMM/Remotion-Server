@@ -1,5 +1,5 @@
 export enum RoutineEnum {
-  ANGER = 'anger',
+  STRESS = 'stress',
   DEPRESSION = 'depression',
-  NERVOUS = 'nervous',
+  ANXIETY = 'anxiety',
 }
