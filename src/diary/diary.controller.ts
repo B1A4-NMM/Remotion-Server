@@ -28,7 +28,7 @@ import { CurrentUser } from '../auth/user.decorator';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { DiaryHomeListRes } from './dto/diary-home-list.res';
 import { DiaryHomeRes } from './dto/diary-home.res';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { S3Service } from '../upload/s3.service';
 import { CreateDiaryRes } from './dto/create-diary.res';
 import { ParseLocalDatePipe } from '../pipe/parse-local-date.pipe';
@@ -62,22 +62,26 @@ export class DiaryController {
     type: CreateDiaryWithMediaDto,
   })
   @UseGuards(AuthGuard('jwt'))
-  @UseInterceptors(FileInterceptor('photo'))
-  @UseInterceptors(FilesInterceptor('audios'))
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'photo', maxCount: 10 },
+    { name: 'audios' },
+  ]))
   async create(
     @CurrentUser() user: any,
     @Body() body: CreateDiaryDto,
-    @UploadedFile() photos?: Array<Express.Multer.File>,
-    @UploadedFiles() audios?: Array<Express.Multer.File>,
+    @UploadedFiles() files: {
+      photo?: Express.Multer.File[];
+      audios?: Express.Multer.File[];
+    }
   ) {
     let imageUrl: string[] | null = null;
     let audioUrl: string | null = null;
-    if (photos) {
-      imageUrl = await this.s3Service.uploadMultipleFiles(photos);
+    if (files.photo) {
+      imageUrl = await this.s3Service.uploadMultipleFiles(files.photo);
     }
 
-    if (audios) {
-      const result = await this.uploadService.uploadAudiosToS3(audios)
+    if (files.audios) {
+      const result = await this.uploadService.uploadAudiosToS3(files.audios)
       audioUrl = result.urls[0]
     }
 

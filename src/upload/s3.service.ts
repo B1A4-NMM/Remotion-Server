@@ -30,7 +30,7 @@ export class S3Service {
     return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${key}`;
   }
 
-  async uploadMultipleFiles(files: Array<Express.Multer.File>): Promise<string[]> {
+  async uploadMultipleFiles(files: Express.Multer.File[]): Promise<string[]> {
     const uploadPromises = files.map(file => this.uploadFile(file));
     return Promise.all(uploadPromises);
   }
