@@ -40,6 +40,9 @@ export class DiaryService {
     private readonly targetService: TargetService,
   ) {}
 
+  /**
+   * 날짜와 기간을 받아 해당 날짜부터 그 이전의 기간까지의 멤버 요약을 가져옵니다 
+   */
   async findMemberSummaryByDateAndPeriod(
     memberId: string,
     diaryId: number,
@@ -60,6 +63,9 @@ export class DiaryService {
     return this.memberService.createMemberSummaryRes(summary, period);
   }
 
+  /**
+   * 일기를 삭제합니다. 일기의 주인이 아닐 경우 에러가 발생합니다 
+   */
   async deleteDiary(memberId: string, id: number) {
     const diary = await this.diaryRepository.findOneOrFail({
       where: { id: id },
