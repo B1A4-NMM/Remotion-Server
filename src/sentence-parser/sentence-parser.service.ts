@@ -7,6 +7,7 @@ import { EmbeddingService } from '../vector/embedding.service';
 import { Member } from '../entities/Member.entity';
 import { LocalDate } from 'js-joda';
 import { v4 as uuidv4 } from 'uuid';
+import { SEARCH_TOP_K } from '../constants/search.contants';
 
 @Injectable()
 export class SentenceParserService {
@@ -51,7 +52,7 @@ export class SentenceParserService {
   }
 
   /**
-   * 멤버 아이디를 받아 유사한 문장을 조회합니다
+   * 멤버 아이디와 문장을 받아 유사한 문장을 조회합니다, SEARCH_TOP_K개의 문장을 반환합니다
    */
   async searchSentenceByMember(query: string, memberId: string) {
     const vector = await this.embedService.embed_query(query);
@@ -105,7 +106,7 @@ export class SentenceParserService {
       };
     });
 
-    return final.slice(0, 5); // Top-K 개수 제한
+    return final.slice(0, SEARCH_TOP_K); // Top-K 개수 제한
   }
 
   async deleteAllByDiaryId(diaryId: number) {
