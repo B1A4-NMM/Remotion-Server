@@ -91,6 +91,10 @@ export class DiaryService {
       imageUrl,
       audioUrl,
     );
+    await this.analysisDiaryService.analysisAndSaveDiaryRoutine(
+      memberId,
+      dto.content,
+    );
 
     this.logger.log(
       `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
@@ -336,11 +340,7 @@ export class DiaryService {
    * 커서를 통해 일기를 가져옴
    * 연관된 감정이나 사건, 대상은 가져오지 않음
    */
-  async getDiariesInfinite(
-    memberId: string,
-    limit: number,
-    cursor?: number,
-  ) {
+  async getDiariesInfinite(memberId: string, limit: number, cursor?: number) {
     const skip = cursor ? cursor * limit : 0;
     const take = limit + 1; // Check for more items
 
@@ -368,38 +368,37 @@ export class DiaryService {
     items.totalDiaryCount = await this.getWritingDiaryCount(memberId);
     items.emotionCountByMonth = await this.getEmotionsCountByMonth(memberId);
 
-    return new InfiniteScrollRes(
-      items,
-      hasMore,
-      nextCursor
-    );
+    return new InfiniteScrollRes(items, hasMore, nextCursor);
   }
 
   /**
    * 키워드를 통해 가장 유사한 문장을 가진 일기들을 반환합니다
    */
   async getSearchDiary(memberId: string, keyword: string) {
-    const result = await this.sentenceParserService.searchSentenceByMember(keyword, memberId);
+    const result = await this.sentenceParserService.searchSentenceByMember(
+      keyword,
+      memberId,
+    );
     const length = result.length;
     let res = new SearchDiaryRes();
-    res.totalCount = length
+    res.totalCount = length;
 
     for (const vector of result) {
       const diaryId = vector.payload.diary_id;
       const diary = await this.diaryRepository.findOne({
         where: {
-          id : diaryId
-        }
-      })
+          id: diaryId,
+        },
+      });
       if (!diary) {
-        this.logger.log("getSearchDiary : diary not found");
+        this.logger.log('getSearchDiary : diary not found');
         throw new NotFoundException('일기를 찾을 수 없습니다');
       }
-      const dto = await this.createDiaryHomeRes(diary)
+      const dto = await this.createDiaryHomeRes(diary);
       res.diaries.push(dto);
     }
 
-    return res
+    return res;
   }
 
   /**
@@ -480,11 +479,15 @@ export class DiaryService {
   private async getEmotionsCountByMonth(memberId: string) {
     const today = LocalDate.now();
     const startDate = today.withDayOfMonth(1);
-    const result = await this.emotionService.getAllEmotionsGroupedByDateRange(memberId, startDate, today);
+    const result = await this.emotionService.getAllEmotionsGroupedByDateRange(
+      memberId,
+      startDate,
+      today,
+    );
 
     const allEmotions: string[] = [];
-    result.forEach(dayData => {
-      dayData.emotions.forEach(emotion => {
+    result.forEach((dayData) => {
+      dayData.emotions.forEach((emotion) => {
         allEmotions.push(emotion.emotion);
       });
     });

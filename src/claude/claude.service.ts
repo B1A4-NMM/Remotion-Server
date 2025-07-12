@@ -5,7 +5,8 @@ import {
 } from '@aws-sdk/client-bedrock-runtime';
 import { ConfigService } from '@nestjs/config';
 import { DiaryAnalysis } from '../util/json.parser';
-import { PROMPT_ANALYZE, PROMPT_VALIDATE } from '../constants/prompt.constants';
+import { PROMPT_ANALYZE, PROMPT_ROUTINE, PROMPT_VALIDATE } from '../constants/prompt.constants';
+import { EmotionLevels } from '../util/routine.parser';
 
 @Injectable()
 export class ClaudeService {
@@ -70,6 +71,14 @@ export class ClaudeService {
         `;
   }
 
+  private ActionAnalysis(prompt: string): string {
+    return `
+  ${PROMPT_ROUTINE}
+
+  일기: ${prompt}
+`;
+  }
+
   async querySummary(prompt: string): Promise<string> {
     const processedPrompt = this.summaryPrompt(prompt);
 
@@ -130,13 +139,13 @@ export class ClaudeService {
         accept: 'application/json',
         body: JSON.stringify({
           messages: [
-            { role: 'user', content: [{ text: processedPrompt }] }
+            { role: 'user', content: [{ text: processedPrompt }] },
           ],
           inferenceConfig: {
             maxTokens: 4000,
             temperature: 0.05,
-            topP: 0.9
-          }
+            topP: 0.9,
+          },
         }),
       });
 
@@ -152,20 +161,20 @@ export class ClaudeService {
       }
 
 
-      const checkPrompt = this.resultAnalysis(responseText)
+      const checkPrompt = this.resultAnalysis(responseText);
       const checkCommand = new InvokeModelCommand({
         modelId: 'apac.amazon.nova-pro-v1:0',
         contentType: 'application/json',
         accept: 'application/json',
         body: JSON.stringify({
           messages: [
-            { role: 'user', content: [{ text: checkPrompt }] }
+            { role: 'user', content: [{ text: checkPrompt }] },
           ],
           inferenceConfig: {
             maxTokens: 4000,
             temperature: 0.05,
-            topP: 0.9
-          }
+            topP: 0.9,
+          },
         }),
       });
 
@@ -181,7 +190,7 @@ export class ClaudeService {
       }
 
 
-      function cleanJsonResponse(text){
+      function cleanJsonResponse(text) {
         // `````` 제거
         let cleaned = text.replace(/``````\s*$/g, '');
 
@@ -204,53 +213,53 @@ export class ClaudeService {
       finalResult = cleanJsonResponse(finalResult);
 
       const emotion_weights = {
-        "행복": 1.0,
-        "기쁨": 1.0,
-        "신남": 1.0,
-        "설렘": 0.95,
-        "유대": 0.95,
-        "신뢰": 0.95,
-        "친밀": 0.9,
-        "그리움":0.9,
-        "자신감": 0.9,
-        "서운": 0.8,
-        "평온": 0.8,
-        "안정": 0.8,
-        "편안": 0.75,
-        "소외": 0.65,
-        "불안": 0.65,
-        "실망": 0.65,
-        "기대": 0.6,
-        "속상": 0.6,
-        "상처": 0.5,
-        "감사": 0.5,
-        "무난": 0.5,
-        "차분": 0.5,
-        "긴장": 0.45,
-        "화남": 0.4,
-        "짜증": 0.4,
-        "무기력": 0.35,
-        "지침": 0.3,
-        "지루": 0.3,
-        "억울": 0.3,
-        "외로움": 0.25,
-        "우울": 0.25,
-        "공허": 0.2,
-        "초조": 0.2,
-        "부담": 0.15,
-        "어색": 0.1,
-        "불편": 0.05,
-        "단절": 0.05
+        '행복': 1.0,
+        '기쁨': 1.0,
+        '신남': 1.0,
+        '설렘': 0.95,
+        '유대': 0.95,
+        '신뢰': 0.95,
+        '친밀': 0.9,
+        '그리움': 0.9,
+        '자신감': 0.9,
+        '서운': 0.8,
+        '평온': 0.8,
+        '안정': 0.8,
+        '편안': 0.75,
+        '소외': 0.65,
+        '불안': 0.65,
+        '실망': 0.65,
+        '기대': 0.6,
+        '속상': 0.6,
+        '상처': 0.5,
+        '감사': 0.5,
+        '무난': 0.5,
+        '차분': 0.5,
+        '긴장': 0.45,
+        '화남': 0.4,
+        '짜증': 0.4,
+        '무기력': 0.35,
+        '지침': 0.3,
+        '지루': 0.3,
+        '억울': 0.3,
+        '외로움': 0.25,
+        '우울': 0.25,
+        '공허': 0.2,
+        '초조': 0.2,
+        '부담': 0.15,
+        '어색': 0.1,
+        '불편': 0.05,
+        '단절': 0.05,
       };
 
       // 시간 간격을 숫자로 변환
       const time_mapping = {
-        "all": 24,
-        "most": 12,
-        "some": 6,
-        "little": 3,
-        "moment": 1,
-        "None": 0
+        'all': 24,
+        'most': 12,
+        'some': 6,
+        'little': 3,
+        'moment': 1,
+        'None': 0,
       };
 
       function getEmotionWeight(emotion) {
@@ -324,4 +333,57 @@ export class ClaudeService {
       throw new Error(`Pattern analysis failed: ${error.message}`);
     }
   }
+
+  // 루틴 추출 메서드
+  async serializeRoutine(prompt: string): Promise<EmotionLevels> {
+    try {
+      const processedPrompt = this.ActionAnalysis(prompt);
+
+      const command = new InvokeModelCommand({
+        modelId: 'apac.amazon.nova-pro-v1:0',
+        contentType: 'application/json',
+        accept: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            { role: 'user', content: [{ text: processedPrompt }] },
+          ],
+          inferenceConfig: {
+            maxTokens: 4000,
+            temperature: 0.8,
+            topP: 0.7,
+          },
+        }),
+      });
+
+      const response = await this.client.send(command);
+      const body = await response.body.transformToString();
+      const parsed = JSON.parse(body);
+
+      let responseText = parsed?.output?.message?.content?.[0]?.text || '';
+
+      if (!responseText) {
+        throw new Error('No response text received');
+      }
+
+      let finalResult: any;
+      try {
+        const cleaned = responseText
+          .replace(/^```json\s*/, '')
+          .replace(/```$/, '')
+          .trim();
+
+        finalResult = JSON.parse(cleaned);
+      } catch (e) {
+        console.warn('Failed to parse cleaned responseText as JSON:', responseText);
+        finalResult = { rawText: responseText };
+      }
+
+      return finalResult;
+    }catch (error) {
+      console.error('Error in queryDiaryPatterns:', error);
+      throw new Error(`Pattern analysis failed: ${error.message}`);
+    }
+
+  }
+
 }

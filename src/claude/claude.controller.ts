@@ -39,4 +39,14 @@ export class ClaudeController {
     }
   }
 
+  @Post('routine')
+  async askRoutine(@Body('prompt') prompt: string) {
+    try {
+      const response = await this.claudeService.serializeRoutine(prompt);
+      return { response };
+    } catch (error) {
+      throw new Error(`Routine analysis failed: ${error.message}`);
+    }
+  }
+
 }

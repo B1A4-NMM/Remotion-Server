@@ -18,6 +18,7 @@ import { DiaryTodo } from './src/entities/diary-todo.entity';
 import { ActivityCluster } from './src/entities/activity-cluster.entity';
 import { ActivityEmotion } from './src/entities/activity-emotion.entity';
 import { YoutubeApi } from './src/entities/YoutubeApi.entity';
+import { Routine } from './src/entities/rotine.entity';
 
 //__dirname + '/**/*.entity{.ts,.js}'
 
@@ -48,6 +49,7 @@ const config: TypeOrmModuleOptions = {
     ActivityCluster,
     ActivityEmotion,
     YoutubeApi,
+    Routine
   ],
   synchronize: true, // 한번 true한 뒤로는 무조건 false
   autoLoadEntities: true,
