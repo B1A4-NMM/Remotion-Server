@@ -207,3 +207,7 @@ Choose ONE per activity from 24 enum, else "None".
 
   • name_intimacy: 애칭1.0/친근0.9/이름0.5/성+직함0.4/거리0.2.
 `
+
+export const PROMPT_ROUTINE = `
+
+`

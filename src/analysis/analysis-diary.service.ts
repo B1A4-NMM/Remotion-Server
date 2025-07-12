@@ -46,10 +46,11 @@ export class AnalysisDiaryService {
     private readonly sentenceParserService: SentenceParserService,
   ) {}
 
-  async analysisDiary(
+  async analysisAndSaveDiary(
     memberId: string,
     dto: CreateDiaryDto,
-    imageUrl?: string | null,
+    imageUrl?: string[] | null,
+    audioUrl?: string | null,
   ) {
     const result = await this.promptService.serializeAnalysis(dto.content);
 
@@ -67,9 +68,8 @@ export class AnalysisDiaryService {
     if (dto.weather !== undefined) diary.weather = dto.weather;
     if (dto.latitude !== undefined) diary.latitude = dto.latitude;
     if (dto.longitude !== undefined) diary.longitude = dto.longitude;
-    if (imageUrl) {
-      diary.photo_path = imageUrl;
-    }
+    if (imageUrl) diary.photo_path = imageUrl;
+    if (audioUrl) diary.audio_path = audioUrl;
 
     const saveDiary = await this.diaryRepository.save(diary);
     const allPeopleInDiary = activity_analysis.flatMap((a) => a.peoples);
@@ -102,9 +102,7 @@ export class AnalysisDiaryService {
       saveDiary,
       author,
     );
-    await this.sentenceParserService.createByDiary(
-      saveDiary
-    )
+    await this.sentenceParserService.createByDiary(saveDiary);
 
     return saveDiary;
   }

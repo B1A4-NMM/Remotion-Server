@@ -11,6 +11,7 @@ import { SentenceParserService } from './sentence-parser.service';
 import { IsString } from 'class-validator';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
+import { ApiExcludeController } from '@nestjs/swagger';
 
 class ParsingDTO {
   @IsString()
@@ -18,6 +19,7 @@ class ParsingDTO {
 }
 
 @Controller('parser')
+@ApiExcludeController()
 export class SentenceParserController {
   constructor(private readonly sentenceParserService: SentenceParserService) {}
 

@@ -50,8 +50,14 @@ export class Diary {
     })
     weather! : Weather;
 
+    @Column({type: 'simple-json' ,nullable : true })
+    photo_path! : string[];
+
     @Column({ nullable : true })
-    photo_path! : string;
+    audio_path! : string;
+
+    @Column({default: false})
+    is_bookmarked! : boolean;
 
     // 추후 extra로 사용할듯
     @ManyToOne(() => ShareGroup,(group) => group.diaries, { nullable : true })

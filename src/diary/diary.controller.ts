@@ -4,17 +4,17 @@ import {
   DefaultValuePipe,
   Delete,
   Get,
-  Injectable,
   Param,
   ParseIntPipe,
   Post,
   Query,
-  UploadedFile,
+  UploadedFile, UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import {
-  ApiBody,
+  ApiBearerAuth,
+  ApiBody, ApiConsumes, ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -26,17 +26,17 @@ import { DiaryService } from './diary.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
 import { CreateDiaryDto } from './dto/create-diary.dto';
-import { DiaryListRes } from './dto/diary-list.res';
+import { DiaryHomeListRes } from './dto/diary-home-list.res';
 import { DiaryHomeRes } from './dto/diary-home.res';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { S3Service } from '../s3/s3.service';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { S3Service } from '../upload/s3.service';
 import { CreateDiaryRes } from './dto/create-diary.res';
-import { CommonUtilService } from '../util/common-util.service';
-import * as util from 'node:util';
 import { ParseLocalDatePipe } from '../pipe/parse-local-date.pipe';
 import { LocalDate } from 'js-joda';
 import { DiaryAnalysisSchema } from '../constants/swagger-scheme.constant';
 import { MemberSummaryRes } from '../member/dto/member-summary.res';
+import { UploadService } from '../upload/upload.service';
+import { CreateDiaryWithMediaDto } from './dto/create-diary-swagger.dto';
 
 @Controller('diary')
 @ApiTags('일기')
@@ -44,37 +44,49 @@ export class DiaryController {
   constructor(
     private readonly diaryService: DiaryService,
     private readonly s3Service: S3Service,
-    private readonly util: CommonUtilService,
+    private readonly uploadService: UploadService
   ) {}
 
   @Post()
-  @ApiOperation({ summary: '일기 생성 후 분석 내용 받기' })
+  @ApiOperation({ summary: '일기 생성' })
   @ApiResponse({
     status: 201,
     description: '다이어리 생성 완료',
     type: CreateDiaryRes,
   })
+  @ApiBearerAuth('access-token')
+  @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiBody({
-    type: CreateDiaryDto,
+    type: CreateDiaryWithMediaDto,
   })
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('photo'))
+  @UseInterceptors(FilesInterceptor('audios'))
   async create(
+    @CurrentUser() user: any,
     @Body() body: CreateDiaryDto,
-    @CurrentUser() user,
-    @UploadedFile() photo?: Express.Multer.File,
+    @UploadedFile() photos?: Array<Express.Multer.File>,
+    @UploadedFiles() audios?: Array<Express.Multer.File>,
   ) {
-    let imageUrl: string | null = null;
-    if (photo) {
-      imageUrl = await this.s3Service.uploadFile(photo);
+    let imageUrl: string[] | null = null;
+    let audioUrl: string | null = null;
+    if (photos) {
+      imageUrl = await this.s3Service.uploadMultipleFiles(photos);
     }
+
+    if (audios) {
+      const result = await this.uploadService.uploadAudiosToS3(audios)
+      audioUrl = result.urls[0]
+    }
+
     const memberId = user.id;
 
     const createId = await this.diaryService.createDiary(
       memberId,
       body,
       imageUrl,
+      audioUrl
     );
     return new CreateDiaryRes(createId);
   }
@@ -114,7 +126,7 @@ export class DiaryController {
   }
 
   @ApiOperation({ summary: '자신이 작성한 모든 일기 받기' })
-  @ApiBody({ type: DiaryListRes })
+  @ApiBody({ type: DiaryHomeListRes })
   @Get()
   @UseGuards(AuthGuard('jwt'))
   async allDiaries(@CurrentUser() user) {
@@ -142,7 +154,7 @@ export class DiaryController {
   }
 
   @ApiOperation({
-    summary: '홈 화면',
+    summary: '오늘의 일기',
     description: '오늘 작성한 일기와 그에 나타난 감정들을 보여줍니다',
   })
   @ApiBody({ type: DiaryHomeRes })
@@ -202,7 +214,6 @@ export class DiaryController {
     summary: '일기 전체 조회',
     description: '무한스크롤을 통해 일기를 조회할 수 있습니다',
   })
-  @ApiBody({ type: DiaryListRes })
   @ApiQuery({
     name: 'limit',
     required: false,
@@ -217,7 +228,7 @@ export class DiaryController {
     type: Number,
     example: 0,
   })
-  @Get()
+  @Get('home')
   @UseGuards(AuthGuard('jwt'))
   async diaryInfinite(
     @CurrentUser() user,

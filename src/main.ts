@@ -41,6 +41,14 @@ async function bootstrap() {
     .setTitle('Remotion API')
     .setDescription('Remotion API 문서입니다')
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'access-token', // 이름은 @ApiBearerAuth()에서 사용됨
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

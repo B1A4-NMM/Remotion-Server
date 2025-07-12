@@ -5,6 +5,7 @@ import { YoutubeService } from '../youtube/youtube.service';
 import { EmotionType } from '../enums/emotion-type.enum';
 import { EMOTION_YOUTUBE_KEYWORDS } from '../constants/emotion-youtube.constant';
 import { Member } from '../entities/Member.entity';
+import { LocalDate } from 'js-joda';
 
 @Injectable()
 export class RecommendService {
@@ -20,16 +21,13 @@ export class RecommendService {
     const memberId = member.id;
 
     // 1. 기간 파싱 및 다이어리 조회
-    const { startDate, endDate } = this.parsePeriod(periodDays); // periodDays 전달
-    if (!startDate || !endDate) {
-      this.logger.warn(`Invalid periodDays: ${periodDays}`);
-      return null;
-    }
+    const startDate = LocalDate.now()
+    const endDate = startDate.minusDays(periodDays)
 
     const emotionsDataByDate = await this.emotionService.getAllEmotionsGroupedByDateRange(
       memberId,
-      startDate.toISOString().split('T')[0],
-      endDate.toISOString().split('T')[0],
+      startDate,
+      endDate,
     );
 
     if (!emotionsDataByDate || emotionsDataByDate.length === 0) {
@@ -79,19 +77,4 @@ export class RecommendService {
     return { videoId, mostFrequentEmotion };
   }
 
-  private parsePeriod(periodDays: number): { startDate: Date | null; endDate: Date | null } {
-    const now = new Date();
-    const endDate = new Date(now); // 현재 시간까지
-
-    // 오늘로부터 periodDays일 전의 날짜 계산
-    const startDate = new Date(now);
-    startDate.setDate(now.getDate() - periodDays);
-
-    // startDate의 시간을 00:00:00으로 설정하여 날짜 시작부터 포함
-    startDate.setHours(0, 0, 0, 0);
-    // endDate의 시간을 23:59:59으로 설정하여 날짜 끝까지 포함
-    endDate.setHours(23, 59, 59, 999);
-
-    return { startDate, endDate };
-  }
 }

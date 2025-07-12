@@ -2,8 +2,10 @@ import { Controller, Delete, Get, Param, UseGuards } from '@nestjs/common';
 import { ActivityClusterService } from './activity-cluster.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
+import { ApiExcludeController } from '@nestjs/swagger';
 
 @Controller('activity-cluster')
+@ApiExcludeController()
 export class ActivityClusterController {
 
   constructor(private readonly activityClusterService: ActivityClusterService) {
