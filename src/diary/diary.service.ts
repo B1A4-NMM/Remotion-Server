@@ -22,6 +22,7 @@ import { SentenceParserService } from '../sentence-parser/sentence-parser.servic
 import { TargetService } from '../target/target.service';
 import { Member } from '../entities/Member.entity';
 import { InfiniteScrollRes } from './dto/infinite-scroll.res';
+import { SearchDiaryRes } from './dto/search-diary.res';
 
 @Injectable()
 export class DiaryService {
@@ -372,6 +373,33 @@ export class DiaryService {
       hasMore,
       nextCursor
     );
+  }
+
+  /**
+   * 키워드를 통해 가장 유사한 문장을 가진 일기들을 반환합니다
+   */
+  async getSearchDiary(memberId: string, keyword: string) {
+    const result = await this.sentenceParserService.searchSentenceByMember(keyword, memberId);
+    const length = result.length;
+    let res = new SearchDiaryRes();
+    res.totalCount = length
+
+    for (const vector of result) {
+      const diaryId = vector.payload.diary_id;
+      const diary = await this.diaryRepository.findOne({
+        where: {
+          id : diaryId
+        }
+      })
+      if (!diary) {
+        this.logger.log("getSearchDiary : diary not found");
+        throw new NotFoundException('일기를 찾을 수 없습니다');
+      }
+      const dto = await this.createDiaryHomeRes(diary)
+      res.diaries.push(dto);
+    }
+
+    return res
   }
 
   /**

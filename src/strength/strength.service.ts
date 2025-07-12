@@ -32,10 +32,11 @@ export class StrengthService {
     async getStrengthsSummaryByMember(memberId : string):Promise<GetStrengthsResponseDto>{
         
         //DB조회는 비동기 처리(not 병렬)
-        const activities =await this.activityRepository.find({
-            where: {diary: { author: { id: memberId }}},
-            relations : ['diary'],
-        });
+        const activities = await this.activityRepository.createQueryBuilder('activity')
+            .innerJoin('activity.diary', 'diary')
+            .innerJoin('diary.author', 'author')
+            .where('author.id = :memberId', { memberId })
+            .getMany();
 
         const typeCount: Record<string,number> = {};
         const detailCount: Record<string, Record<string,number>> = {};

@@ -89,16 +89,21 @@ export class SentenceParserService {
     const rerankUrl = this.configService.get('RERANK_MODEL_URL');
     const rerankRes = await axios.post(rerankUrl, {
       query,
-      candidates: candidates.map((c) => c.text),
+      candidates: candidates.map((c) => ({
+        id: c.id,
+        text: c.text,
+      })),
     });
 
-    const reranked: { text: string; score: number }[] = rerankRes.data;
 
-    // text 기반으로 payload 다시 붙이기
+    const reranked: { id:string ,text: string; score: number }[] = rerankRes.data;
+
+    const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+
     const final = reranked.map((item) => {
-      const original = candidates.find((c) => c.text === item.text);
+      const original = candidateMap.get(item.id);
       return {
-        id: original?.id ?? null,
+        id: item.id,
         text: item.text,
         rerankScore: item.score,
         vectorScore: original?.vectorScore ?? null,
@@ -106,7 +111,11 @@ export class SentenceParserService {
       };
     });
 
-    return final.slice(0, SEARCH_TOP_K); // Top-K 개수 제한
+    // 🔽 필터 추가: rerankScore가 0.7 이상인 것만
+    const filtered = final.filter((item) => item.rerankScore >= 0.5);
+
+// 🔽 Top-K 제한
+    return filtered.slice(0, SEARCH_TOP_K); // Top-K 개수 제한
   }
 
   async deleteAllByDiaryId(diaryId: number) {
