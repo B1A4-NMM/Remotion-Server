@@ -16,7 +16,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiTags,
-  ApiProperty,
+  ApiProperty, ApiBearerAuth, ApiQuery,
 } from '@nestjs/swagger';
 
 import { CreateTodoDto } from './dto/create-todo.dto';
@@ -27,6 +27,7 @@ import { TodoAnalysisDto } from '../diary/dto/diary-analysis.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { GetTodosResponseDto } from './dto/get-todos-response.dto';
 import { LocalDate } from 'js-joda';
+import { ParseLocalDatePipe } from '../pipe/parse-local-date.pipe';
 
 /*
 ============================================
@@ -41,6 +42,7 @@ app.get으로 한 것과 동일
 
 @Controller('todos')
 @UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth('access-token')
 @ApiTags('할 일 추가')
 export class TodoController {
   private readonly logger = new Logger(TodoController.name);
@@ -53,6 +55,7 @@ export class TodoController {
     status: 200,
     description: 'Todo 저장 완료 ! ',
   })
+  @ApiBearerAuth('access-token')
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiBody({ type: CreateTodoDto })
   async createTodo(@CurrentUser() user, @Body() dto: CreateTodoDto) {
@@ -73,19 +76,30 @@ export class TodoController {
     description:
       'User식별해서 전체 todo목록 및 캘린더 뷰를 위한 누적 감정 목록을 조회합니다.',
   })
-  // @ApiResponse({
-  //     status: 200,
-  //     description : "Todo 조회 완료"
-  // })
   @ApiResponse({
     status: 200,
     description: '할 일 조회 성공',
     type: GetTodosResponseDto,
   })
+  @ApiBearerAuth('access-token')
   @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiQuery({
+    name: 'from',
+    type: String,
+    required: true,
+    description: '시작일자 (YYYY-MM-DD)',
+    example: '2025-01-01',
+  })
+  @ApiQuery({
+    name: 'to',
+    type: String,
+    required: true,
+    description: '종료일자 (YYYY-MM-DD)',
+    example: '2025-08-01',
+  })
   async getTodos(
-    @Query('from') from: LocalDate,
-    @Query('to') to: LocalDate,
+    @Query('from', ParseLocalDatePipe) from: LocalDate,
+    @Query('to', ParseLocalDatePipe) to: LocalDate,
     @CurrentUser() user,
   ) {
     //console.log("Todo 조회 성공")
@@ -99,6 +113,7 @@ export class TodoController {
     description: 'Todo 업데이트 성공 ',
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiBearerAuth('access-token')
   async updateTodo(
     @Param('id') id: number,
     @Body() updateDto: UpdateTodoDto,
@@ -114,6 +129,7 @@ export class TodoController {
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiOperation({ summary: '할 일 삭제' })
+  @ApiBearerAuth('access-token')
   async deleteTodo(@Param('id') id: number, @CurrentUser() user: any) {
     await this.todoService.deleteTodo(id, user.id);
 
