@@ -4,6 +4,13 @@ import { IsOptional } from 'class-validator';
 
 class TargetEmotionRes {
   @ApiProperty({
+    type: Number,
+    description: '대상 id',
+    example: 1,
+  })
+  id: number;
+
+  @ApiProperty({
     type: String,
     description: '관계 대상의 이름',
   })

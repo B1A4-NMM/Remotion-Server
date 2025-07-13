@@ -76,6 +76,17 @@ export class TargetService {
     }
   }
 
+  /**
+   * 해당 대상이 나타난 다이어리를 모두 반환합니다 
+   */
+  async getDiariesByTarget(target: Target) {
+    const diaries = await this.diaryTargetRepository.find({
+      where: { target: target },
+      relations: ['diary']
+    })
+    return diaries.map(diary => diary.diary)
+  }
+
   async createDiaryTarget(target: Target, diary: Diary) {
     let diaryTarget = await this.diaryTargetRepository.findOneBy({
       diary: diary,
