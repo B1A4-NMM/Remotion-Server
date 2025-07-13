@@ -17,12 +17,13 @@ import { DiarytodoModule } from '../diarytodo/diarytodo.module';
 import { UploadModule } from '../upload/upload.module';
 import { AchievementModule } from '../achievement-cluster/achievement.module';
 import { SentenceParserModule } from '../sentence-parser/sentence-parser.module';
+import { Routine } from '../entities/rotine.entity';
 
 @Module({
   imports: [
     ClaudeModule,
     Neo4jModule,
-    TypeOrmModule.forFeature([Diary, DiaryTodo, Member, Todo]),
+    TypeOrmModule.forFeature([Diary, DiaryTodo, Member, Todo, Routine]),
     MemberModule,
     ActivityModule,
     TargetModule,

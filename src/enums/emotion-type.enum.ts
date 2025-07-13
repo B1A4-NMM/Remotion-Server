@@ -112,7 +112,6 @@ export const EmotionGroupMap: Record<EmotionType, EmotionGroup | null> = {
   감사: EmotionGroup.유대,
 
   // 스트레스
-  긴장: EmotionGroup.스트레스,
   부담: EmotionGroup.스트레스,
   피로: EmotionGroup.스트레스,
   지침: EmotionGroup.스트레스,
@@ -134,6 +133,7 @@ export const EmotionGroupMap: Record<EmotionType, EmotionGroup | null> = {
   부끄러움: EmotionGroup.불안,
   수치: EmotionGroup.불안,
   창피: EmotionGroup.불안,
+  긴장: EmotionGroup.불안,
 
   // 우울
   우울: EmotionGroup.우울,

@@ -59,7 +59,10 @@ export class ActivityService {
     }
   }
 
-  private aggregateEmotions(activity: ActivityAnalysis, emotions: CombinedEmotion[]) {
+  private aggregateEmotions(
+    activity: ActivityAnalysis,
+    emotions: CombinedEmotion[],
+  ) {
     const self = this.utilService.toCombinedEmotionTyped(
       activity.self_emotions,
     );
@@ -150,4 +153,16 @@ export class ActivityService {
     const result = this.clusterService.getClusters(req);
     return result;
   }
+
+  /**
+   * 일기 하나를 인자로 받아 연관된 행동들을 string으로 반환합니다
+   */
+  async getActivityContentsByDiary(diary:Diary) {
+    const activities = await this.repo.find({
+      where: { diary: {id : diary.id} },
+      select: ['content']
+    })
+    return activities.map(activity => activity.content)
+  }
+
 }

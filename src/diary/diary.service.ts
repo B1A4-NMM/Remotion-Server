@@ -23,6 +23,7 @@ import { TargetService } from '../target/target.service';
 import { Member } from '../entities/Member.entity';
 import { InfiniteScrollRes } from './dto/infinite-scroll.res';
 import { SearchDiaryRes } from './dto/search-diary.res';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class DiaryService {
@@ -38,8 +39,12 @@ export class DiaryService {
     private readonly summaryRepo: Repository<MemberSummary>,
     private readonly sentenceParserService: SentenceParserService,
     private readonly targetService: TargetService,
+    private readonly activityService: ActivityService
   ) {}
 
+  /**
+   * 날짜와 기간을 받아 해당 날짜부터 그 이전의 기간까지의 멤버 요약을 가져옵니다 
+   */
   async findMemberSummaryByDateAndPeriod(
     memberId: string,
     diaryId: number,
@@ -60,6 +65,9 @@ export class DiaryService {
     return this.memberService.createMemberSummaryRes(summary, period);
   }
 
+  /**
+   * 일기를 삭제합니다. 일기의 주인이 아닐 경우 에러가 발생합니다
+   */
   async deleteDiary(memberId: string, id: number) {
     const diary = await this.diaryRepository.findOneOrFail({
       where: { id: id },
@@ -85,12 +93,11 @@ export class DiaryService {
     audioUrl?: string | null,
   ) {
     this.logger.log('다이어리 생성');
-    const result = await this.analysisDiaryService.analysisAndSaveDiary(
-      memberId,
-      dto,
-      imageUrl,
-      audioUrl,
-    );
+
+    const [result, routine] = await Promise.all([
+      this.analysisDiaryService.analysisAndSaveDiary(memberId, dto, imageUrl, audioUrl),
+      this.analysisDiaryService.analysisAndSaveDiaryRoutine(memberId, dto.content),
+    ]);
 
     this.logger.log(
       `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
@@ -334,13 +341,8 @@ export class DiaryService {
 
   /**
    * 커서를 통해 일기를 가져옴
-   * 연관된 감정이나 사건, 대상은 가져오지 않음
    */
-  async getDiariesInfinite(
-    memberId: string,
-    limit: number,
-    cursor?: number,
-  ) {
+  async getDiariesInfinite(memberId: string, limit: number, cursor?: number) {
     const skip = cursor ? cursor * limit : 0;
     const take = limit + 1; // Check for more items
 
@@ -368,38 +370,37 @@ export class DiaryService {
     items.totalDiaryCount = await this.getWritingDiaryCount(memberId);
     items.emotionCountByMonth = await this.getEmotionsCountByMonth(memberId);
 
-    return new InfiniteScrollRes(
-      items,
-      hasMore,
-      nextCursor
-    );
+    return new InfiniteScrollRes(items, hasMore, nextCursor);
   }
 
   /**
    * 키워드를 통해 가장 유사한 문장을 가진 일기들을 반환합니다
    */
   async getSearchDiary(memberId: string, keyword: string) {
-    const result = await this.sentenceParserService.searchSentenceByMember(keyword, memberId);
+    const result = await this.sentenceParserService.searchSentenceByMember(
+      keyword,
+      memberId,
+    );
     const length = result.length;
     let res = new SearchDiaryRes();
-    res.totalCount = length
+    res.totalCount = length;
 
     for (const vector of result) {
       const diaryId = vector.payload.diary_id;
       const diary = await this.diaryRepository.findOne({
         where: {
-          id : diaryId
-        }
-      })
+          id: diaryId,
+        },
+      });
       if (!diary) {
-        this.logger.log("getSearchDiary : diary not found");
+        this.logger.log('getSearchDiary : diary not found');
         throw new NotFoundException('일기를 찾을 수 없습니다');
       }
-      const dto = await this.createDiaryHomeRes(diary)
+      const dto = await this.createDiaryHomeRes(diary);
       res.diaries.push(dto);
     }
 
-    return res
+    return res;
   }
 
   /**
@@ -416,6 +417,7 @@ export class DiaryService {
     diaryRes.isBookmarked = diary.is_bookmarked;
     diaryRes.latitude = diary.latitude;
     diaryRes.longitude = diary.longitude;
+    diaryRes.activities = await this.activityService.getActivityContentsByDiary(diary)
 
     const emotions = await this.emotionService.findAllDiaryEmotions(diary);
     if (emotions.length > 0)
@@ -480,11 +482,15 @@ export class DiaryService {
   private async getEmotionsCountByMonth(memberId: string) {
     const today = LocalDate.now();
     const startDate = today.withDayOfMonth(1);
-    const result = await this.emotionService.getAllEmotionsGroupedByDateRange(memberId, startDate, today);
+    const result = await this.emotionService.getAllEmotionsGroupedByDateRange(
+      memberId,
+      startDate,
+      today,
+    );
 
     const allEmotions: string[] = [];
-    result.forEach(dayData => {
-      dayData.emotions.forEach(emotion => {
+    result.forEach((dayData) => {
+      dayData.emotions.forEach((emotion) => {
         allEmotions.push(emotion.emotion);
       });
     });
@@ -492,4 +498,6 @@ export class DiaryService {
     const uniqueEmotions = new Set(allEmotions);
     return uniqueEmotions.size;
   }
+
+
 }

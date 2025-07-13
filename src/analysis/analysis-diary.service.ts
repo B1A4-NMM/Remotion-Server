@@ -1,8 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ClaudeService } from '../claude/claude.service';
 import {
-  ActivityAnalysisDto,
-  DiaryAnalysisDto,
   EmotionAnalysisDto,
   PeopleAnalysisDto,
   TodoAnalysisDto,
@@ -26,11 +24,15 @@ import { DiarytodoService } from '../diarytodo/diarytodo.service';
 import { AchievementService } from '../achievement-cluster/achievement.service';
 import { CreateDiaryDto } from '../diary/dto/create-diary.dto';
 import { LocalDate } from 'js-joda';
-import { auth } from 'neo4j-driver';
 import { SentenceParserService } from '../sentence-parser/sentence-parser.service';
+import { Member } from '../entities/Member.entity';
+import { Routine } from 'src/entities/rotine.entity';
+import { RoutineEnum } from '../enums/routine.enum';
 
 @Injectable()
 export class AnalysisDiaryService {
+  private readonly logger = new Logger(AnalysisDiaryService.name);
+
   constructor(
     private readonly promptService: ClaudeService,
     private readonly util: CommonUtilService,
@@ -44,8 +46,13 @@ export class AnalysisDiaryService {
     private readonly diaryTodoService: DiarytodoService,
     private readonly achievementService: AchievementService,
     private readonly sentenceParserService: SentenceParserService,
+    @InjectRepository(Routine)
+    private readonly routineRepository: Repository<Routine>,
   ) {}
 
+  /**
+   * 일기를 분석하며 관련된 엔티티들을 저장합니다
+   */
   async analysisAndSaveDiary(
     memberId: string,
     dto: CreateDiaryDto,
@@ -105,6 +112,50 @@ export class AnalysisDiaryService {
     await this.sentenceParserService.createByDiary(saveDiary);
 
     return saveDiary;
+  }
+
+  /**
+   * 일기를 분석하며 기분 전환 루틴을 찾아 저장합니다
+   */
+  async analysisAndSaveDiaryRoutine(memberId: string, content: string) {
+    const member = await this.memberService.findOne(memberId);
+
+    const response = await this.promptService.serializeRoutine(content);
+
+    if (response.anger != 'None') {
+      await this.saveRoutine(member, response.anger, RoutineEnum.STRESS);
+    }
+    if (response.nervous != 'None') {
+      await this.saveRoutine(member, response.nervous, RoutineEnum.ANXIETY);
+    }
+    if (response.depression != 'None') {
+      await this.saveRoutine(member, response.depression, RoutineEnum.DEPRESSION);
+    }
+
+  }
+
+  /**
+   * 루틴을 저장합니다. 처음에는 트리거 체크가 켜져있어 폴더에 들어가지 않습니다
+   */
+  private async saveRoutine(
+    member: Member,
+    content: string,
+    routineType: RoutineEnum,
+  ) {
+    // 이미 있으면 다시 저장할 필요 없음
+    const find = await this.routineRepository.findOne({
+      where: { member: {id: member.id}, routineType: routineType },
+    })
+    if (find) return;
+
+    const entity = new Routine();
+    entity.member = member;
+    entity.routineType = routineType;
+    entity.content = content;
+    entity.isTrigger = true;
+    this.logger.log(`루틴 생성, 타입 : ${routineType}, 루틴 : ${content}`)
+
+    await this.routineRepository.save(entity);
   }
 
   private todoAnalysis(todos: string[]) {
