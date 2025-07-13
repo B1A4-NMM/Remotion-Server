@@ -43,6 +43,7 @@ import { SearchDiaryRes } from './dto/search-diary.res';
 @Controller('diary')
 @ApiBearerAuth('access-token')
 @ApiTags('일기')
+@UseGuards(AuthGuard('jwt'))
 export class DiaryController {
   constructor(
     private readonly diaryService: DiaryService,
@@ -62,7 +63,6 @@ export class DiaryController {
   @ApiBody({
     type: CreateDiaryWithMediaDto,
   })
-  @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'photo', maxCount: 10 },
@@ -101,7 +101,6 @@ export class DiaryController {
   }
 
   @Get('date/emotion/:id')
-  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: '특정 일기 기준으로 기간별 감정 변화 조회' })
   @ApiParam({
     name: 'id',
@@ -138,7 +137,6 @@ export class DiaryController {
   @ApiOperation({ summary: '자신이 작성한 모든 일기 받기, 무한스크롤 아님 !!' })
   @ApiBody({ type: DiaryHomeListRes })
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async allDiaries(@CurrentUser() user) {
     const memberId = user.id;
     return await this.diaryService.getDiaryList(memberId);
@@ -154,7 +152,6 @@ export class DiaryController {
   })
   @ApiResponse({ type: DiaryHomeRes })
   @Get('date')
-  @UseGuards(AuthGuard('jwt'))
   async getDiaryByDate(
     @CurrentUser() user: any,
     @Query('date', ParseLocalDatePipe) date: LocalDate,
@@ -169,7 +166,6 @@ export class DiaryController {
   })
   @ApiResponse({ type: DiaryHomeRes })
   @Get('/today')
-  @UseGuards(AuthGuard('jwt'))
   async getTodayDiary(@CurrentUser() user): Promise<DiaryHomeRes> {
     const memberId = user.id;
     return this.diaryService.getTodayDiriesRes(memberId);
@@ -182,7 +178,6 @@ export class DiaryController {
     schema: DiaryAnalysisSchema,
   })
   @Get('json/:id')
-  @UseGuards(AuthGuard('jwt'))
   async getDiaryToJson(@CurrentUser() user, @Param('id') id: string) {
     const memberId: string = user.id;
     return await this.diaryService.getDiaryJson(memberId, +id);
@@ -198,21 +193,18 @@ export class DiaryController {
   @ApiResponse({ status: 200, description: '일기 삭제 성공' })
   @ApiResponse({ status: 404, description: '해당 일기의 주인이 아닙니다' })
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
   async deleteDiary(@CurrentUser() user: any, @Param('id') id: string) {
     const memberId: string = user.id;
     return await this.diaryService.deleteDiary(memberId, +id);
   }
 
   @Delete('all')
-  @UseGuards(AuthGuard('jwt'))
   async deleteAll(@CurrentUser() user) {
     const memberId: string = user.id;
     return await this.diaryService.deleteAll(memberId);
   }
 
   @Get('search')
-  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({
     summary: '일기 검색',
     description: '키워드를 통해 가장 유사한 문장을 가진 일기들을 조회합니다',
@@ -249,7 +241,6 @@ export class DiaryController {
   })
   @ApiResponse({ type: InfiniteScrollRes })
   @Get('home')
-  @UseGuards(AuthGuard('jwt'))
   async diaryInfinite(
     @CurrentUser() user,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
@@ -263,12 +254,14 @@ export class DiaryController {
   @ApiOperation({ summary: '특정 일기 가공 데이터 조회' })
   @ApiResponse({ type: DiaryAnalysisDto })
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
   async getDiary(@CurrentUser() user, @Param('id') id: string) {
     const memberId: string = user.id;
     return await this.diaryService.getDiary(memberId, +id);
   }
 
   @Patch(':id')
-  async bookmarkDiary()
+  async bookmarkDiary(@CurrentUser() user:any, @Param('id') id: string) {
+    const memberId:string = user.id
+
+  }
 }
