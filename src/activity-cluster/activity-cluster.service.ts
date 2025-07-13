@@ -172,18 +172,24 @@ export class ActivityClusterService {
       this.logger.warn(
         'clusteringActivity 진입하였지만, 행동 클러스터를 찾지 못했습니다. 이는 벡터DB와 RDB간 정합성이 깨진 경우입니다. 추후 수정이 필요합니다',
       );
-      await this.deleteById(clusterId.toString())
+      await this.deleteById(id)
       return;
     }
 
     const activities = await this.activityRepo.find({
       where: { cluster: { id: id } },
     });
-    const avgVector = this.averageVectors(
-      activities.map((activity) => activity.vector),
-    );
+    try {
+      const avgVector = this.averageVectors(
+        activities.map((activity) => activity.vector),
+      );
 
-    await this.updateActivityClusterVector(id, avgVector);
+      await this.updateActivityClusterVector(id, avgVector);
+    } catch (e) {
+      this.logger.warn(`현재 벡터 재계산 로직에서 오류가 발생하고 있습니다. 로그를 출력합니다. 
+      행동 배열 길이 : ${activities.length}, 
+      클러스터 ID : ${id}`)
+    }
     clusterEntity.clusteredCount++;
     await this.activityClusterRepo.save(clusterEntity);
 
