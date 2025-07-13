@@ -167,12 +167,12 @@ export class DiaryController {
     summary: '오늘의 일기',
     description: '오늘 작성한 일기와 그에 나타난 감정들을 보여줍니다',
   })
-  @ApiBody({ type: DiaryHomeRes })
+  @ApiResponse({ type: DiaryHomeRes })
   @Get('/today')
   @UseGuards(AuthGuard('jwt'))
   async getTodayDiary(@CurrentUser() user): Promise<DiaryHomeRes> {
     const memberId = user.id;
-    return this.diaryService.getHomeDiaries(memberId);
+    return this.diaryService.getTodayDiriesRes(memberId);
   }
 
   @ApiOperation({ summary: '특정 일기 json 데이터 조회' })

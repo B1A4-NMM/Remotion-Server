@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AchievementClusterService } from './achievement-cluster.service';
 import { DiaryAnalysisDto } from '../diary/dto/diary-analysis.dto';
 import { Diary } from '../entities/Diary.entity';
@@ -13,6 +13,9 @@ import { AchievementRes, AllAchievementRes } from '../member/dto/all-achievement
 
 @Injectable()
 export class AchievementService {
+
+  private readonly logger = new Logger(AchievementService.name)
+
   constructor(
     @InjectRepository(DiaryAchievement)
     private readonly achievementRepo: Repository<DiaryAchievement>,
@@ -103,9 +106,16 @@ export class AchievementService {
   ) {
     // @ts-ignore
     const id: string = clusterId;
-    const clusterEntity = await this.achievementClusterRepo.findOneOrFail({
+    const clusterEntity = await this.achievementClusterRepo.findOne({
       where: { id: id },
     });
+
+    if (!clusterEntity){
+      this.logger.warn("clusteringAchievement에 진입하였지만, 성취 클러스터를 찾지 못했습니다. 이는 벡터DB와 RDB간 정합성이 깨진 경우입니다. 추후 수정이 필요합니다")
+      await this.achievementClusterService.deleteById(clusterId.toString())
+      return;
+    }
+
     let achievementEntity = new DiaryAchievement();
     achievementEntity.cluster = clusterEntity;
     achievementEntity.diary = diary;

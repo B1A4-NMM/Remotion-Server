@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { THRESHOLD } from '../constants/threshold.constansts';
 import { v4 as uuid } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +14,8 @@ import { ActivityEmotion } from '../entities/activity-emotion.entity';
 
 @Injectable()
 export class ActivityClusterService {
+  private readonly logger = new Logger(ActivityClusterService.name);
+
   private readonly collection = 'activity_cluster';
 
   constructor(
@@ -32,7 +34,11 @@ export class ActivityClusterService {
    * 행동 하나를 인자로 받아서 클러스터가 있는지 확인하고, 있다면 클러스터에 추기,
    * 없다면 클러스터를 새로 만듭니다
    */
-  public async createByActivity(activity: Activity, diary: Diary, member: Member) {
+  public async createByActivity(
+    activity: Activity,
+    diary: Diary,
+    member: Member,
+  ) {
     const result = await this.searchTopActivityCluster(
       activity.content,
       member.id,
@@ -135,7 +141,6 @@ export class ActivityClusterService {
       member.id,
     );
 
-
     let clusterEntity = new ActivityCluster();
     clusterEntity.id = created.id;
     clusterEntity.label = activity.content;
@@ -145,7 +150,7 @@ export class ActivityClusterService {
 
     await this.activityClusterRepo.save(clusterEntity);
 
-    activity.cluster = clusterEntity // 액티비티의 클러스터 업데이트
+    activity.cluster = clusterEntity; // 액티비티의 클러스터 업데이트
     await this.activityRepo.save(activity);
   }
 
@@ -159,9 +164,17 @@ export class ActivityClusterService {
     activity: Activity,
   ) {
     const id: string = clusterId.toString();
-    const clusterEntity = await this.activityClusterRepo.findOneOrFail({
+    const clusterEntity = await this.activityClusterRepo.findOne({
       where: { id: id },
     });
+
+    if (!clusterEntity) {
+      this.logger.warn(
+        'clusteringActivity 진입하였지만, 행동 클러스터를 찾지 못했습니다. 이는 벡터DB와 RDB간 정합성이 깨진 경우입니다. 추후 수정이 필요합니다',
+      );
+      await this.deleteById(clusterId.toString())
+      return;
+    }
 
     const activities = await this.activityRepo.find({
       where: { cluster: { id: id } },
@@ -194,12 +207,12 @@ export class ActivityClusterService {
     return sum.map((v) => v / len);
   }
 
-  public async getTopEmotionsByMember(memberId: string, limit:number = 3) {
+  public async getTopEmotionsByMember(memberId: string, limit: number = 3) {
     const clusters = await this.activityClusterRepo.find({
       where: { author: { id: memberId } },
     });
 
-    const result:any[] = [];
+    const result: any[] = [];
     for (const cluster of clusters) {
       const emotionCounts = await this.getEmotionCountsByCluster(cluster);
       const sortedEmotions = Object.entries(emotionCounts)
@@ -215,5 +228,12 @@ export class ActivityClusterService {
     }
 
     return result;
+  }
+
+  /**
+   * 행동 클러스터 하나 삭제
+   */
+  private async deleteById(id: string) {
+    await this.qdrantService.deletePointById(this.collection, id)
   }
 }
