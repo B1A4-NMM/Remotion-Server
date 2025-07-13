@@ -495,7 +495,7 @@ export class DiaryService {
   /**
    * DiaryRes 객체를 만들어서 정보를 넣고 반환합니다
    */
-  private async createDiaryRes(diary: Diary) {
+  async createDiaryRes(diary: Diary) {
     let diaryRes = new DiaryRes();
     diaryRes.diaryId = diary.id;
     diaryRes.title = diary.title;

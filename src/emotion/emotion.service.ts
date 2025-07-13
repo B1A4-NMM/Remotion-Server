@@ -38,6 +38,8 @@ import { Activity } from '../entities/Activity.entity';
 import { EmotionAnalysisPeriodRes } from './dto/emotion-analysis-period.res';
 import { ConfigService } from '@nestjs/config';
 
+import { EmotionSummaryByTargetResponseDto } from './dto/emotion-summary-by-target.res.dto';
+
 @Injectable()
 export class EmotionService {
   private readonly logger = new Logger(EmotionService.name);
@@ -81,7 +83,7 @@ export class EmotionService {
     const groupedByDate = new Map<string, EmotionTarget[]>();
 
     for (const emotionTarget of emotionTargets) {
-      const feelDate = (emotionTarget.feel_date ?? LocalDate.now()).toString();;
+      const feelDate = emotionTarget.feel_date?.toString() ?? LocalDate.now().toString();
       if (!groupedByDate.has(feelDate)) {
         groupedByDate.set(feelDate, []);
       }
@@ -128,7 +130,7 @@ export class EmotionService {
    * @param targetId - 대상의 ID
    * @returns 날짜별 감정 집계 결과
    */
-  async getEmotionSummaryByTarget(targetId: number) {
+  async getEmotionSummaryByTarget(targetId: number): Promise<EmotionSummaryByTargetResponseDto[]> {
     // 1. Target ID로 EmotionTarget 엔티티 조회
     const emotionTargets = await this.getEmotionTargetsByTargetId(targetId);
 
@@ -140,7 +142,7 @@ export class EmotionService {
     const groupedByDate = this.groupEmotionTargetsByDate(emotionTargets);
 
     // 3. 날짜별로 감정 집계
-    const result: any[] = [];
+    const result: EmotionSummaryByTargetResponseDto[] = [];
     for (const [date, targets] of groupedByDate.entries()) {
       const emotions = this.aggregateEmotions(targets);
       result.push({ date, emotions });
