@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
 import { EmotionService } from '../emotion/emotion.service';
-import { DiaryHomeListRes, DiaryRes } from './dto/diary-home-list.res';
+import { DiaryHomeListRes, DiaryRes, EmotionRes } from './dto/diary-home-list.res';
 import { DiaryHomeRes } from './dto/diary-home.res';
 import { Diary } from '../entities/Diary.entity';
 import {
@@ -421,7 +421,7 @@ export class DiaryService {
 
     const emotions = await this.emotionService.findAllDiaryEmotions(diary);
     if (emotions.length > 0)
-      diaryRes.emotions = emotions.map((emotion) => emotion.emotion);
+      diaryRes.emotions = emotions.map((emotion) => new EmotionRes(emotion.emotion, emotion.intensity));
     else diaryRes.emotions = [];
 
     const targets = await this.targetService.getTargetByDiary(diary);

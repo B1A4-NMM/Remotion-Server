@@ -2,6 +2,26 @@ import { EmotionType } from '../../enums/emotion-type.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { LocalDate } from 'js-joda';
 
+export class EmotionRes {
+  @ApiProperty({
+    enum: EmotionType,
+    example: '행복',
+    description: '감정 종류',
+  })
+  emotion: EmotionType;
+
+  @ApiProperty({
+    example: 5,
+    description: '감정 강도',
+  })
+  intensity: number;
+
+  constructor(emotion: EmotionType, intensity: number) {
+    this.emotion = emotion;
+    this.intensity = intensity;
+  }
+}
+
 export class DiaryRes {
   @ApiProperty({ example: 1, description: '일기 ID' })
   diaryId: number;
@@ -48,19 +68,17 @@ export class DiaryRes {
   activities: string[] = [];
 
   @ApiProperty({
-    type: [String],
-    enum: EmotionType,
-    example: ['행복', '기쁨'],
-    description: '일기에 포함된 감정들',
+    type: [EmotionRes],
+    description: '일기에 포함된 감정들, 감정의 강도와 같이 보냅니다',
   })
-  emotions?: EmotionType[] | null = [];
+  emotions: EmotionRes[] = [];
 
   @ApiProperty({
     type: [String],
     example: ['김민수', '이영희'],
     description: '일기에 포함된 대상들',
   })
-  targets?: string[] | null = [];
+  targets: string[] = [];
 }
 
 export class DiaryHomeListRes {
