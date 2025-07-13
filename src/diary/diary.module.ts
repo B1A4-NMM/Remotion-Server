@@ -11,6 +11,7 @@ import { MemberSummaryService } from '../member/member-summary.service';
 import { MemberSummary } from '../entities/member-summary.entity';
 import { SentenceParserModule } from '../sentence-parser/sentence-parser.module';
 import { TargetModule } from '../target/target.module';
+import { ActivityModule } from '../activity/activity.module';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { TargetModule } from '../target/target.module';
     EmotionModule,
     UploadModule,
     SentenceParserModule,
-    TargetModule
+    TargetModule,
+    ActivityModule
   ],
   controllers: [DiaryController],
   providers: [DiaryService],

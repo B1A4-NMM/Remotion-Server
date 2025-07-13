@@ -23,6 +23,7 @@ import { TargetService } from '../target/target.service';
 import { Member } from '../entities/Member.entity';
 import { InfiniteScrollRes } from './dto/infinite-scroll.res';
 import { SearchDiaryRes } from './dto/search-diary.res';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class DiaryService {
@@ -38,6 +39,7 @@ export class DiaryService {
     private readonly summaryRepo: Repository<MemberSummary>,
     private readonly sentenceParserService: SentenceParserService,
     private readonly targetService: TargetService,
+    private readonly activityService: ActivityService
   ) {}
 
   /**
@@ -339,7 +341,6 @@ export class DiaryService {
 
   /**
    * 커서를 통해 일기를 가져옴
-   * 연관된 감정이나 사건, 대상은 가져오지 않음
    */
   async getDiariesInfinite(memberId: string, limit: number, cursor?: number) {
     const skip = cursor ? cursor * limit : 0;
@@ -416,6 +417,7 @@ export class DiaryService {
     diaryRes.isBookmarked = diary.is_bookmarked;
     diaryRes.latitude = diary.latitude;
     diaryRes.longitude = diary.longitude;
+    diaryRes.activities = await this.activityService.getActivityContentsByDiary(diary)
 
     const emotions = await this.emotionService.findAllDiaryEmotions(diary);
     if (emotions.length > 0)
@@ -496,4 +498,6 @@ export class DiaryService {
     const uniqueEmotions = new Set(allEmotions);
     return uniqueEmotions.size;
   }
+
+
 }
