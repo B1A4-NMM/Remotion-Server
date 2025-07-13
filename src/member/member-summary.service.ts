@@ -48,7 +48,7 @@ export class MemberSummaryService {
   /**
    * 기간과 memberSummary 배열을 받아 사용자 요약 응답을 반환합니다
    */
-  private async createMemberSummaryRes(
+  async createMemberSummaryRes(
     summaries: MemberSummary[],
     period: number,
   ): Promise<MemberSummaryRes> {

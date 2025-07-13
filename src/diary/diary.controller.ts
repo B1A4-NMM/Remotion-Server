@@ -259,9 +259,26 @@ export class DiaryController {
     return await this.diaryService.getDiary(memberId, +id);
   }
 
-  @Patch(':id')
-  async bookmarkDiary(@CurrentUser() user:any, @Param('id') id: string) {
-    const memberId:string = user.id
-
+  @Patch('bookmark/:id')
+  @ApiOperation({ summary: '일기 북마크 토글' })
+  @ApiParam({
+    name: 'id',
+    description: '북마크 토글할 일기의 ID',
+    type: 'string',
+    required: true,
+  })
+  @ApiResponse({
+    status: 200,
+    description: '북마크 토글 성공',
+    schema: {
+      properties: {
+        id: { type: 'number' },
+        isBookmarked: { type: 'boolean' },
+      },
+    },
+  })
+  async bookmarkDiary(@CurrentUser() user: any, @Param('id') id: string) {
+    const memberId: string = user.id;
+    return this.diaryService.toggleDiaryBookmark(memberId, +id);
   }
 }

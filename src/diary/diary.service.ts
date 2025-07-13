@@ -404,6 +404,21 @@ export class DiaryService {
   }
 
   /**
+   * 다이어리의 북마크 여부를 토글합니다
+   */
+  async toggleDiaryBookmark(memberId:string, id:number){
+    let diary = await this.diaryRepository.findOneOrFail({
+      where: {
+        author: {id : memberId},
+        id: id
+      }
+    })
+    diary.is_bookmarked = !diary.is_bookmarked;
+    diary = await this.diaryRepository.save(diary);
+    return {id: diary.id, isBookmarked: diary.is_bookmarked};
+  }
+
+  /**
    * DiaryRes 객체를 만들어서 정보를 넣고 반환합니다
    */
   private async createDiaryHomeRes(diary: Diary) {
