@@ -5,7 +5,7 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
+  ParseIntPipe, Patch,
   Post,
   Query,
   UploadedFile, UploadedFiles,
@@ -268,4 +268,7 @@ export class DiaryController {
     const memberId: string = user.id;
     return await this.diaryService.getDiary(memberId, +id);
   }
+
+  @Patch(':id')
+  async bookmarkDiary()
 }

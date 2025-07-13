@@ -43,7 +43,34 @@ export class DiaryService {
   ) {}
 
   /**
-   * 날짜와 기간을 받아 해당 날짜부터 그 이전의 기간까지의 멤버 요약을 가져옵니다 
+   * 다이어리 생성 함수
+   * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장
+   * 연관된 엔티티 : [ Activity, Target, DiaryTarget, DiaryEmotion ]
+   */
+  async createDiary(
+    memberId: string,
+    dto: CreateDiaryDto,
+    imageUrl?: string[] | null,
+    audioUrl?: string | null,
+  ) {
+    this.logger.log('다이어리 생성');
+
+    const [result, routine] = await Promise.all([
+      this.analysisDiaryService.analysisAndSaveDiary(memberId, dto, imageUrl, audioUrl),
+      this.analysisDiaryService.analysisAndSaveDiaryRoutine(memberId, dto.content),
+    ]);
+
+    this.logger.log(
+      `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
+    );
+
+    this.logger.log(`일기의 주인 : ${result.author.id}, 글쓴이 : ${memberId}`);
+
+    return result.id;
+  }
+
+  /**
+   * 날짜와 기간을 받아 해당 날짜부터 그 이전의 기간까지의 멤버 요약을 가져옵니다
    */
   async findMemberSummaryByDateAndPeriod(
     memberId: string,
@@ -79,33 +106,6 @@ export class DiaryService {
 
     await this.sentenceParserService.deleteAllByDiaryId(diary.id);
     return await this.diaryRepository.delete(diary.id);
-  }
-
-  /**
-   * 다이어리 생성 함수
-   * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장
-   * 연관된 엔티티 : [ Activity, Target, DiaryTarget, DiaryEmotion ]
-   */
-  async createDiary(
-    memberId: string,
-    dto: CreateDiaryDto,
-    imageUrl?: string[] | null,
-    audioUrl?: string | null,
-  ) {
-    this.logger.log('다이어리 생성');
-
-    const [result, routine] = await Promise.all([
-      this.analysisDiaryService.analysisAndSaveDiary(memberId, dto, imageUrl, audioUrl),
-      this.analysisDiaryService.analysisAndSaveDiaryRoutine(memberId, dto.content),
-    ]);
-
-    this.logger.log(
-      `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
-    );
-
-    this.logger.log(`일기의 주인 : ${result.author.id}, 글쓴이 : ${memberId}`);
-
-    return result.id;
   }
 
   /**
