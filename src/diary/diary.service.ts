@@ -39,11 +39,46 @@ export class DiaryService {
     private readonly summaryRepo: Repository<MemberSummary>,
     private readonly sentenceParserService: SentenceParserService,
     private readonly targetService: TargetService,
-    private readonly activityService: ActivityService
+    private readonly activityService: ActivityService,
   ) {}
 
   /**
-   * 날짜와 기간을 받아 해당 날짜부터 그 이전의 기간까지의 멤버 요약을 가져옵니다 
+   * 다이어리 생성 함수
+   * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장
+   * 연관된 엔티티 : [ Activity, Target, DiaryTarget, DiaryEmotion ]
+   */
+  async createDiary(
+    memberId: string,
+    dto: CreateDiaryDto,
+    imageUrl?: string[] | null,
+    audioUrl?: string | null,
+  ) {
+    this.logger.log('다이어리 생성');
+
+    const [result, routine] = await Promise.all([
+      this.analysisDiaryService.analysisAndSaveDiary(
+        memberId,
+        dto,
+        imageUrl,
+        audioUrl,
+      ),
+      this.analysisDiaryService.analysisAndSaveDiaryRoutine(
+        memberId,
+        dto.content,
+      ),
+    ]);
+
+    this.logger.log(
+      `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
+    );
+
+    this.logger.log(`일기의 주인 : ${result.author.id}, 글쓴이 : ${memberId}`);
+
+    return result.id;
+  }
+
+  /**
+   * 날짜와 기간을 받아 해당 날짜부터 그 이전의 기간까지의 멤버 요약을 가져옵니다
    */
   async findMemberSummaryByDateAndPeriod(
     memberId: string,
@@ -79,33 +114,6 @@ export class DiaryService {
 
     await this.sentenceParserService.deleteAllByDiaryId(diary.id);
     return await this.diaryRepository.delete(diary.id);
-  }
-
-  /**
-   * 다이어리 생성 함수
-   * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장
-   * 연관된 엔티티 : [ Activity, Target, DiaryTarget, DiaryEmotion ]
-   */
-  async createDiary(
-    memberId: string,
-    dto: CreateDiaryDto,
-    imageUrl?: string[] | null,
-    audioUrl?: string | null,
-  ) {
-    this.logger.log('다이어리 생성');
-
-    const [result, routine] = await Promise.all([
-      this.analysisDiaryService.analysisAndSaveDiary(memberId, dto, imageUrl, audioUrl),
-      this.analysisDiaryService.analysisAndSaveDiaryRoutine(memberId, dto.content),
-    ]);
-
-    this.logger.log(
-      `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
-    );
-
-    this.logger.log(`일기의 주인 : ${result.author.id}, 글쓴이 : ${memberId}`);
-
-    return result.id;
   }
 
   /**
@@ -340,6 +348,27 @@ export class DiaryService {
   }
 
   /**
+   * 커서를 통해 북마크된 일기들을 가져옴
+   */
+  async getBookmarkedDiariesInfinite(memberId: string, limit: number, cursor?: number) {
+    const skip = cursor ? cursor * limit : 0;
+    const take = limit + 1;
+
+    const qb = this.diaryRepository
+      .createQueryBuilder('d')
+      .where('d.author_id = :memberId', { memberId })
+      .andWhere('d.is_bookmarked = :isBookmarked', { isBookmarked: true })
+      .orderBy('d.written_date', 'DESC')
+      .addOrderBy('d.id', 'DESC')
+      .skip(skip)
+      .take(take);
+
+    const rows = await qb.getMany();
+
+    return await this.makeScroll(rows, take, cursor, memberId);
+  }
+
+  /**
    * 커서를 통해 일기를 가져옴
    */
   async getDiariesInfinite(memberId: string, limit: number, cursor?: number) {
@@ -356,6 +385,15 @@ export class DiaryService {
 
     const rows = await qb.getMany();
 
+    return await this.makeScroll(rows, take, cursor, memberId);
+  }
+
+  private async makeScroll(
+    rows: Diary[],
+    take: number,
+    cursor: number | undefined,
+    memberId: string,
+  ) {
     const hasMore = rows.length === take;
     const diaries = hasMore ? rows.slice(0, -1) : rows;
 
@@ -404,6 +442,21 @@ export class DiaryService {
   }
 
   /**
+   * 다이어리의 북마크 여부를 토글합니다
+   */
+  async toggleDiaryBookmark(memberId: string, id: number) {
+    let diary = await this.diaryRepository.findOneOrFail({
+      where: {
+        author: { id: memberId },
+        id: id,
+      },
+    });
+    diary.is_bookmarked = !diary.is_bookmarked;
+    diary = await this.diaryRepository.save(diary);
+    return { id: diary.id, isBookmarked: diary.is_bookmarked };
+  }
+
+  /**
    * DiaryRes 객체를 만들어서 정보를 넣고 반환합니다
    */
   private async createDiaryHomeRes(diary: Diary) {
@@ -417,11 +470,14 @@ export class DiaryService {
     diaryRes.isBookmarked = diary.is_bookmarked;
     diaryRes.latitude = diary.latitude;
     diaryRes.longitude = diary.longitude;
-    diaryRes.activities = await this.activityService.getActivityContentsByDiary(diary)
+    diaryRes.activities =
+      await this.activityService.getActivityContentsByDiary(diary);
 
     const emotions = await this.emotionService.findAllDiaryEmotions(diary);
     if (emotions.length > 0)
-      diaryRes.emotions = emotions.map((emotion) => new EmotionRes(emotion.emotion, emotion.intensity));
+      diaryRes.emotions = emotions.map(
+        (emotion) => new EmotionRes(emotion.emotion, emotion.intensity),
+      );
     else diaryRes.emotions = [];
 
     const targets = await this.targetService.getTargetByDiary(diary);
@@ -498,6 +554,4 @@ export class DiaryService {
     const uniqueEmotions = new Set(allEmotions);
     return uniqueEmotions.size;
   }
-
-
 }

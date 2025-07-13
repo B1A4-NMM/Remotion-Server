@@ -30,8 +30,9 @@ export class MemberSummaryService {
     private readonly configService: ConfigService
   ) {}
 
-
-
+  /**
+   * 기간과 멤버 아이디를 받아 해당 기간 내의 사용자 요약 응답을 만들어 반환합니다
+   */
   async findMemberSummaryByPeriod(memberId: string, period: number) {
     const today = LocalDate.now();
     const end = today.minusDays(period);
@@ -44,6 +45,9 @@ export class MemberSummaryService {
     return this.createMemberSummaryRes(result, period);
   }
 
+  /**
+   * 기간과 memberSummary 배열을 받아 사용자 요약 응답을 반환합니다
+   */
   async createMemberSummaryRes(
     summaries: MemberSummary[],
     period: number,
@@ -104,6 +108,9 @@ export class MemberSummaryService {
     return result;
   }
 
+  /**
+   * 사용자 요약 엔티티를 찾아 반환하고, 만약 없다면 만들어서 반환합니다
+   */
   async findMemberSummaryIfNotExistCreate(member: Member, date: LocalDate) {
 
     let summary = await this.repo.findOne({
@@ -120,6 +127,9 @@ export class MemberSummaryService {
     return summary;
   }
 
+  /**
+   * 감정요약이 있는지 확인하고, 없다면 생성한 다음 반환합니다
+   */
   async findEmotionSummaryIfNotExistCreate(
     summary: MemberSummary,
     emotion: EmotionGroup,
@@ -140,6 +150,9 @@ export class MemberSummaryService {
     return emotionSummary;
   }
 
+  /**
+   * 일기로부터 감정 요약이 업데이트됩니다
+   */
   async updateSummaryFromDiary(
     people: PeopleAnalysisDto[],
     selfEmotions: CombinedEmotion[],
@@ -177,6 +190,9 @@ export class MemberSummaryService {
     }
   }
 
+  /**
+   * 감정 요약 엔티티를 업데이트합니다, 감정 요약 그룹에 카운트와 강도가 합산됩니다
+   */
   async updateEmotion(
     member: Member,
     date: LocalDate,
