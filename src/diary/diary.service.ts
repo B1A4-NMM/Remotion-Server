@@ -24,6 +24,8 @@ import { Member } from '../entities/Member.entity';
 import { InfiniteScrollRes } from './dto/infinite-scroll.res';
 import { SearchDiaryRes } from './dto/search-diary.res';
 import { ActivityService } from '../activity/activity.service';
+import { DiaryBookmarkListRes } from './dto/DiaryBookmarkListRes';
+import { InfiniteBookmarkScrollRes } from './dto/infinite-bookmark-scroll.res';
 
 @Injectable()
 export class DiaryService {
@@ -350,7 +352,11 @@ export class DiaryService {
   /**
    * 커서를 통해 북마크된 일기들을 가져옴
    */
-  async getBookmarkedDiariesInfinite(memberId: string, limit: number, cursor?: number) {
+  async getBookmarkedDiariesInfinite(
+    memberId: string,
+    limit: number,
+    cursor?: number,
+  ) {
     const skip = cursor ? cursor * limit : 0;
     const take = limit + 1;
 
@@ -365,7 +371,7 @@ export class DiaryService {
 
     const rows = await qb.getMany();
 
-    return await this.makeScroll(rows, take, cursor, memberId);
+    return await this.makeBookmarkScroll(rows, take, cursor);
   }
 
   /**
@@ -388,19 +394,33 @@ export class DiaryService {
     return await this.makeScroll(rows, take, cursor, memberId);
   }
 
+  private async makeBookmarkScroll(
+    rows: Diary[],
+    take: number,
+    cursor: number | undefined
+  ) {
+    const { hasMore, nextCursor, diaryRes } = await this.getCursorAndRes(
+      rows,
+      take,
+      cursor,
+    );
+    const items = new DiaryBookmarkListRes();
+    items.diaries = diaryRes;
+    items.totalDiaryCount = rows.length
+
+    return new InfiniteBookmarkScrollRes(items, hasMore, nextCursor);
+  }
+
   private async makeScroll(
     rows: Diary[],
     take: number,
     cursor: number | undefined,
     memberId: string,
   ) {
-    const hasMore = rows.length === take;
-    const diaries = hasMore ? rows.slice(0, -1) : rows;
-
-    const nextCursor: number | null = hasMore ? (cursor || 0) + 1 : null;
-
-    const diaryRes = await Promise.all(
-      diaries.map((diary) => this.createDiaryHomeRes(diary)),
+    const { hasMore, nextCursor, diaryRes } = await this.getCursorAndRes(
+      rows,
+      take,
+      cursor,
     );
     const items = new DiaryHomeListRes();
     items.diaries = diaryRes;
@@ -409,6 +429,22 @@ export class DiaryService {
     items.emotionCountByMonth = await this.getEmotionsCountByMonth(memberId);
 
     return new InfiniteScrollRes(items, hasMore, nextCursor);
+  }
+
+  private async getCursorAndRes(
+    rows: Diary[],
+    take: number,
+    cursor: number | undefined,
+  ) {
+    const hasMore = rows.length === take;
+    const diaries = hasMore ? rows.slice(0, -1) : rows;
+
+    const nextCursor: number | null = hasMore ? (cursor || 0) + 1 : null;
+
+    const diaryRes = await Promise.all(
+      diaries.map((diary) => this.createDiaryRes(diary)),
+    );
+    return { hasMore, nextCursor, diaryRes };
   }
 
   /**
@@ -434,7 +470,7 @@ export class DiaryService {
         this.logger.log('getSearchDiary : diary not found');
         throw new NotFoundException('일기를 찾을 수 없습니다');
       }
-      const dto = await this.createDiaryHomeRes(diary);
+      const dto = await this.createDiaryRes(diary);
       res.diaries.push(dto);
     }
 
@@ -459,7 +495,7 @@ export class DiaryService {
   /**
    * DiaryRes 객체를 만들어서 정보를 넣고 반환합니다
    */
-  private async createDiaryHomeRes(diary: Diary) {
+  private async createDiaryRes(diary: Diary) {
     let diaryRes = new DiaryRes();
     diaryRes.diaryId = diary.id;
     diaryRes.title = diary.title;

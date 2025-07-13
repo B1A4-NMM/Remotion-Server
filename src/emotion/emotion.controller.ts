@@ -1,4 +1,4 @@
-import { Controller, Get, ParseEnumPipe, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, ParseEnumPipe, Query, UseGuards, Param, ParseIntPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
 import { EmotionGroup } from '../enums/emotion-type.enum';
@@ -11,6 +11,13 @@ import { EmotionAnalysisPeriodRes } from './dto/emotion-analysis-period.res';
 export class EmotionController {
 
   constructor(private  readonly service: EmotionService) {
+  }
+
+  @Get('target/:targetId')
+  @ApiOperation({ summary: '대상별 감정 요약 조회', description: '특정 대상과 관련된 감정을 날짜별로 요약하여 조회합니다.' })
+  @ApiResponse({ status: 200, description: '성공적으로 조회했을 경우' })
+  async getEmotionSummaryByTarget(@Param('targetId', ParseIntPipe) targetId: number) {
+    return this.service.getEmotionSummaryByTarget(targetId);
   }
 
   @Get('activity')

@@ -71,6 +71,7 @@ export class TargetService {
       await this.emotionService.createOrUpdateEmotionTarget(
         target,
         feelToTarget,
+        diary.written_date
       );
     }
   }
