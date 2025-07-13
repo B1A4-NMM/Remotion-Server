@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiBody, ApiConsumes, ApiHeader,
+  ApiBody, ApiConsumes, ApiExcludeEndpoint, ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -134,7 +134,8 @@ export class DiaryController {
     );
   }
 
-  @ApiOperation({ summary: '자신이 작성한 모든 일기 받기' })
+  @ApiExcludeEndpoint()
+  @ApiOperation({ summary: '자신이 작성한 모든 일기 받기, 무한스크롤 아님 !!' })
   @ApiBody({ type: DiaryHomeListRes })
   @Get()
   @UseGuards(AuthGuard('jwt'))
