@@ -251,12 +251,42 @@ export class DiaryController {
     return this.diaryService.getDiariesInfinite(memberId, limit, cursor);
   }
 
+  @ApiOperation({
+    summary: '북마크된 일기 무한스크롤 조회',
+    description: '무한스크롤을 통해 북마크된 일기를 조회할 수 있습니다',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: '한 번에 가져올 일기 개수',
+    type: Number,
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: '맨 첫 스크롤을 가져오려면 0 또는 값을 보내지 마세요',
+    type: Number,
+    example: 0,
+  })
+  @ApiResponse({ type: InfiniteScrollRes })
+  @Get('bookmark')
+  async bookmarkedDiaryInfinite(
+    @CurrentUser() user,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('cursor', new DefaultValuePipe(0), ParseIntPipe) cursorId: number,
+  ) {
+    const cursor = cursorId;
+    const memberId = user.id;
+    return this.diaryService.getBookmarkedDiariesInfinite(memberId, limit, cursor);
+  }
+
   @ApiOperation({ summary: '특정 일기 가공 데이터 조회' })
   @ApiResponse({ type: DiaryAnalysisDto })
   @Get(':id')
-  async getDiary(@CurrentUser() user, @Param('id') id: string) {
+  async getDiary(@CurrentUser() user, @Param('id', ParseIntPipe) id: number) {
     const memberId: string = user.id;
-    return await this.diaryService.getDiary(memberId, +id);
+    return await this.diaryService.getDiary(memberId, id);
   }
 
   @Patch('bookmark/:id')
@@ -277,8 +307,8 @@ export class DiaryController {
       },
     },
   })
-  async bookmarkDiary(@CurrentUser() user: any, @Param('id') id: string) {
+  async bookmarkDiary(@CurrentUser() user: any, @Param('id', ParseIntPipe) id: number) {
     const memberId: string = user.id;
-    return this.diaryService.toggleDiaryBookmark(memberId, +id);
+    return this.diaryService.toggleDiaryBookmark(memberId, id);
   }
 }
