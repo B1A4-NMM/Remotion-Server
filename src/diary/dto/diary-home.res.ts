@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class EmotionRes {
   @ApiProperty({ enum: EmotionType, example: '행복', description: '감정 종류' })
-  emotionType: EmotionType;
+  emotion: EmotionType;
 
   @ApiProperty({ example: 5, description: '감정 강도' })
   intensity: number;

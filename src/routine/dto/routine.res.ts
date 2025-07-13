@@ -16,9 +16,16 @@ export class RoutineRes {
   })
   routineType: RoutineEnum;
 
+  @ApiProperty({
+    description:'현재 루틴 폴더에 추가되어있지 않고 트리거로만 저장되어 있는지의 여부',
+    example: true
+  })
+  isTrigger: boolean
+
   constructor(routine:Routine) {
     this.routineId = routine.id;
     this.content = routine.content;
     this.routineType = routine.routineType;
+    this.isTrigger = routine.isTrigger
   }
 }

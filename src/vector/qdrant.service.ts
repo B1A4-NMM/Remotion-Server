@@ -169,4 +169,10 @@ export class QdrantService {
     })
   }
 
+  async deletePointById(collectionName: string, pointId: string): Promise<void> {
+    await this.client.delete(collectionName, {
+      points: [pointId]
+    });
+  }
+
 }

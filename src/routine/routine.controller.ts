@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { RoutineService } from './routine.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
@@ -9,18 +9,15 @@ import {
   ApiTags,
   ApiBody,
   ApiParam,
-  ApiHeader,
+  ApiHeader, ApiBearerAuth,
 } from '@nestjs/swagger';
 import { RoutineRes } from './dto/routine.res';
 
 
 @Controller('routine')
+@ApiTags('루틴')
 @UseGuards(AuthGuard('jwt'))
-@ApiTags('routine')
-@ApiHeader({
-  name: 'Authorization',
-  description: 'Bearer {JWT token}',
-})
+@ApiBearerAuth('access-token')
 export class RoutineController {
   constructor(private readonly routineService: RoutineService) {}
 
@@ -51,7 +48,11 @@ export class RoutineController {
     @Body('content') content: string,
   ) {
     const memberId: string = user.id;
-    return this.routineService.createRoutine(memberId, RoutineEnum.STRESS, content);
+    return this.routineService.createRoutine(
+      memberId,
+      RoutineEnum.STRESS,
+      content,
+    );
   }
 
   @Get('nervous')
@@ -81,7 +82,11 @@ export class RoutineController {
     @Body('content') content: string,
   ) {
     const memberId: string = user.id;
-    return this.routineService.createRoutine(memberId, RoutineEnum.ANXIETY, content);
+    return this.routineService.createRoutine(
+      memberId,
+      RoutineEnum.ANXIETY,
+      content,
+    );
   }
 
   @Get('depression')
@@ -111,6 +116,60 @@ export class RoutineController {
     @Body('content') content: string,
   ) {
     const memberId: string = user.id;
-    return this.routineService.createRoutine(memberId, RoutineEnum.DEPRESSION, content);
+    return this.routineService.createRoutine(
+      memberId,
+      RoutineEnum.DEPRESSION,
+      content,
+    );
+  }
+
+  @Get('trigger')
+  @ApiOperation({
+    summary: '루틴 트리거 조회',
+    description:
+      '사용자의 루틴 트리거를 조회합니다. 이 트리거는 루틴 폴더에는 추가되지 않았습니다',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '트리거 조회 성공',
+    type: [RoutineRes],
+  })
+  async getTrigger(@CurrentUser() user: any) {
+    const memberId: string = user.id;
+    return this.routineService.getTrigger(memberId);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: '루틴 트리거 토글',
+    description: '트리거를 토글하여 폴더에서 추가하거나 삭제합니다.',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: '루틴 ID',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '트리거 토글 성공',
+    schema: {
+      properties: {
+        id: {
+          type: 'number',
+          example: 1,
+          description: '토글된 루틴의 ID',
+        },
+        isTrigger: {
+          type: 'boolean',
+          example: false,
+          description: '토글된 이후 루틴의 상태'
+        }
+      },
+    },
+  })
+  async toggleTrigger(@CurrentUser() user: any, @Param('id') id: string) {
+    const memberId: string = user.id;
+    const trigger = await this.routineService.toggleTrigger(+id);
+    return { id: trigger.id, isTrigger: trigger.isTrigger };
   }
 }

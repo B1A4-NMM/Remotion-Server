@@ -98,5 +98,9 @@ export class AchievementClusterService {
     return result;
   }
 
+  async deleteById(id: string) {
+    await this.qdrantService.deletePointById(this.collection, id)
+  }
+
 
 }
