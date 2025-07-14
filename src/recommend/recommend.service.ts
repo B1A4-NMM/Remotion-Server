@@ -13,6 +13,7 @@ import { LocalDate } from 'js-joda';
 import { ActivityClusterService } from '../activity-cluster/activity-cluster.service';
 import { ClaudeService } from '../claude/claude.service';
 import { ActivityService } from '../activity/activity.service';
+import { getRandomComment } from '../constants/recommend-comment.constants';
 
 @Injectable()
 export class RecommendService {
@@ -105,28 +106,37 @@ export class RecommendService {
     return { videoId, mostFrequentEmotion };
   }
 
-  async getCommentByWeekday(memberId: string) {
+  getCommentByWeekdayOfToday(memberId: string) {
+    const date = LocalDate.now();
+    return this.getCommentByWeekday(memberId, date);
+  }
+
+  /**
+   * 각 요일마다 알맞은 추천 멘트를 줍니다
+   */
+  async getCommentByWeekday(memberId: string, date:LocalDate) {
     const emotionGroup =
-      await this.getMostFrequentEmotionGroupByWeekday(memberId);
+      await this.getMostFrequentEmotionGroupByWeekday(memberId, date);
     let comment = '';
     if (emotionGroup === null) {
       comment = '추천해드릴 감정 데이터가 쌓이질 않았어요. 일기를 써보세요';
       return comment;
     }
     let recommendEmotion = EmotionGroup.안정;
-    const dayOfWeek = LocalDate.now().dayOfWeek().toString().toLowerCase();
+    const dayOfWeek = date.dayOfWeek().toString().toLowerCase();
+    this.logger.log(`${dayOfWeek} : recommendEmotion = ${recommendEmotion}`)
     switch (emotionGroup) {
       case EmotionGroup.스트레스:
         recommendEmotion = EmotionGroup.안정;
         break;
       case EmotionGroup.우울:
-        recommendEmotion = EmotionGroup.유대;
+        recommendEmotion = EmotionGroup.활력;
         break;
       case EmotionGroup.불안:
         recommendEmotion = EmotionGroup.활력;
         break;
       default:
-        comment = '긍정적인 요일이네요!!'
+        comment = getRandomComment()
         return comment
     }
     this.logger.log(`recommendEmotion = ${recommendEmotion}`)
@@ -137,10 +147,11 @@ export class RecommendService {
         0
       );
     const activities = clusters.map((c) => c.content);
-    if (activities.length === 0) {
-      comment = '추천해드릴 행동 데이터가 쌓이질 않았어요. 일기를 써보세요';
-      return comment;
-    }
+    this.logger.log(`activites = ${activities}`)
+    // if (activities.length === 0) {
+    //   comment = '추천해드릴 행동 데이터가 쌓이질 않았어요. 일기를 써보세요';
+    //   return comment;
+    // }
     comment = await this.LLMService.getRecommendComment(
       activities,
       emotionGroup,
@@ -150,11 +161,10 @@ export class RecommendService {
     return comment
   }
 
-  private async getMostFrequentEmotionGroupByWeekday(memberId: string) {
+  private async getMostFrequentEmotionGroupByWeekday(memberId: string, date:LocalDate) {
     const emotionByWeekday =
       await this.emotionService.getAllEmotionsGroupByWeekday(memberId);
-    const today = LocalDate.now(); // 오늘 날짜
-    const dayOfWeek = today.dayOfWeek().toString().toLowerCase();
+    const dayOfWeek = date.dayOfWeek().toString().toLowerCase();
 
     const emotions = emotionByWeekday[dayOfWeek];
 
