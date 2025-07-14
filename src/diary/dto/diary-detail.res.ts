@@ -17,7 +17,7 @@ export class DiaryDetailRes {
     required: false,
     nullable: true,
   })
-  audiosPath?: string | null;
+  audioPath?: string | null;
 
   @ApiProperty({ description: '다이어리 내용' })
   content: string;
@@ -35,7 +35,7 @@ export class DiaryDetailRes {
     this.id = diary.id;
     this.writtenDate = diary.written_date;
     this.photoPath = diary.photo_path ?? [];
-    this.audiosPath = diary.audio_path;
+    this.audioPath = diary.audio_path;
     this.content = diary.content;
     this.latitude = diary.latitude;
     this.longitude = diary.longitude;
