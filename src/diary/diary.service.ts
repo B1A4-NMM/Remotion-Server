@@ -456,9 +456,7 @@ export class DiaryService {
       keyword,
       memberId,
     );
-    const length = result.length;
     let res = new SearchDiaryRes();
-    res.totalCount = length;
 
     for (const vector of result) {
       const diaryId = vector.payload.diary_id;
@@ -468,12 +466,13 @@ export class DiaryService {
         },
       });
       if (!diary) {
-        this.logger.log('getSearchDiary : diary not found');
-        throw new NotFoundException('일기를 찾을 수 없습니다');
+        this.logger.warn('getSearchDiary : diary not found');
+        continue;
       }
       const dto = await this.createDiaryRes(diary);
       res.diaries.push(dto);
     }
+    res.totalCount = res.diaries.length;
 
     return res;
   }
