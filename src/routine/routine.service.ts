@@ -6,6 +6,8 @@ import { RoutineEnum } from '../enums/routine.enum';
 import { RoutineRes } from './dto/routine.res';
 import { MemberService } from '../member/member.service';
 import { EmotionGroup } from '../enums/emotion-type.enum';
+import { EmotionService } from 'src/emotion/emotion.service';
+import { RecommendRoutineRes } from './dto/recommend-routine.res';
 
 @Injectable()
 export class RoutineService {
@@ -13,6 +15,7 @@ export class RoutineService {
     @InjectRepository(Routine)
     private readonly routineRepository: Repository<Routine>,
     private readonly memberService: MemberService,
+    private readonly emotionService: EmotionService,
   ) {}
 
   /**
@@ -27,8 +30,7 @@ export class RoutineService {
       },
     });
 
-    const res: any[] = [];
-    res.push(result.map((r) => new RoutineRes(r)));
+    const res: RoutineRes[] = result.map((r) => new RoutineRes(r));
     return res;
   }
 
@@ -69,34 +71,54 @@ export class RoutineService {
   async toggleTrigger(id: number) {
     const trigger = await this.routineRepository.findOneOrFail({
       where: {
-        id : id
-      }
-    })
+        id: id,
+      },
+    });
     trigger.isTrigger = !trigger.isTrigger;
     return await this.routineRepository.save(trigger);
   }
 
+  async getRecommendRoutine(memberId: string, diaryId: number) {
+    const emotion = await this.emotionService.getRepresentEmotionGroup(diaryId)
+    let res = new RecommendRoutineRes();
+    if (!emotion) {
+      res.routineId = null
+      res.content = null
+      return res
+    }
+    const routine = await this.getRecommendRoutineRandom(memberId, emotion)
+    if (!routine) {
+      res.routineId = null
+      res.content = null
+      return res
+    }
+
+    res.routineId = routine.routineId
+    res.content = routine.content
+    return res
+  }
+
   /**
-   * 인자로 받은 감정 그룹에 알맞은 루틴 하나를 랜덤으로 추천합니다 
+   * 인자로 받은 감정 그룹에 알맞은 루틴 하나를 랜덤으로 추천합니다
    */
-  async getRecommendRoutineRandom(memberId:string, emotions:EmotionGroup) {
-    let routine:any[] = [];
+  async getRecommendRoutineRandom(memberId: string, emotions: EmotionGroup) {
+    let routine: RoutineRes[] = [];
     switch (emotions) {
       case EmotionGroup.스트레스:
         routine = await this.getRoutine(memberId, RoutineEnum.STRESS);
         break;
       case EmotionGroup.불안:
         routine = await this.getRoutine(memberId, RoutineEnum.ANXIETY);
-        break
+        break;
       case EmotionGroup.우울:
         routine = await this.getRoutine(memberId, RoutineEnum.DEPRESSION);
-        break
+        break;
       default:
-        return []
+        return null;
     }
 
     if (routine.length === 0) {
-      return [];
+      return null;
     }
     return routine[Math.floor(Math.random() * routine.length)];
   }

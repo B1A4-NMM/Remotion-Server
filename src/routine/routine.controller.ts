@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { RoutineService } from './routine.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
@@ -9,10 +19,10 @@ import {
   ApiTags,
   ApiBody,
   ApiParam,
-  ApiHeader, ApiBearerAuth,
+  ApiHeader,
+  ApiBearerAuth, ApiQuery,
 } from '@nestjs/swagger';
 import { RoutineRes } from './dto/routine.res';
-
 
 @Controller('routine')
 @ApiTags('루틴')
@@ -123,6 +133,30 @@ export class RoutineController {
     );
   }
 
+  @Get('recommend')
+  @ApiOperation({
+    summary: '추천 루틴 조회',
+    description: '다이어리의 감정 분석을 바탕으로 루틴을 추천합니다.',
+  })
+  @ApiQuery({
+    name: 'diaryId',
+    required: true,
+    type: Number,
+    description: '루틴을 추천받을 다이어리 아이디',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '루틴 추천 성공',
+    type: RoutineRes,
+  })
+  async getRecommendRoutine(
+    @CurrentUser() user: any,
+    @Query('diaryId', ParseIntPipe) diaryId: number,
+  ) {
+    const memberId: string = user.id;
+    return this.routineService.getRecommendRoutine(memberId, diaryId);
+  }
+
   @Get('trigger')
   @ApiOperation({
     summary: '루틴 트리거 조회',
@@ -162,8 +196,8 @@ export class RoutineController {
         isTrigger: {
           type: 'boolean',
           example: false,
-          description: '토글된 이후 루틴의 상태'
-        }
+          description: '토글된 이후 루틴의 상태',
+        },
       },
     },
   })

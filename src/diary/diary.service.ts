@@ -171,7 +171,7 @@ export class DiaryService {
    *  홈 화면에서 보여질 정보들을 추출
    *  RETURN [ 오늘의 감정 , 오늘 작성한 일기 (감정, 대상) ]
    */
-  async getTodayDiriesRes(memberId: string): Promise<DiaryHomeRes> {
+  async getTodayDiariesRes(memberId: string): Promise<DiaryHomeRes> {
     const diaries = await this.getTodayDiaries(memberId);
     const todayEmotions = await this.emotionService.getTodayEmotions(memberId);
     const result = new DiaryHomeRes();

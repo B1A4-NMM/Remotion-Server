@@ -819,4 +819,42 @@ export class EmotionService {
 
     return result;
   }
+
+  /**
+   * 일기를 받아 해당 일기의 대표 감정 그룹을 반환합니다.
+   * @returns 가장 높은 감정 그룹
+   * @param diaryId
+   */
+  async getRepresentEmotionGroup(diaryId: number): Promise<EmotionGroup | null> {
+    // 1. diary에 연결된 모든 diaryEmotion을 조회합니다.
+    const diaryEmotions = await this.diaryEmotionRepository.find({
+      where: { diary: { id: diaryId } },
+    });
+
+    if (!diaryEmotions.length) {
+      return null;
+    }
+
+    // 2. 조회된 diaryEmotion의 EmotionType들을 EmotionGroup으로 그룹핑합니다.
+    const emotionGroupCounts: Record<string, number> = {};
+    for (const diaryEmotion of diaryEmotions) {
+      const emotionGroup = EmotionGroupMap[diaryEmotion.emotion];
+      if (emotionGroup) {
+        emotionGroupCounts[emotionGroup] = (emotionGroupCounts[emotionGroup] || 0) + 1;
+      }
+    }
+
+    // 3. 그룹핑된 EmotionGroup 중 가장 높은 감정 그룹을 반환합니다.
+    let representEmotionGroup: EmotionGroup | null = null;
+    let maxCount = 0;
+
+    for (const [group, count] of Object.entries(emotionGroupCounts)) {
+      if (count > maxCount) {
+        maxCount = count;
+        representEmotionGroup = group as EmotionGroup;
+      }
+    }
+
+    return representEmotionGroup;
+  }
 }
