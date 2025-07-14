@@ -16,7 +16,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiQuery,
-  ApiBearerAuth,
+  ApiBearerAuth, ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { LocalDate } from 'js-joda';
 import { LocalDateTransformer } from '../util/local-date.transformer';
@@ -89,6 +89,7 @@ export class RecommendController {
     summary: '요일별 감정 분석 후 행동 추천',
     description: '각 요일별로 어떤 감정이 크게 들었고, 감정에 따른 행동을 추천하는 멘트를 반환합니다'
   })
+  @ApiExcludeEndpoint()
   @Get('activity/weekday/:date')
   async getRecommendedActivityDate(@CurrentUser() user: any, @Param('date') date: string) {
     const memberId: string = user.id;
