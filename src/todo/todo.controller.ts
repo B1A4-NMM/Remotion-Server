@@ -60,11 +60,7 @@ export class TodoController {
   @ApiBody({ type: CreateTodoDto })
   async createTodo(@CurrentUser() user, @Body() dto: CreateTodoDto) {
     this.logger.log(`POST  요청 들어옴: ${JSON.stringify(dto)}`);
-    //console.log('[POST/todo] 요청 body :',dto);
-
     const result = this.todoService.createTodos(user.id, dto);
-
-    //console.log("응답 완료:",result);
 
     return result;
   }
@@ -102,7 +98,6 @@ export class TodoController {
     @Query('to', ParseLocalDatePipe) to: LocalDate,
     @CurrentUser() user,
   ) {
-    //console.log("Todo 조회 성공")
     return this.todoService.getTodoAndEmotions(user.id, from, to);
   }
 

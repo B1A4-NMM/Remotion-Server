@@ -84,8 +84,6 @@ export class RecommendService {
       }
     }
 
-    console.log(`가장 많은 감정 = ${mostFrequentEmotion}`);
-
     if (!mostFrequentEmotion) {
       this.logger.log(
         `No relevant emotion found for member ${memberId} in period of ${periodDays} days`,

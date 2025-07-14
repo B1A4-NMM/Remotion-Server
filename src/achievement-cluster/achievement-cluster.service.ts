@@ -60,11 +60,7 @@ export class AchievementClusterService {
   public async searchTopVector(text: string) {
     const vector = await this.simecseEmbedderService.embed(text);
     const result = await this.qdrantService.searchTopVector(this.collection, vector, THRESHOLD)
-    if (result.length > 0) {
-      console.log(`found top vector = ${JSON.stringify(result[0].payload)}`)
-    }else {
-      console.log(`not found top vector`)
-    }
+
     return result
   }
 

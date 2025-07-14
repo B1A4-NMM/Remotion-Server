@@ -1,9 +1,11 @@
-import { Injectable,OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 
 @Injectable()
 export class AppService implements OnModuleInit {
+  
+  private readonly logger = new Logger(AppService.name);
 
   constructor(private dataSource : DataSource) {}
 

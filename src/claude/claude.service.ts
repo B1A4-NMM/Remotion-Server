@@ -331,20 +331,19 @@ export class ClaudeService {
           // 심적 거리는 양수가 되도록 조정
           const final_psychological_distance = Math.max(0.1, psychological_distance);
 
-          console.log(`=== ${person.name} ===`);
-          console.log(`감정: ${main_emotion} (가중치: ${final_emotion_weight.toFixed(3)})`);
-          console.log(`감정 강도: ${intensity}`);
-          console.log(`언급 횟수: ${mentions}`);
-          console.log(`사회적 유사성: ${social_similarity_score.toFixed(2)}`);
-          console.log(`심적 거리: ${final_psychological_distance.toFixed(3)}`);
-          console.log('---');
+          // console.log(`=== ${person.name} ===`);
+          // console.log(`감정: ${main_emotion} (가중치: ${final_emotion_weight.toFixed(3)})`);
+          // console.log(`감정 강도: ${intensity}`);
+          // console.log(`언급 횟수: ${mentions}`);
+          // console.log(`사회적 유사성: ${social_similarity_score.toFixed(2)}`);
+          // console.log(`심적 거리: ${final_psychological_distance.toFixed(3)}`);
+          // console.log('---');
         });
       }
 
       return parsedResponse;
 
     } catch (error) {
-      console.error('Error in queryDiaryPatterns:', error);
       throw new Error(`Pattern analysis failed: ${error.message}`);
     }
   }

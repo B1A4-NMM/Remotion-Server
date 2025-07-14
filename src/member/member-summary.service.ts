@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { MemberSummary } from '../entities/member-summary.entity';
 import { Between, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -20,6 +20,8 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MemberSummaryService {
+
+  private readonly logger = new Logger(MemberSummaryService.name);
 
   constructor(
     @InjectRepository(MemberSummary)
@@ -85,13 +87,13 @@ export class MemberSummaryService {
       });
     }
 
-    console.log("스트레스 종합 : " + totalEmotionScores[EmotionGroup.스트레스])
-    console.log("우울 종합 : " + totalEmotionScores[EmotionGroup.스트레스])
-    console.log("불안 종합 : " + totalEmotionScores[EmotionGroup.스트레스])
+    let threshold = this.configService.get('WARNING_THRESHOLD');
+    this.logger.log(`스트레스 종합 : ${totalEmotionScores[EmotionGroup.스트레스]}, 
+    우울 종합 : ${totalEmotionScores[EmotionGroup.우울]},
+    불안 종합 : ${totalEmotionScores[EmotionGroup.불안]},
+    임계값 : ${threshold}`)
 
     // 임계값 검사 및 경고 플래그 설정
-    let threshold = this.configService.get('WARNING_THRESHOLD');
-    console.log("임계값 = " + threshold)
     if (totalEmotionScores[EmotionGroup.우울] > threshold
     ) {
       result.depressionWarning = true;

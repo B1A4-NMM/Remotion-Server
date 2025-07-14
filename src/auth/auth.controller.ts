@@ -91,7 +91,6 @@ export class AuthController {
 
     // ✅ /getaccess 경로 포함해서 리다이렉트
     const url = `${redirectUri}/getaccess?access=${jwtToken.access_token}`;
-    console.log(`redirect uri = ${redirectUri}`)
 
     delete req.session.state; // 세션에 담겨있는 리다이렉트 경로 삭제
     return res.redirect(url);
