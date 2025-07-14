@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Activity } from '../entities/Activity.entity';
 import { Repository } from 'typeorm';
-import { DiaryAnalysisDto } from '../diary/dto/diary-analysis.dto';
 import { Diary } from '../entities/Diary.entity';
 import { ClustersService } from '../vector/clusters.service';
 import { MakeClusterDto, SentenceDto } from '../vector/dto/make-cluster.dto';
@@ -10,7 +9,13 @@ import { LocalDate } from 'js-joda';
 import { ActivityEmotion } from '../entities/activity-emotion.entity';
 import { ActivityAnalysis, CombinedEmotion } from '../util/json.parser';
 import { CommonUtilService } from '../util/common-util.service';
-import { EmotionType, getEmotionGroup } from '../enums/emotion-type.enum';
+import {
+  EmotionBase,
+  EmotionGroup,
+  EmotionType,
+  getEmotionBase,
+  getEmotionGroup,
+} from '../enums/emotion-type.enum';
 import { ClusteringResult } from '../util/cluster-json.parser';
 import { SimsceEmbedderService } from '../vector/simsce-embedder.service';
 import { ActivityClusterService } from '../activity-cluster/activity-cluster.service';
@@ -50,18 +55,32 @@ export class ActivityService {
         diary.author,
       ); // 유저의 모든 활동에 대한 클러스터
 
-      let emotions: CombinedEmotion[] = [];
-      this.aggregateEmotions(activity, emotions);
+      let selfEmotions: CombinedEmotion[] = [];
+      let stateEmotions: CombinedEmotion[] = [];
+      this.aggregateEmotions(activity, selfEmotions, stateEmotions);
 
-      for (const e of emotions) {
-        await this.saveOrUpdateActivityEmotion(e, activityEntity);
+      for (const e of selfEmotions) {
+        await this.saveOrUpdateActivityEmotion(
+          e,
+          activityEntity,
+          EmotionBase.State,
+        );
+      }
+
+      for (const e of stateEmotions) {
+        await this.saveOrUpdateActivityEmotion(
+          e,
+          activityEntity,
+          EmotionBase.State,
+        );
       }
     }
   }
 
   private aggregateEmotions(
     activity: ActivityAnalysis,
-    emotions: CombinedEmotion[],
+    selfEmotions: CombinedEmotion[],
+    stateEmotions: CombinedEmotion[],
   ) {
     const self = this.utilService.toCombinedEmotionTyped(
       activity.self_emotions,
@@ -70,8 +89,8 @@ export class ActivityService {
       activity.state_emotions,
     );
 
-    emotions.push(...self);
-    emotions.push(...state);
+    selfEmotions.push(...self);
+    stateEmotions.push(...state);
   }
 
   /**
@@ -81,6 +100,7 @@ export class ActivityService {
   private async saveOrUpdateActivityEmotion(
     e: CombinedEmotion,
     activityEntity: Activity,
+    emotionBase: EmotionBase,
   ) {
     let emotion = this.utilService.parseEnumValue(EmotionType, e.emotion);
     let entity: ActivityEmotion | null = await this.activityEmotionRepo.findOne(
@@ -99,6 +119,7 @@ export class ActivityService {
       entity.emotion = emotion;
       entity.emotionGroup = getEmotionGroup(entity.emotion);
       entity.intensitySum = e.intensity;
+      entity.emotionBase = emotionBase;
       entity.count = 1;
     } else {
       // 이미 존재한다면 intensity와 카운트의 증가
@@ -157,12 +178,96 @@ export class ActivityService {
   /**
    * 일기 하나를 인자로 받아 연관된 행동들을 string으로 반환합니다
    */
-  async getActivityContentsByDiary(diary:Diary) {
+  async getActivityContentsByDiary(diary: Diary) {
     const activities = await this.repo.find({
-      where: { diary: {id : diary.id} },
-      select: ['content']
-    })
-    return activities.map(activity => activity.content)
+      where: { diary: { id: diary.id } },
+      select: ['content'],
+    });
+    return activities.map((activity) => activity.content);
   }
 
+  /**
+   * 특정 멤버의 모든 활동을 조회합니다.
+   * @param memberId - 멤버의 ID
+   * @returns 해당 멤버의 모든 활동 배열
+   */
+  private async getActivitiesByMember(memberId: string): Promise<Activity[]> {
+    return this.repo
+      .createQueryBuilder('activity')
+      .innerJoin('activity.diary', 'diary')
+      .innerJoin('diary.author', 'author')
+      .where('author.id = :memberId', { memberId })
+      .leftJoinAndSelect('activity.emotions', 'emotions')
+      .getMany();
+  }
+
+  /**
+   * 활동 배열을 필터링하여 특정 감정 그룹과 관련된 활동만 반환합니다.
+   * @param activities - 필터링할 활동 배열
+   * @param emotionGroup - 필터링할 감정 그룹
+   * @returns 필터링된 활동 배열
+   */
+  private filterActivitiesByEmotionGroup(
+    activities: Activity[],
+    emotionGroup: EmotionGroup,
+  ): Activity[] {
+    return activities.filter((activity) =>
+      activity.emotions.some((emotion) => {
+        const base = getEmotionBase(emotion.emotion);
+        return (
+          (base === EmotionBase.State || base === EmotionBase.Self) &&
+          emotion.emotionGroup === emotionGroup
+        );
+      }),
+    );
+  }
+
+  /**
+   * 활동 배열을 필터링하여 감정 강도가 임계값 이상인 활동만 반환합니다.
+   * @param activities - 필터링할 활동 배열
+   * @param threshold - 감정 강도 임계값
+   * @returns 필터링된 활동 배열
+   */
+  private filterActivitiesByIntensity(
+    activities: Activity[],
+    threshold: number,
+  ): Activity[] {
+    return activities.filter((activity) =>
+      activity.emotions.some((emotion) => emotion.intensitySum >= threshold),
+    );
+  }
+
+  /**
+   * 특정 감정 그룹 및 강도 임계값에 따라 활동을 조회합니다.
+   * @param memberId - 멤버의 ID
+   * @param emotionGroup - 조회할 감정 그룹
+   * @param intensityThreshold - 감정 강도 임계값
+   * @returns 조건에 맞는 활동의 ID와 내용 배열
+   */
+  async getActivitiesByEmotionGroup(
+    memberId: string,
+    emotionGroup: EmotionGroup,
+    intensityThreshold: number,
+  ): Promise<{ id: number; content: string }[]> {
+    // 1. 해당 멤버의 모든 활동을 가져옵니다.
+    const allActivities = await this.getActivitiesByMember(memberId);
+
+    // 2. EmotionBase가 State 또는 Self이고, EmotionGroup이 일치하는 활동만 필터링합니다.
+    const groupFilteredActivities = this.filterActivitiesByEmotionGroup(
+      allActivities,
+      emotionGroup,
+    );
+
+    // 3. 감정 강도가 임계값 이상인 활동만 필터링합니다.
+    const intensityFilteredActivities = this.filterActivitiesByIntensity(
+      groupFilteredActivities,
+      intensityThreshold,
+    );
+
+    // 4. 필터링된 활동의 id와 content만 반환합니다.
+    return intensityFilteredActivities.map((activity) => ({
+      id: activity.id,
+      content: activity.content,
+    }));
+  }
 }

@@ -34,6 +34,9 @@ export class YoutubeService {
     await this.searchAndStoreVideos();
   }
 
+  /**
+   * Youtube API를 이용해 키워드로 검색된 영상을 저장합니다
+   */
   async searchAndStoreVideos(): Promise<void> {
     this.logger.log('Starting YouTube video search and storage...');
     for (const emotionTypeKey in EMOTION_YOUTUBE_KEYWORDS) {

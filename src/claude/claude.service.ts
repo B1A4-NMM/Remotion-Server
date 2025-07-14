@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { DiaryAnalysis } from '../util/json.parser';
 import { PROMPT_ANALYZE, PROMPT_ROUTINE, PROMPT_VALIDATE } from '../constants/prompt.constants';
 import { EmotionLevels } from '../util/routine.parser';
+import { EmotionGroup } from '../enums/emotion-type.enum';
 
 @Injectable()
 export class ClaudeService {
@@ -77,6 +78,18 @@ export class ClaudeService {
 
   일기: ${prompt}
 `;
+  }
+
+  private recommendCommentPrompt(activites:string[], emotion:EmotionGroup, dayOfWeek:string): string {
+    return `
+    당신은 사용자의 기분 전환을 위한 특정 행동을 추천해주는 멘트를 써줘야한다.
+    오늘은 ${dayOfWeek}이고, 사용자는 이 요일마다 ${emotion} 감정을 많이 받는다.
+    사용자는 다음 행동들에서 긍정적인 감정을 얻을 가능성이 높다.
+    ${activites.join(', ')}
+    이를 참고하여 사용자가 자연스럽게 위로를 받을 수 있는 멘트를 써라. 다음은 예시이다.
+    1. 월요일마다 우울한 감정이 많이 드시네요!! 러닝을 통해 기분전환 어떠세요?
+    2. 화요일마다 스트레스를 많이 받으시네요. 명상을 통해 화를 다스리시는 게 어떠세요? 
+    `
   }
 
   async querySummary(prompt: string): Promise<string> {
@@ -384,6 +397,34 @@ export class ClaudeService {
       throw new Error(`Pattern analysis failed: ${error.message}`);
     }
 
+  }
+
+  async getRecommendComment(activites:string[], emotion:EmotionGroup, dayOfWeek:string): Promise<string> {
+    const processedPrompt = this.recommendCommentPrompt(activites, emotion, dayOfWeek);
+
+    const command = new InvokeModelCommand({
+      modelId: 'apac.amazon.nova-pro-v1:0',
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          { role: 'user', content: [{ text: processedPrompt }] },
+        ],
+        inferenceConfig: {
+          maxTokens: 4000,
+          temperature: 0.05,
+          topP: 0.9,
+        },
+      }),
+    });
+
+    const response = await this.client.send(command);
+    const body = await response.body.transformToString();
+    const parsed = JSON.parse(body);
+
+    let responseText = parsed?.output?.message?.content?.[0]?.text || 'No response';
+
+    return responseText;
   }
 
 }

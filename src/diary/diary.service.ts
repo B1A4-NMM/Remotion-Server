@@ -26,6 +26,7 @@ import { SearchDiaryRes } from './dto/search-diary.res';
 import { ActivityService } from '../activity/activity.service';
 import { DiaryBookmarkListRes } from './dto/DiaryBookmarkListRes';
 import { InfiniteBookmarkScrollRes } from './dto/infinite-bookmark-scroll.res';
+import { DiaryDetailRes } from './dto/diary-detail.res';
 
 @Injectable()
 export class DiaryService {
@@ -233,7 +234,7 @@ export class DiaryService {
   }
 
   /**
-   * 해당 다이어리에 저장되어있는 json 본문을 반환합니다
+   * 해당 다이어리에 저장되어있는 json 본문을 포함한 정보를 반환합니다
    */
   async getDiaryJson(memberId: string, id: number) {
     const diary = await this.diaryRepository.findOneOrFail({
@@ -244,7 +245,7 @@ export class DiaryService {
       throw new NotFoundException('해당 일기의 주인이 아닙니다');
     }
 
-    return diary.metadata;
+    return new DiaryDetailRes(diary);
   }
 
   /**
