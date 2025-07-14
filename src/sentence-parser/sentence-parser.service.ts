@@ -8,6 +8,7 @@ import { Member } from '../entities/Member.entity';
 import { LocalDate } from 'js-joda';
 import { v4 as uuidv4 } from 'uuid';
 import { SEARCH_THRESHOLD, SEARCH_TOP_K } from '../constants/search.contants';
+import { ClaudeService } from '../claude/claude.service';
 
 
 @Injectable()
@@ -18,6 +19,7 @@ export class SentenceParserService {
     private readonly qdrantService: QdrantService,
     private readonly configService: ConfigService,
     private readonly embedService: EmbeddingService,
+    private readonly LLMService: ClaudeService
   ) {
     this.createCollection();
   }
@@ -115,8 +117,12 @@ export class SentenceParserService {
     // 🔽 필터 추가: rerankScore가 0.7 이상인 것만
     const filtered = final.filter((item) => item.rerankScore >= SEARCH_THRESHOLD);
 
+    const payloads: {diary_id:number, memberId:string, sentence:string, date:string}[] = filtered.map((item) => item.payload);
+    let ragResult = await this.LLMService.getRAG(query, payloads);
+    ragResult = ragResult.filter(rag => rag.is_similar == true)
+
 // 🔽 Top-K 제한
-    return filtered.slice(0, SEARCH_TOP_K); // Top-K 개수 제한
+    return ragResult.slice(0, SEARCH_TOP_K); // Top-K 개수 제한
   }
 
   async deleteAllByDiaryId(diaryId: number) {
