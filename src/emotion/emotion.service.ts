@@ -38,6 +38,8 @@ import { Activity } from '../entities/Activity.entity';
 import { EmotionAnalysisPeriodRes } from './dto/emotion-analysis-period.res';
 import { ConfigService } from '@nestjs/config';
 
+import { EmotionSummaryByTargetResponseDto } from './dto/emotion-summary-by-target.res.dto';
+
 @Injectable()
 export class EmotionService {
   private readonly logger = new Logger(EmotionService.name);
@@ -55,6 +57,99 @@ export class EmotionService {
     private readonly diaryRepository: Repository<Diary>,
     private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * Target ID를 기반으로 EmotionTarget 엔티티를 조회합니다.
+   * @param targetId - 조회할 대상의 ID
+   * @returns EmotionTarget 엔티티 배열
+   */
+  private async getEmotionTargetsByTargetId(
+    targetId: number,
+  ): Promise<EmotionTarget[]> {
+    return this.emotionTargetRepository.find({
+      where: { target: { id: targetId } },
+      relations: ['target'],
+    });
+  }
+
+  /**
+   * EmotionTarget 엔티티 목록을 날짜별로 그룹화합니다.
+   * @param emotionTargets - 그룹화할 EmotionTarget 엔티티 배열
+   * @returns 날짜별로 그룹화된 EmotionTarget 맵
+   */
+  private groupEmotionTargetsByDate(
+    emotionTargets: EmotionTarget[],
+  ): Map<string, EmotionTarget[]> {
+    const groupedByDate = new Map<string, EmotionTarget[]>();
+
+    for (const emotionTarget of emotionTargets) {
+      const feelDate = emotionTarget.feel_date?.toString() ?? LocalDate.now().toString();
+      if (!groupedByDate.has(feelDate)) {
+        groupedByDate.set(feelDate, []);
+      }
+      // @ts-ignore
+      groupedByDate.get(feelDate).push(emotionTarget);
+    }
+
+    return groupedByDate;
+  }
+
+  /**
+   * 특정 날짜의 EmotionTarget 목록을 감정별로 집계합니다.
+   * @param emotionTargetsForDate - 특정 날짜의 EmotionTarget 엔티티 배열
+   * @returns 감정별로 집계된 결과 배열
+   */
+  private aggregateEmotions(
+    emotionTargetsForDate: EmotionTarget[],
+  ): { emotion: EmotionType; count: number; intensity: number }[] {
+    const emotionMap = new Map<
+      EmotionType,
+      { count: number; intensity: number }
+    >();
+
+    for (const { emotion, count, emotion_intensity } of emotionTargetsForDate) {
+      if (!emotionMap.has(emotion)) {
+        emotionMap.set(emotion, { count: 0, intensity: 0 });
+      }
+      const current = emotionMap.get(emotion);
+      current!.count += count;
+      current!.intensity += emotion_intensity;
+    }
+
+    return Array.from(emotionMap.entries()).map(
+      ([emotion, { count, intensity }]) => ({
+        emotion,
+        count,
+        intensity,
+      }),
+    );
+  }
+
+  /**
+   * Target ID에 연관된 감정을 날짜별로 집계하여 반환합니다.
+   * @param targetId - 대상의 ID
+   * @returns 날짜별 감정 집계 결과
+   */
+  async getEmotionSummaryByTarget(targetId: number): Promise<EmotionSummaryByTargetResponseDto[]> {
+    // 1. Target ID로 EmotionTarget 엔티티 조회
+    const emotionTargets = await this.getEmotionTargetsByTargetId(targetId);
+
+    if (!emotionTargets.length) {
+      return [];
+    }
+
+    // 2. 날짜별로 EmotionTarget 그룹화
+    const groupedByDate = this.groupEmotionTargetsByDate(emotionTargets);
+
+    // 3. 날짜별로 감정 집계
+    const result: EmotionSummaryByTargetResponseDto[] = [];
+    for (const [date, targets] of groupedByDate.entries()) {
+      const emotions = this.aggregateEmotions(targets);
+      result.push({ date, emotions });
+    }
+
+    return result;
+  }
 
   /**
    * 기간,멤버,감정 그룹을 인자로 받아 멤버와 연관된 해당 기간 내의 감정 그룹들을 반환합니다
@@ -338,13 +433,14 @@ export class EmotionService {
   async createOrUpdateEmotionTarget(
     target: Target,
     emotions: CombinedEmotion[],
+    feelDate:LocalDate
   ) {
     for (const dto of emotions) {
       const emotion = dto.emotion;
       const emotionIntensity = dto.intensity;
       let find = await this.findOneEmotionTarget(target, emotion);
       if (find === null) {
-        find = new EmotionTarget(emotion, target, emotionIntensity, 1);
+        find = new EmotionTarget(emotion, target, emotionIntensity, 1, feelDate);
       } else {
         find.emotion_intensity += emotionIntensity;
         find.count += 1;
@@ -611,4 +707,6 @@ export class EmotionService {
 
     return result;
   }
+
+
 }

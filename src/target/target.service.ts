@@ -40,7 +40,7 @@ export class TargetService {
    */
   async createByDiary(people: Person[], diary: Diary, member: Member) {
     for (const person of people) {
-      let target = await this.findOne(member, person.name);
+      let target = await this.findOne(member.id, person.name);
       if (target === null) {
         // 대상이 없다면 생성
         target = new Target(
@@ -71,8 +71,20 @@ export class TargetService {
       await this.emotionService.createOrUpdateEmotionTarget(
         target,
         feelToTarget,
+        diary.written_date,
       );
     }
+  }
+
+  /**
+   * 해당 대상이 나타난 다이어리를 모두 반환합니다 
+   */
+  async getDiariesByTarget(targetId: number) {
+    const diaries = await this.diaryTargetRepository.find({
+      where: { target: {id : targetId} },
+      relations: ['diary']
+    })
+    return diaries.map(diary => diary.diary)
   }
 
   async createDiaryTarget(target: Target, diary: Diary) {
@@ -86,10 +98,19 @@ export class TargetService {
     }
   }
 
-  async findOne(member: Member, targetName: string) {
+  async findOne(memberId:string, targetName: string) {
     return await this.targetRepository.findOneBy({
-      member: member,
+      member: {id : memberId},
       name: targetName,
+    });
+  }
+
+  async findOneById(memberId:string, targetId: number) {
+    return await this.targetRepository.findOneOrFail({
+      where: {
+        member: { id: memberId },
+        id : targetId
+      },
     });
   }
 

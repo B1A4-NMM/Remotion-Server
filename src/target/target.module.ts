@@ -10,6 +10,7 @@ import { EmotionModule } from '../emotion/emotion.module';
 @Module({
   imports: [TypeOrmModule.forFeature([Target, DiaryTarget]), MemberModule, EmotionModule],
   providers: [TargetService],
-  exports: [TargetService]
+  exports: [TargetService],
+  controllers: []
 })
 export class TargetModule {}
