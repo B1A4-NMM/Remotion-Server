@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -14,15 +15,16 @@ import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
 import { RoutineEnum } from '../enums/routine.enum';
 import {
+  ApiBearerAuth,
+  ApiBody,
   ApiOperation,
+  ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
-  ApiBody,
-  ApiParam,
-  ApiHeader,
-  ApiBearerAuth, ApiQuery,
 } from '@nestjs/swagger';
 import { RoutineRes } from './dto/routine.res';
+import { RecommendRoutineRes } from './dto/recommend-routine.res';
 
 @Controller('routine')
 @ApiTags('루틴')
@@ -147,7 +149,7 @@ export class RoutineController {
   @ApiResponse({
     status: 200,
     description: '루틴 추천 성공',
-    type: RoutineRes,
+    type: RecommendRoutineRes,
   })
   async getRecommendRoutine(
     @CurrentUser() user: any,
@@ -205,5 +207,28 @@ export class RoutineController {
     const memberId: string = user.id;
     const trigger = await this.routineService.toggleTrigger(+id);
     return { id: trigger.id, isTrigger: trigger.isTrigger };
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: '루틴 삭제',
+    description: '사용자의 루틴을 삭제합니다.',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    type: Number,
+    description: '삭제할 루틴 ID',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '루틴 삭제 성공',
+  })
+  async deleteRoutine(
+    @CurrentUser() user: any,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    const memberId: string = user.id;
+    return await this.routineService.deleteRoutine(memberId, id);
   }
 }

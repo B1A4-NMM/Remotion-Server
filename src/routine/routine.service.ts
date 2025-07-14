@@ -122,4 +122,15 @@ export class RoutineService {
     }
     return routine[Math.floor(Math.random() * routine.length)];
   }
+
+  async deleteRoutine(memberId: string, routineId: number) {
+    const routine = await this.routineRepository.findOneOrFail({
+      where: {
+        member: { id: memberId },
+        id : routineId
+      },
+    });
+
+    return await this.routineRepository.remove(routine);
+  }
 }
