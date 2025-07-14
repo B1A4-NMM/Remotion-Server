@@ -83,7 +83,8 @@ export class EmotionService {
     const groupedByDate = new Map<string, EmotionTarget[]>();
 
     for (const emotionTarget of emotionTargets) {
-      const feelDate = emotionTarget.feel_date?.toString() ?? LocalDate.now().toString();
+      const feelDate =
+        emotionTarget.feel_date?.toString() ?? LocalDate.now().toString();
       if (!groupedByDate.has(feelDate)) {
         groupedByDate.set(feelDate, []);
       }
@@ -130,7 +131,9 @@ export class EmotionService {
    * @param targetId - 대상의 ID
    * @returns 날짜별 감정 집계 결과
    */
-  async getEmotionSummaryByTarget(targetId: number): Promise<EmotionSummaryByTargetResponseDto[]> {
+  async getEmotionSummaryByTarget(
+    targetId: number,
+  ): Promise<EmotionSummaryByTargetResponseDto[]> {
     // 1. Target ID로 EmotionTarget 엔티티 조회
     const emotionTargets = await this.getEmotionTargetsByTargetId(targetId);
 
@@ -433,14 +436,20 @@ export class EmotionService {
   async createOrUpdateEmotionTarget(
     target: Target,
     emotions: CombinedEmotion[],
-    feelDate:LocalDate
+    feelDate: LocalDate,
   ) {
     for (const dto of emotions) {
       const emotion = dto.emotion;
       const emotionIntensity = dto.intensity;
       let find = await this.findOneEmotionTarget(target, emotion);
       if (find === null) {
-        find = new EmotionTarget(emotion, target, emotionIntensity, 1, feelDate);
+        find = new EmotionTarget(
+          emotion,
+          target,
+          emotionIntensity,
+          1,
+          feelDate,
+        );
       } else {
         find.emotion_intensity += emotionIntensity;
         find.count += 1;
@@ -480,7 +489,10 @@ export class EmotionService {
     emotionBase: EmotionBase,
   ) {
     for (const emotion of emotions) {
-      let entity = await this.findOneDiaryEmotionByEmotionType(diary, emotion.emotion);
+      let entity = await this.findOneDiaryEmotionByEmotionType(
+        diary,
+        emotion.emotion,
+      );
       if (entity === null) {
         entity = new DiaryEmotion(
           diary,
@@ -636,15 +648,12 @@ export class EmotionService {
   /**
    * 일기를 가장 처음 쓴 날부터 오늘까지의 감정을 요일별로 묶어서 반환합니다
    */
-  async getAllEmotionsGroupByWeekday(
-    memberId: string,
-  ) {
+  async getAllEmotionsGroupByWeekday(memberId: string) {
     const endDate = LocalDate.now();
-    let result =
-      await this.diaryRepository
-        .createQueryBuilder('d')
-        .select('MIN(d.written_date)', 'minDate')
-        .getRawOne();
+    let result = await this.diaryRepository
+      .createQueryBuilder('d')
+      .select('MIN(d.written_date)', 'minDate')
+      .getRawOne();
     const rawMinDate = result?.minDate;
 
     const startDate = rawMinDate
@@ -652,7 +661,10 @@ export class EmotionService {
       : endDate;
 
     const period = ChronoUnit.DAYS.between(startDate, endDate);
-    const EmotionGroupByWeekday = await this.getEmotionSummaryWeekDay(memberId, period);
+    const EmotionGroupByWeekday = await this.getEmotionSummaryWeekDay(
+      memberId,
+      period,
+    );
 
     return EmotionGroupByWeekday;
   }
@@ -732,5 +744,79 @@ export class EmotionService {
     return result;
   }
 
+  /**
+   * 년, 월을 인자로 받아 해당 월의 감정 Base 기반 분석을 수행합니다.
+   * @param memberId 회원 ID
+   * @param year 연도
+   * @param month 월
+   */
+  async getEmotionBaseAnalysisByMonth(
+    memberId: string,
+    year: number,
+    month: number,
+  ) {
+    const startDate = LocalDate.of(year, month, 1);
+    const endDate = startDate.plusMonths(1).minusDays(1);
 
+    return this.getEmotionBaseAnalysisByPeriod(memberId, startDate, endDate);
+  }
+
+  /**
+   * 기간을 인자로 받아 해당 기간의 감정 Base 기반 분석을 수행합니다.
+   * @param memberId 회원 ID
+   * @param startDate 시작 날짜
+   * @param endDate 종료 날짜
+   * @returns 감정 Base 분석 결과
+   */
+  async getEmotionBaseAnalysisByPeriod(
+    memberId: string,
+    startDate: LocalDate,
+    endDate: LocalDate,
+  ): Promise<EmotionBaseAnalysisResponseDto> {
+    // 1. DB에서 기간 내의 집계 데이터를 한번에 조회
+    const rawResult = await this.diaryEmotionRepository
+      .createQueryBuilder('emotion')
+      .select('emotion.emotionBase', 'emotionBase')
+      .addSelect('emotion.emotion', 'emotion')
+      .addSelect('SUM(emotion.intensity)', 'intensity')
+      .addSelect('COUNT(*)', 'count')
+      .innerJoin('emotion.diary', 'diary')
+      .where('diary.author_id = :memberId', { memberId })
+      .andWhere('diary.written_date BETWEEN :startDate AND :endDate', {
+        startDate: startDate.toString(),
+        endDate: endDate.toString(),
+      })
+      .groupBy('emotion.emotionBase')
+      .addGroupBy('emotion.emotion')
+      .getRawMany<{
+        emotionBase: EmotionBase;
+        emotion: EmotionType;
+        intensity: string;
+        count: string;
+      }>();
+
+    // 2. 초기화된 반환 DTO 구조
+    const result: EmotionBaseAnalysisResponseDto = {
+      Relation: [],
+      Self: [],
+      State: [],
+    };
+
+    // 3. rawResult 순회하면서 해당 base에 맞는 배열에 값 push하기
+    for (const row of rawResult) {
+      const base = row.emotionBase as EmotionBase;
+      const emotion = row.emotion as EmotionType;
+
+      const dto: EmotionBaseAnalysisDto = {
+        emotion,
+        // db에서 string형으로 주기 때문에 float,int형으로 바꿔주기
+        intensity: Math.round(parseFloat(row.intensity) * 1000) / 1000,
+        count: parseInt(row.count),
+      };
+
+      result[base].push(dto);
+    }
+
+    return result;
+  }
 }
