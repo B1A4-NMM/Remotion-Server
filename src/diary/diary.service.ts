@@ -20,7 +20,6 @@ import { LocalDate } from 'js-joda';
 import { MemberSummary } from '../entities/member-summary.entity';
 import { SentenceParserService } from '../sentence-parser/sentence-parser.service';
 import { TargetService } from '../target/target.service';
-import { Member } from '../entities/Member.entity';
 import { InfiniteScrollRes } from './dto/infinite-scroll.res';
 import { SearchDiaryRes } from './dto/search-diary.res';
 import { ActivityService } from '../activity/activity.service';
