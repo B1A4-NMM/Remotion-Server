@@ -5,9 +5,10 @@ import {
 } from '@aws-sdk/client-bedrock-runtime';
 import { ConfigService } from '@nestjs/config';
 import { DiaryAnalysis } from '../util/json.parser';
-import { PROMPT_ANALYZE, PROMPT_ROUTINE, PROMPT_VALIDATE } from '../constants/prompt.constants';
+import { PROMPT_ANALYZE, PROMPT_ROUTINE, PROMPT_VALIDATE, promptRAG } from '../constants/prompt.constants';
 import { EmotionLevels } from '../util/routine.parser';
 import { EmotionGroup } from '../enums/emotion-type.enum';
+import { LocalDate } from 'js-joda';
 
 @Injectable()
 export class ClaudeService {
@@ -425,6 +426,44 @@ export class ClaudeService {
 
     let responseText = parsed?.output?.message?.content?.[0]?.text || 'No response';
     const result = responseText.replace(/\*\*(.*?)\*\*/g, '$1');
+
+    return result;
+  }
+
+  async getRAG(query: string, documents: {
+    diary_id: number;
+    memberId: string;
+    sentence: string;
+    date: string;
+  }[]) {
+    const processedPrompt = promptRAG(query, documents, LocalDate.now().toString());
+
+    const command = new InvokeModelCommand({
+      modelId: 'apac.amazon.nova-lite-v1:0',
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          { role: 'user', content: [{ text: processedPrompt }] },
+        ],
+        inferenceConfig: {
+          maxTokens: 4000,
+          temperature: 1.0,
+          topP: 0.9,
+        },
+      }),
+    });
+
+    const response = await this.client.send(command);
+    const body = await response.body.transformToString();
+    const parsed = JSON.parse(body);
+
+    let responseText = parsed?.output?.message?.content?.[0]?.text || 'No response';
+    responseText = responseText.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+
+    let result = responseText.replace(/\*\*(.*?)\*\*/g, '$1');
+    result = JSON.parse(result);
+    console.log(result)
 
     return result;
   }

@@ -20,8 +20,6 @@ C. RETURN **ONLY** the corrected JSON (no commentary)
   - enum 밖 단어 → 가장 근접 enum, 없으면 "None"  
 • Strength  
   - 아래 24 개 enum 외 금지, 근거 부족 시 "None"  
-• decision_code  
-  - 아래 5 개 enum 외 금지, 근거 부족 시 "None"  
 • conflict_response_code  
   - 아래 24 개 enum 외 금지, 근거 부족 시 "None"  
   
@@ -36,9 +34,6 @@ C. RETURN **ONLY** the corrected JSON (no commentary)
 
 [ STRENGTH (24) ]  
 창의성, 호기심, 판단력, 학습애, 통찰력, 용감함, 끈기, 정직함, 활력, 사랑, 친절함, 사회적지능, 팀워크, 공정함, 리더십, 용서, 겸손, 신중함, 자기조절, 미적감상, 감사, 희망, 유머, None 
-
-[ decision_code ]
-합리적, 직관적, 의존적, 회피적, 충동적
 
 [ conflict_response_code ]
 회피형, 경쟁형, 타협형, 수용형, 협력형
@@ -109,7 +104,6 @@ export const PROMPT_ANALYZE = `
         "situation": "",
         "approach": "",
         "outcome": "",
-        "decision_code" :"",
         "conflict_response_code":""
       }],
       "strength": ""
@@ -142,7 +136,6 @@ Fields
   • situation  = 부정 맥락 핵심어(어려움, 갈등, 실패, …)  
   • approach   = 해결 행동
   • outcome    = 현재 상태/결과  
-  • decision_code    = CHOOSE ONE FROM enum [합리적, 직관적, 의존적, 회피적, 충동적]
   • conflict_response_code    =   CHOOSE ONE FROM enum [회피형, 경쟁형, 타협형, 수용형, 협력형]
 ↳ situation="None" ⇒ 나머지 4필드도 "None".  
 ↳ approach="None"  ⇒ outcome="None".
@@ -233,3 +226,59 @@ export const PROMPT_ROUTINE = `
   "nervous": ""
   }
 `;
+
+export function promptRAG(
+  question: string,
+  documents: {
+    diary_id: number;
+    memberId: string;
+    sentence: string;
+    date: string;
+  }[],
+  today: string,
+) {
+  const formattedDocs = JSON.stringify(documents, null, 2);
+
+  return `
+사용자의 질의는 다음과 같습니다:
+
+질문: "${question}"
+
+오늘 날짜는 ${today}입니다.
+사용자의 질문에 "최근", "3개월 이내", "작년" 등 기간을 포함하는 표현이 있다면, 반드시 문장의 날짜(date 필드)를 보고 비교해서 판단해 주세요.
+
+아래는 과거에 사용자가 작성한 일기 문장들입니다.
+각 문장에는 다음 필드가 포함되어 있습니다:
+- diary_id: 해당 문장이 포함된 일기의 고유 ID
+- sentence: 일기 문장 내용
+- date: 문장이 작성된 날짜 (YYYY-MM-DD 형식)
+
+각 문장이 위 질문과 의미적으로 유사한지 판단해 주세요.
+유사하다면 true, 아니라면 false로 표시하고, 결과를 JSON 배열 형식으로 반환해 주세요.
+
+문장 목록:
+${formattedDocs}
+
+응답 형식 (주의: JSON 배열만 반환하세요):
+
+[
+  {
+    "diary_id": 76,
+    "sentence" : "이러한 일이 있었다"
+    "is_similar": true
+  },
+  {
+    "diary_id": 92,
+    "sentence" : "저러한 일이 있었다"
+    "is_similar": true
+  },
+  {
+    "diary_id": 84,
+    "sentence" : "그러한 일이 있었다"
+    "is_similar": false
+  }
+]
+  `;
+}
+
+

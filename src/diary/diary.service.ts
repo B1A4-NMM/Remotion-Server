@@ -458,7 +458,7 @@ export class DiaryService {
     let res = new SearchDiaryRes();
 
     for (const vector of result) {
-      const diaryId = vector.payload.diary_id;
+      const diaryId = vector.diary_id;
       const diary = await this.diaryRepository.findOne({
         where: {
           id: diaryId,
