@@ -4,8 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RoutineEnum } from '../enums/routine.enum';
 import { RoutineRes } from './dto/routine.res';
-import { Member } from '../entities/Member.entity';
 import { MemberService } from '../member/member.service';
+import { EmotionGroup } from '../enums/emotion-type.enum';
 
 @Injectable()
 export class RoutineService {
@@ -72,7 +72,32 @@ export class RoutineService {
         id : id
       }
     })
-    trigger.isTrigger = !trigger.isTrigger
-    return await this.routineRepository.save(trigger)
+    trigger.isTrigger = !trigger.isTrigger;
+    return await this.routineRepository.save(trigger);
+  }
+
+  /**
+   * 인자로 받은 감정 그룹에 알맞은 루틴 하나를 랜덤으로 추천합니다 
+   */
+  async getRecommendRoutineRandom(memberId:string, emotions:EmotionGroup) {
+    let routine:any[] = [];
+    switch (emotions) {
+      case EmotionGroup.스트레스:
+        routine = await this.getRoutine(memberId, RoutineEnum.STRESS);
+        break;
+      case EmotionGroup.불안:
+        routine = await this.getRoutine(memberId, RoutineEnum.ANXIETY);
+        break
+      case EmotionGroup.우울:
+        routine = await this.getRoutine(memberId, RoutineEnum.DEPRESSION);
+        break
+      default:
+        return []
+    }
+
+    if (routine.length === 0) {
+      return [];
+    }
+    return routine[Math.floor(Math.random() * routine.length)];
   }
 }

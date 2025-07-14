@@ -11,7 +11,7 @@ export class DiaryMapInfo {
   diaryId: number;
 
   @ApiProperty({ description: '사진 경로' })
-  photo_path: string;
+  photo_path: string | null;
 
   @ApiProperty({ description: '일기 내용, 100자만 표시됩니다' })
   content: string;

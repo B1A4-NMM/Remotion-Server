@@ -89,6 +89,8 @@ export class ClaudeService {
     이를 참고하여 사용자가 자연스럽게 위로를 받을 수 있는 멘트를 써라. 다음은 예시이다.
     1. 월요일마다 우울한 감정이 많이 드시네요!! 러닝을 통해 기분전환 어떠세요?
     2. 화요일마다 스트레스를 많이 받으시네요. 명상을 통해 화를 다스리시는 게 어떠세요? 
+    만약 아무 행동도 없다면, 저 감정을 위로할만한 행동 하나를 뽑아 응답하라.
+    또한 '**' 와 같은 강조 표시나, 멘트 이외의 다른 잡설은 넣지 마라.
     `
   }
 
@@ -403,7 +405,7 @@ export class ClaudeService {
     const processedPrompt = this.recommendCommentPrompt(activites, emotion, dayOfWeek);
 
     const command = new InvokeModelCommand({
-      modelId: 'apac.amazon.nova-pro-v1:0',
+      modelId: 'apac.amazon.nova-lite-v1:0',
       contentType: 'application/json',
       accept: 'application/json',
       body: JSON.stringify({
@@ -412,7 +414,7 @@ export class ClaudeService {
         ],
         inferenceConfig: {
           maxTokens: 4000,
-          temperature: 0.05,
+          temperature: 1.0,
           topP: 0.9,
         },
       }),
@@ -423,8 +425,9 @@ export class ClaudeService {
     const parsed = JSON.parse(body);
 
     let responseText = parsed?.output?.message?.content?.[0]?.text || 'No response';
+    const result = responseText.replace(/\*\*(.*?)\*\*/g, '$1');
 
-    return responseText;
+    return result;
   }
 
 }

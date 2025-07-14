@@ -4,7 +4,7 @@ import {
   Query,
   UseGuards,
   Logger,
-  ParseIntPipe,
+  ParseIntPipe, Param,
 } from '@nestjs/common'; // ParseIntPipe 추가
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
@@ -18,6 +18,8 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { LocalDate } from 'js-joda';
+import { LocalDateTransformer } from '../util/local-date.transformer';
 
 @ApiTags('추천')
 @Controller('recommend')
@@ -80,6 +82,16 @@ export class RecommendController {
   @Get('activity/weekday')
   async getRecommendedActivity(@CurrentUser() user: any) {
     const memberId: string = user.id;
-    return this.recommendService.getCommentByWeekday(memberId);
+    return this.recommendService.getCommentByWeekdayOfToday(memberId);
+  }
+
+  @ApiOperation({
+    summary: '요일별 감정 분석 후 행동 추천',
+    description: '각 요일별로 어떤 감정이 크게 들었고, 감정에 따른 행동을 추천하는 멘트를 반환합니다'
+  })
+  @Get('activity/weekday/:date')
+  async getRecommendedActivityDate(@CurrentUser() user: any, @Param('date') date: string) {
+    const memberId: string = user.id;
+    return this.recommendService.getCommentByWeekday(memberId, LocalDate.parse(date));
   }
 }
