@@ -33,7 +33,7 @@ import { S3Service } from '../upload/s3.service';
 import { CreateDiaryRes } from './dto/create-diary.res';
 import { ParseLocalDatePipe } from '../pipe/parse-local-date.pipe';
 import { LocalDate } from 'js-joda';
-import { DiaryAnalysisSchema } from '../constants/swagger-scheme.constant';
+import { DiaryResponseSchema } from '../constants/swagger-scheme.constant';
 import { MemberSummaryRes } from '../member/dto/member-summary.res';
 import { UploadService } from '../upload/upload.service';
 import { CreateDiaryWithMediaDto } from './dto/create-diary-swagger.dto';
@@ -175,7 +175,7 @@ export class DiaryController {
   @ApiResponse({
     status: 200,
     description: '일기 분석 결과',
-    schema: DiaryAnalysisSchema,
+    schema: DiaryResponseSchema,
   })
   @Get('json/:id')
   async getDiaryToJson(@CurrentUser() user, @Param('id') id: string) {
