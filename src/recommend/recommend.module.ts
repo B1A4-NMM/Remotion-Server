@@ -7,6 +7,7 @@ import { DiaryModule } from '../diary/diary.module';
 import { YoutubeModule } from '../youtube/youtube.module';
 import { ClaudeModule } from '../claude/claude.module';
 import { ActivityClusterModule } from '../activity-cluster/activity-cluster.module';
+import { ActivityModule } from '../activity/activity.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { ActivityClusterModule } from '../activity-cluster/activity-cluster.modu
     DiaryModule,
     YoutubeModule,
     ClaudeModule,
-    ActivityClusterModule
+    ActivityClusterModule,
+    ActivityModule
   ],
   controllers: [RecommendController],
   providers: [RecommendService],

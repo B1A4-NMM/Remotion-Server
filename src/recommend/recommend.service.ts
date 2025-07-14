@@ -12,6 +12,7 @@ import { Member } from '../entities/Member.entity';
 import { LocalDate } from 'js-joda';
 import { ActivityClusterService } from '../activity-cluster/activity-cluster.service';
 import { ClaudeService } from '../claude/claude.service';
+import { ActivityService } from '../activity/activity.service';
 
 @Injectable()
 export class RecommendService {
@@ -23,6 +24,7 @@ export class RecommendService {
     private readonly youtubeService: YoutubeService,
     private readonly activityClusterService: ActivityClusterService,
     private readonly LLMService: ClaudeService,
+    private readonly activityService: ActivityService,
   ) {}
 
   /**
@@ -127,10 +129,12 @@ export class RecommendService {
         comment = '긍정적인 요일이네요!!'
         return comment
     }
+    this.logger.log(`recommendEmotion = ${recommendEmotion}`)
     const clusters =
-      await this.activityClusterService.getActivityClusterByEmotionGroup(
-        recommendEmotion,
+      await this.activityService.getActivitiesByEmotionGroup(
         memberId,
+        recommendEmotion,
+        0
       );
     const activities = clusters.map((c) => c.content);
     if (activities.length === 0) {

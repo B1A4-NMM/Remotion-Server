@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Activity } from '../entities/Activity.entity';
 import { Repository } from 'typeorm';
-import { DiaryAnalysisDto } from '../diary/dto/diary-analysis.dto';
 import { Diary } from '../entities/Diary.entity';
 import { ClustersService } from '../vector/clusters.service';
 import { MakeClusterDto, SentenceDto } from '../vector/dto/make-cluster.dto';
@@ -10,7 +9,13 @@ import { LocalDate } from 'js-joda';
 import { ActivityEmotion } from '../entities/activity-emotion.entity';
 import { ActivityAnalysis, CombinedEmotion } from '../util/json.parser';
 import { CommonUtilService } from '../util/common-util.service';
-import { EmotionBase, EmotionGroup, EmotionType, getEmotionBase, getEmotionGroup } from '../enums/emotion-type.enum';
+import {
+  EmotionBase,
+  EmotionGroup,
+  EmotionType,
+  getEmotionBase,
+  getEmotionGroup,
+} from '../enums/emotion-type.enum';
 import { ClusteringResult } from '../util/cluster-json.parser';
 import { SimsceEmbedderService } from '../vector/simsce-embedder.service';
 import { ActivityClusterService } from '../activity-cluster/activity-cluster.service';
@@ -50,18 +55,32 @@ export class ActivityService {
         diary.author,
       ); // 유저의 모든 활동에 대한 클러스터
 
-      let emotions: CombinedEmotion[] = [];
-      this.aggregateEmotions(activity, emotions);
+      let selfEmotions: CombinedEmotion[] = [];
+      let stateEmotions: CombinedEmotion[] = [];
+      this.aggregateEmotions(activity, selfEmotions, stateEmotions);
 
-      for (const e of emotions) {
-        await this.saveOrUpdateActivityEmotion(e, activityEntity);
+      for (const e of selfEmotions) {
+        await this.saveOrUpdateActivityEmotion(
+          e,
+          activityEntity,
+          EmotionBase.State,
+        );
+      }
+
+      for (const e of stateEmotions) {
+        await this.saveOrUpdateActivityEmotion(
+          e,
+          activityEntity,
+          EmotionBase.State,
+        );
       }
     }
   }
 
   private aggregateEmotions(
     activity: ActivityAnalysis,
-    emotions: CombinedEmotion[],
+    selfEmotions: CombinedEmotion[],
+    stateEmotions: CombinedEmotion[],
   ) {
     const self = this.utilService.toCombinedEmotionTyped(
       activity.self_emotions,
@@ -70,8 +89,8 @@ export class ActivityService {
       activity.state_emotions,
     );
 
-    emotions.push(...self);
-    emotions.push(...state);
+    selfEmotions.push(...self);
+    stateEmotions.push(...state);
   }
 
   /**
@@ -81,6 +100,7 @@ export class ActivityService {
   private async saveOrUpdateActivityEmotion(
     e: CombinedEmotion,
     activityEntity: Activity,
+    emotionBase: EmotionBase,
   ) {
     let emotion = this.utilService.parseEnumValue(EmotionType, e.emotion);
     let entity: ActivityEmotion | null = await this.activityEmotionRepo.findOne(
@@ -99,6 +119,7 @@ export class ActivityService {
       entity.emotion = emotion;
       entity.emotionGroup = getEmotionGroup(entity.emotion);
       entity.intensitySum = e.intensity;
+      entity.emotionBase = emotionBase;
       entity.count = 1;
     } else {
       // 이미 존재한다면 intensity와 카운트의 증가
@@ -157,12 +178,12 @@ export class ActivityService {
   /**
    * 일기 하나를 인자로 받아 연관된 행동들을 string으로 반환합니다
    */
-  async getActivityContentsByDiary(diary:Diary) {
+  async getActivityContentsByDiary(diary: Diary) {
     const activities = await this.repo.find({
-      where: { diary: {id : diary.id} },
-      select: ['content']
-    })
-    return activities.map(activity => activity.content)
+      where: { diary: { id: diary.id } },
+      select: ['content'],
+    });
+    return activities.map((activity) => activity.content);
   }
 
   /**
