@@ -436,6 +436,7 @@ export class ClaudeService {
     sentence: string;
     date: string;
   }[]) {
+    console.log(`sentence = ${documents.map(d => d.sentence).join('\n')}`);
     const processedPrompt = promptRAG(query, documents, LocalDate.now().toString());
 
     const command = new InvokeModelCommand({
@@ -463,7 +464,7 @@ export class ClaudeService {
 
     let result = responseText.replace(/\*\*(.*?)\*\*/g, '$1');
     result = JSON.parse(result);
-    console.log(result)
+    console.log(`result = ${JSON.stringify(result)}`)
 
     return result;
   }
