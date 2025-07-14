@@ -168,7 +168,7 @@ export class DiaryController {
   @Get('/today')
   async getTodayDiary(@CurrentUser() user): Promise<DiaryHomeRes> {
     const memberId = user.id;
-    return this.diaryService.getTodayDiriesRes(memberId);
+    return this.diaryService.getTodayDiariesRes(memberId);
   }
 
   @ApiOperation({ summary: '특정 일기 json 데이터 조회' })
