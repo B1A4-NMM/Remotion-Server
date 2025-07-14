@@ -11,6 +11,11 @@ import { Diary } from '../entities/Diary.entity';
 import { Member } from '../entities/Member.entity';
 import { Activity } from '../entities/Activity.entity';
 import { ActivityEmotion } from '../entities/activity-emotion.entity';
+import {
+  EmotionGroup,
+  getEmotionGroup,
+  EmotionType,
+} from '../enums/emotion-type.enum';
 
 @Injectable()
 export class ActivityClusterService {
@@ -213,6 +218,12 @@ export class ActivityClusterService {
     return sum.map((v) => v / len);
   }
 
+  /**
+   * 주어진 멤버의 행동 클러스터들을 가져와 각 클러스터별로 가장 많이 나타난 감정들을 반환합니다.
+   * @param memberId 조회할 멤버의 ID
+   * @param limit 각 클러스터당 반환할 상위 감정의 수 (기본값: 3)
+   * @returns 클러스터 ID, 라벨, 상위 N개 감정과 각 감정의 출현 횟수를 포함한 배열
+   */
   public async getTopEmotionsByMember(memberId: string, limit: number = 3) {
     const clusters = await this.activityClusterRepo.find({
       where: { author: { id: memberId } },
@@ -241,5 +252,51 @@ export class ActivityClusterService {
    */
   private async deleteById(id: string) {
     await this.qdrantService.deletePointById(this.collection, id)
+  }
+
+  /**
+   * 주어진 멤버의 특정 감정 그룹과 관련된 활동들을 조회합니다.
+   * @param emotionGroup 조회할 감정 그룹
+   * @param memberId 멤버의 ID
+   * @returns 감정 그룹과 관련된 활동들의 ID와 내용 배열
+   */
+  public async getActivityClusterByEmotionGroup(
+    emotionGroup: EmotionGroup | null,
+    memberId: string,
+  ): Promise<{ id: number; content: string }[]> {
+
+    if (emotionGroup === null) {
+      return []
+    }
+
+    // 1. 각 행동 클러스터의 top 1 감정을 가져옵니다.
+    const topEmotionsByCluster = await this.getTopEmotionsByMember(memberId, 1);
+
+    // 2. top 1 감정을 EmotionGroup으로 그룹화하고, 인자로 받은 EmotionGroup과 일치하는 클러스터만 필터링합니다.
+    const targetClusters = topEmotionsByCluster.filter((cluster) => {
+      if (cluster.top3Emotions.length > 0) {
+        const topEmotion = cluster.top3Emotions[0].emotion as EmotionType;
+        const topEmotionGroup = getEmotionGroup(topEmotion);
+        return topEmotionGroup === emotionGroup;
+      }
+      return false;
+    });
+
+    if (targetClusters.length === 0) {
+      return [];
+    }
+
+    // 3. 필터링된 클러스터에 속한 모든 Activity를 조회합니다.
+    const clusterIds = targetClusters.map((cluster) => cluster.clusterId);
+    const activities = await this.activityRepo
+      .createQueryBuilder('activity')
+      .where('activity.cluster_id IN (:...clusterIds)', { clusterIds })
+      .getMany();
+
+    // 4. Activity를 {id, content} 형태로 변환하여 반환합니다.
+    return activities.map((activity) => ({
+      id: activity.id,
+      content: activity.content,
+    }));
   }
 }

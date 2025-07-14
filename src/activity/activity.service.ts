@@ -10,7 +10,7 @@ import { LocalDate } from 'js-joda';
 import { ActivityEmotion } from '../entities/activity-emotion.entity';
 import { ActivityAnalysis, CombinedEmotion } from '../util/json.parser';
 import { CommonUtilService } from '../util/common-util.service';
-import { EmotionType, getEmotionGroup } from '../enums/emotion-type.enum';
+import { EmotionBase, EmotionGroup, EmotionType, getEmotionBase, getEmotionGroup } from '../enums/emotion-type.enum';
 import { ClusteringResult } from '../util/cluster-json.parser';
 import { SimsceEmbedderService } from '../vector/simsce-embedder.service';
 import { ActivityClusterService } from '../activity-cluster/activity-cluster.service';
@@ -165,4 +165,88 @@ export class ActivityService {
     return activities.map(activity => activity.content)
   }
 
+  /**
+   * 특정 멤버의 모든 활동을 조회합니다.
+   * @param memberId - 멤버의 ID
+   * @returns 해당 멤버의 모든 활동 배열
+   */
+  private async getActivitiesByMember(memberId: string): Promise<Activity[]> {
+    return this.repo
+      .createQueryBuilder('activity')
+      .innerJoin('activity.diary', 'diary')
+      .innerJoin('diary.author', 'author')
+      .where('author.id = :memberId', { memberId })
+      .leftJoinAndSelect('activity.emotions', 'emotions')
+      .getMany();
+  }
+
+  /**
+   * 활동 배열을 필터링하여 특정 감정 그룹과 관련된 활동만 반환합니다.
+   * @param activities - 필터링할 활동 배열
+   * @param emotionGroup - 필터링할 감정 그룹
+   * @returns 필터링된 활동 배열
+   */
+  private filterActivitiesByEmotionGroup(
+    activities: Activity[],
+    emotionGroup: EmotionGroup,
+  ): Activity[] {
+    return activities.filter((activity) =>
+      activity.emotions.some((emotion) => {
+        const base = getEmotionBase(emotion.emotion);
+        return (
+          (base === EmotionBase.State || base === EmotionBase.Self) &&
+          emotion.emotionGroup === emotionGroup
+        );
+      }),
+    );
+  }
+
+  /**
+   * 활동 배열을 필터링하여 감정 강도가 임계값 이상인 활동만 반환합니다.
+   * @param activities - 필터링할 활동 배열
+   * @param threshold - 감정 강도 임계값
+   * @returns 필터링된 활동 배열
+   */
+  private filterActivitiesByIntensity(
+    activities: Activity[],
+    threshold: number,
+  ): Activity[] {
+    return activities.filter((activity) =>
+      activity.emotions.some((emotion) => emotion.intensitySum >= threshold),
+    );
+  }
+
+  /**
+   * 특정 감정 그룹 및 강도 임계값에 따라 활동을 조회합니다.
+   * @param memberId - 멤버의 ID
+   * @param emotionGroup - 조회할 감정 그룹
+   * @param intensityThreshold - 감정 강도 임계값
+   * @returns 조건에 맞는 활동의 ID와 내용 배열
+   */
+  async getActivitiesByEmotionGroup(
+    memberId: string,
+    emotionGroup: EmotionGroup,
+    intensityThreshold: number,
+  ): Promise<{ id: number; content: string }[]> {
+    // 1. 해당 멤버의 모든 활동을 가져옵니다.
+    const allActivities = await this.getActivitiesByMember(memberId);
+
+    // 2. EmotionBase가 State 또는 Self이고, EmotionGroup이 일치하는 활동만 필터링합니다.
+    const groupFilteredActivities = this.filterActivitiesByEmotionGroup(
+      allActivities,
+      emotionGroup,
+    );
+
+    // 3. 감정 강도가 임계값 이상인 활동만 필터링합니다.
+    const intensityFilteredActivities = this.filterActivitiesByIntensity(
+      groupFilteredActivities,
+      intensityThreshold,
+    );
+
+    // 4. 필터링된 활동의 id와 content만 반환합니다.
+    return intensityFilteredActivities.map((activity) => ({
+      id: activity.id,
+      content: activity.content,
+    }));
+  }
 }

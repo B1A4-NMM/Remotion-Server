@@ -27,7 +27,7 @@ import { DiaryEmotion } from '../entities/diary-emotion.entity';
 import { Diary } from '../entities/Diary.entity';
 
 import { weekday } from '../constants/weekday.constant';
-import { LocalDate } from 'js-joda';
+import { ChronoUnit, LocalDate } from 'js-joda';
 import { CombinedEmotion, EmotionInteraction } from '../util/json.parser';
 import { EmotionSummaryPeriodRes } from './dto/emotion-summary-period.res';
 import { TargetEmotionSummaryRes } from './dto/target-emotion-summary.res';
@@ -631,6 +631,30 @@ export class EmotionService {
       (a, b) => b.intensity - a.intensity,
     );
     return sorted[0].emotion;
+  }
+
+  /**
+   * 일기를 가장 처음 쓴 날부터 오늘까지의 감정을 요일별로 묶어서 반환합니다
+   */
+  async getAllEmotionsGroupByWeekday(
+    memberId: string,
+  ) {
+    const endDate = LocalDate.now();
+    let result =
+      await this.diaryRepository
+        .createQueryBuilder('d')
+        .select('MIN(d.written_date)', 'minDate')
+        .getRawOne();
+    const rawMinDate = result?.minDate;
+
+    const startDate = rawMinDate
+      ? LocalDate.parse(new Date(rawMinDate).toISOString().substring(0, 10))
+      : endDate;
+
+    const period = ChronoUnit.DAYS.between(startDate, endDate);
+    const EmotionGroupByWeekday = await this.getEmotionSummaryWeekDay(memberId, period);
+
+    return EmotionGroupByWeekday;
   }
 
   //특정 날짜 범위에 있는 모든 감정들 추출해서 보내주기
