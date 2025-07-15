@@ -89,7 +89,7 @@ export class TargetService {
 
   async createDiaryTarget(target: Target, diary: Diary) {
     let diaryTarget = await this.diaryTargetRepository.findOneBy({
-      diary: diary,
+      diary: {id : diary.id},
       target: target,
     });
     if (diaryTarget === null) {
