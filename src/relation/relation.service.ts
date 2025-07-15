@@ -47,18 +47,22 @@ export class RelationService {
       .sort((a, b) => b.count - a.count)
       .slice(0, 12);
 
-    const affections = topTargets.map((target) => target.affection);
-    const minAffection = Math.min(...affections);
-    const maxAffection = Math.max(...affections);
+    // affection과 count를 합산한 점수 생성
+    const combinedScores = topTargets.map(
+      (target) => target.affection + target.count,
+    );
+    const minScore = Math.min(...combinedScores);
+    const maxScore = Math.max(...combinedScores);
 
     for (const target of topTargets) {
       let emotion = await this.emotionService.topEmotionsToTargetSecond(target);
       if (!emotion || emotion.length === 0) continue;
 
-      const normalizedAffection = this.normalizeAffection(
-        target.affection,
-        minAffection,
-        maxAffection,
+      const combinedScore = target.affection + target.count;
+      const normalizedAffection = this.normalize(
+        combinedScore,
+        minScore,
+        maxScore,
       );
 
       res.relations.push({
@@ -75,23 +79,23 @@ export class RelationService {
   }
 
   /**
-   * affection 값을 30에서 150 사이로 정규화합니다.
-   * 가장 가까운 대상(affection이 높은)은 30, 먼 대상(affection이 낮은)은 150으로 설정합니다.
-   * @param affection 정규화할 affection 값
-   * @param minAffection affection의 최소값
-   * @param maxAffection affection의 최대값
-   * @returns 정규화된 affection 값
+   * 점수를 30에서 150 사이로 정규화합니다.
+   * 가장 높은 점수는 30, 가장 낮은 점수는 150으로 변환됩니다.
+   * @param score 정규화할 점수 (affection + count)
+   * @param minScore 점수 중 최소값
+   * @param maxScore 점수 중 최대값
+   * @returns 정규화된 값
    */
-  private normalizeAffection(
-    affection: number,
-    minAffection: number,
-    maxAffection: number,
+  private normalize(
+    score: number,
+    minScore: number,
+    maxScore: number,
   ): number {
-    if (minAffection === maxAffection) {
-      return 30; // 모든 값이 같을 경우 최소값으로 설정
+    if (minScore === maxScore) {
+      return 30; // 모든 값이 같을 경우 최소값(가장 가까운 거리)으로 설정
     }
     const normalized = 
-      150 - (affection - minAffection) * (120 / (maxAffection - minAffection));
+      150 - (score - minScore) * (120 / (maxScore - minScore));
     return Math.round(normalized);
   }
 
