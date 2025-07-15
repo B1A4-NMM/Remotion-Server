@@ -100,6 +100,7 @@ export class RoutineService {
 
     res.routineId = routine.routineId
     res.content = routine.content
+    res.routineType = routine.routineType
     return res
   }
 
