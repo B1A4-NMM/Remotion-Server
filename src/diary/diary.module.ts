@@ -22,7 +22,7 @@ import { ActivityModule } from '../activity/activity.module';
     UploadModule,
     SentenceParserModule,
     TargetModule,
-    ActivityModule
+    ActivityModule,
   ],
   controllers: [DiaryController],
   providers: [DiaryService],
