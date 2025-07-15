@@ -23,7 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { MemberSummaryService } from './member-summary.service';
 import { AuthGuard } from '@nestjs/passport';
-import { CurrentUser } from '../auth/user.decorator';
+import { CurrentUser, JwtPayload } from '../auth/user.decorator';
 import { MemberSummaryRes } from './dto/member-summary.res';
 import { EmotionService } from '../emotion/emotion.service';
 import { EmotionSummaryWeekdayRes } from './dto/emotion-summary-weekday.res';
@@ -32,6 +32,7 @@ import { EmotionBaseAnalysisResponseDto } from 'src/emotion/dto/emotion-base-ana
 import { MemberCharacterService } from './member-character.service';
 import { ParseLocalDatePipe } from '../pipe/parse-local-date.pipe';
 import { LocalDate } from 'js-joda';
+import { RoutineEnum } from '../enums/routine.enum';
 
 @Controller('member')
 @ApiTags('사용자/회원')
@@ -67,7 +68,7 @@ export class MemberController {
     @CurrentUser() user: any,
     @Query('period') period: number = 7,
   ) {
-    const memberId = user.id;
+    const memberId:string = user.id;
     return this.memberSummaryService.findMemberSummaryByPeriod(
       memberId,
       period,
@@ -164,5 +165,44 @@ export class MemberController {
   async getCharacter(@CurrentUser() user: any): Promise<CharacterResponseDto> {
     const memberId = user.id;
     return await this.memberCharacterService.getMemberCharacter(memberId);
+  }
+
+  @Post('test/stress')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({
+    summary: '스트레스 테스트 날짜 갱신',
+    description: '현재 사용자의 스트레스 테스트 날짜를 오늘 날짜로 갱신합니다.',
+  })
+  @ApiResponse({ status: 200, description: '스트레스 테스트 날짜 갱신 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
+  async updateStressTestDate(@CurrentUser() user: any) {
+    await this.memberService.updateTestDate(user.id, RoutineEnum.STRESS);
+    return { message: '스트레스 테스트 날짜가 갱신되었습니다.' };
+  }
+
+  @Post('test/anxiety')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({
+    summary: '불안 테스트 날짜 갱신',
+    description: '현재 사용자의 불안 테스트 날짜를 오늘 날짜로 갱신합니다.',
+  })
+  @ApiResponse({ status: 200, description: '불안 테스트 날짜 갱신 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
+  async updateAnxietyTestDate(@CurrentUser() user: any) {
+    await this.memberService.updateTestDate(user.id, RoutineEnum.ANXIETY);
+    return { message: '불안 테스트 날짜가 갱신되었습니다.' };
+  }
+
+  @Post('test/depression')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({
+    summary: '우울 테스트 날짜 갱신',
+    description: '현재 사용자의 우울 테스트 날짜를 오늘 날짜로 갱신합니다.',
+  })
+  @ApiResponse({ status: 200, description: '우울 테스트 날짜 갱신 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
+  async updateDepressionTestDate(@CurrentUser() user: any) {
+    await this.memberService.updateTestDate(user.id, RoutineEnum.DEPRESSION);
+    return { message: '우울 테스트 날짜가 갱신되었습니다.' };
   }
 }

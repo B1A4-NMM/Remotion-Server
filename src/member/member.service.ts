@@ -10,6 +10,8 @@ import { MEMBER_DAILY_LIMIT } from '../constants/member.constant';
 import { MemberSummary } from '../entities/member-summary.entity';
 import { AchievementService } from '../achievement-cluster/achievement.service';
 import { MemberSummaryService } from './member-summary.service';
+import { LocalDate } from 'js-joda';
+import { RoutineEnum } from '../enums/routine.enum';
 
 @Injectable()
 export class MemberService {
@@ -25,6 +27,9 @@ export class MemberService {
     member.nickname = dto.nickname;
     member.social_type = dto.socialType;
     member.daily_limit = MEMBER_DAILY_LIMIT;
+    member.anxiety_test_date = LocalDate.parse('1990-01-01');
+    member.stress_test_date = LocalDate.parse('1990-01-01');
+    member.depression_test_date = LocalDate.parse('1990-01-01');
     return this.repo.save(member);
   }
 
@@ -54,5 +59,30 @@ export class MemberService {
 
   createMemberSummaryRes(summary: any, period: number) {
     return this.summaryService.createMemberSummaryRes(summary, period);
+  }
+
+  /**
+   * 멤버의 특정 테스트 날짜를 현재 날짜로 갱신합니다.
+   * @param memberId 멤버 ID
+   * @param routineType 갱신할 테스트 타입 (스트레스, 불안, 우울)
+   */
+  async updateTestDate(memberId: string, routineType: RoutineEnum) {
+    const member = await this.findOne(memberId);
+    const today = LocalDate.now();
+
+    switch (routineType) {
+      case RoutineEnum.STRESS:
+        member.stress_test_date = today;
+        break;
+      case RoutineEnum.ANXIETY:
+        member.anxiety_test_date = today;
+        break;
+      case RoutineEnum.DEPRESSION:
+        member.depression_test_date = today;
+        break;
+      default:
+        throw new Error(`Invalid RoutineEnum type: ${routineType}`);
+    }
+    await this.repo.save(member);
   }
 }

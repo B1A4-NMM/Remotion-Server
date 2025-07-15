@@ -3,6 +3,7 @@ import { Between, LessThanOrEqual, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
+import { ConfigService } from '@nestjs/config';
 import { EmotionService } from '../emotion/emotion.service';
 import {
   DiaryHomeListRes,
@@ -50,6 +51,7 @@ export class DiaryService {
     private readonly targetService: TargetService,
     private readonly activityService: ActivityService,
     private readonly memberSummaryService: MemberSummaryService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -253,8 +255,12 @@ export class DiaryService {
 
   /**
    * 해당 다이어리에 저장되어있는 json 본문을 포함한 정보를 반환합니다
+   * @param memberId 멤버 ID
+   * @param id 일기 ID
+   * @param beforeDiaryCount 이전 일기 개수
+   * @returns 일기 상세 정보 DTO
    */
-  async getDiaryDetail(memberId: string, id: number, beforeDiaryCount:number) {
+  async getDiaryDetail(memberId: string, id: number, beforeDiaryCount: number) {
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
     });
@@ -267,6 +273,11 @@ export class DiaryService {
       throw new NotFoundException('해당 일기의 주인이 아닙니다');
     }
 
+    // 멤버 정보 조회
+    const member = await this.memberService.findOne(memberId);
+    const today = LocalDate.now();
+
+    // 경고 플래그 초기화 (기본값은 memberSummaryService에서 가져온 값)
     const warnings = await this.memberSummaryService.getMemberWarningsByPeriod(
       diary.written_date,
       memberId,
@@ -277,6 +288,28 @@ export class DiaryService {
     diaryDetailRes.anxietyWarning = warnings.anxietyWarning;
     diaryDetailRes.stressWarning = warnings.stressWarning;
     diaryDetailRes.depressionWarning = warnings.depressionWarning;
+
+    // 스트레스 테스트 날짜 기반 경고 플래그 업데이트
+    // STRESS_WARNING_PERIOD_DAYS 환경 변수에서 기간을 가져오고, 없으면 기본값 30일 사용
+    const stressPeriod = this.configService.get<number>('WARNING_PERIOD_DAYS', 30);
+    if (member.stress_test_date.plusDays(stressPeriod).isAfter(today) || member.stress_test_date.plusDays(stressPeriod).isEqual(today)) {
+      diaryDetailRes.stressWarning = false;
+    }
+
+    // 불안 테스트 날짜 기반 경고 플래그 업데이트
+    // ANXIETY_WARNING_PERIOD_DAYS 환경 변수에서 기간을 가져오고, 없으면 기본값 30일 사용
+    const anxietyPeriod = this.configService.get<number>('WARNING_PERIOD_DAYS', 30);
+    if (member.anxiety_test_date.plusDays(anxietyPeriod).isAfter(today) || member.anxiety_test_date.plusDays(anxietyPeriod).isEqual(today)) {
+      diaryDetailRes.anxietyWarning = false;
+    }
+
+    // 우울 테스트 날짜 기반 경고 플래그 업데이트
+    // DEPRESSION_WARNING_PERIOD_DAYS 환경 변수에서 기간을 가져오고, 없으면 기본값 30일 사용
+    const depressionPeriod = this.configService.get<number>('WARNING_PERIOD_DAYS', 30);
+    if (member.depression_test_date.plusDays(depressionPeriod).isAfter(today) || member.depression_test_date.plusDays(depressionPeriod).isEqual(today)) {
+      diaryDetailRes.depressionWarning = false;
+    }
+
     diaryDetailRes.beforeDiaryScores = await this.getEmotionScoresByDiary(
       diary.written_date,
       beforeDiaryCount,
