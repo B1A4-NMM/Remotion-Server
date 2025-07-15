@@ -94,4 +94,15 @@ export class AuthService {
     );
     return response.data;
   }
+
+  async demoLogin() {
+    const demoUser = {
+      id: 'demo',
+      nickname: '하루뒤',
+      email: 'demo@example.com',
+      type: SocialType.DEMO,
+    };
+
+    return this.validateOAuthLogin(demoUser);
+  }
 }

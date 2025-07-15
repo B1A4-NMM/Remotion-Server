@@ -95,4 +95,13 @@ export class AuthController {
     delete req.session.state; // 세션에 담겨있는 리다이렉트 경로 삭제
     return res.redirect(url);
   }
+
+  @ApiOperation({
+    summary: '데모 계정 로그인',
+    description: '데모 계정으로 로그인하여 JWT를 발급받습니다.',
+  })
+  @Get('demo')
+  async demoLogin() {
+    return this.authService.demoLogin();
+  }
 }
