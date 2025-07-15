@@ -1,10 +1,14 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Between, Repository } from 'typeorm';
+import { Between, LessThanOrEqual, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
 import { EmotionService } from '../emotion/emotion.service';
-import { DiaryHomeListRes, DiaryRes, EmotionRes } from './dto/diary-home-list.res';
+import {
+  DiaryHomeListRes,
+  DiaryRes,
+  EmotionRes,
+} from './dto/diary-home-list.res';
 import { DiaryHomeRes } from './dto/diary-home.res';
 import { Diary } from '../entities/Diary.entity';
 import {
@@ -26,6 +30,9 @@ import { ActivityService } from '../activity/activity.service';
 import { DiaryBookmarkListRes } from './dto/DiaryBookmarkListRes';
 import { InfiniteBookmarkScrollRes } from './dto/infinite-bookmark-scroll.res';
 import { DiaryDetailRes } from './dto/diary-detail.res';
+import { MemberSummaryService } from '../member/member-summary.service';
+import { EmotionScoreDto } from './dto/emotion-score.dto';
+import { EmotionScoresResDto } from './dto/emotion-scores-res.dto';
 
 @Injectable()
 export class DiaryService {
@@ -42,6 +49,7 @@ export class DiaryService {
     private readonly sentenceParserService: SentenceParserService,
     private readonly targetService: TargetService,
     private readonly activityService: ActivityService,
+    private readonly memberSummaryService: MemberSummaryService,
   ) {}
 
   /**
@@ -92,7 +100,9 @@ export class DiaryService {
     });
 
     if (diary === null) {
-      throw new NotFoundException('[findMemberSummaryByDateAndPeriod] 일기를 찾지 못했습니다')
+      throw new NotFoundException(
+        '[findMemberSummaryByDateAndPeriod] 일기를 찾지 못했습니다',
+      );
     }
 
     const date = diary.written_date;
@@ -116,7 +126,7 @@ export class DiaryService {
     });
 
     if (diary === null) {
-      throw new NotFoundException("[deleteDiary] 일기를 찾지 못했습니다")
+      throw new NotFoundException('[deleteDiary] 일기를 찾지 못했습니다');
     }
 
     if (diary.author.id != memberId) {
@@ -244,20 +254,34 @@ export class DiaryService {
   /**
    * 해당 다이어리에 저장되어있는 json 본문을 포함한 정보를 반환합니다
    */
-  async getDiaryJson(memberId: string, id: number) {
+  async getDiaryDetail(memberId: string, id: number, beforeDiaryCount:number) {
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
     });
 
     if (diary === null) {
-      throw new NotFoundException('없는 일기입니다')
+      throw new NotFoundException('없는 일기입니다');
     }
 
     if (diary.author.id != memberId) {
       throw new NotFoundException('해당 일기의 주인이 아닙니다');
     }
 
-    return new DiaryDetailRes(diary);
+    const warnings = await this.memberSummaryService.getMemberWarningsByPeriod(
+      diary.written_date,
+      memberId,
+      7,
+    );
+
+    let diaryDetailRes = new DiaryDetailRes(diary);
+    diaryDetailRes.anxietyWarning = warnings.anxietyWarning;
+    diaryDetailRes.stressWarning = warnings.stressWarning;
+    diaryDetailRes.depressionWarning = warnings.depressionWarning;
+    diaryDetailRes.beforeDiaryScores = await this.getEmotionScoresByDiary(
+      diary.written_date,
+      beforeDiaryCount,
+    );
+    return diaryDetailRes;
   }
 
   /**
@@ -410,7 +434,7 @@ export class DiaryService {
   private async makeBookmarkScroll(
     rows: Diary[],
     take: number,
-    cursor: number | undefined
+    cursor: number | undefined,
   ) {
     const { hasMore, nextCursor, diaryRes } = await this.getCursorAndRes(
       rows,
@@ -419,7 +443,7 @@ export class DiaryService {
     );
     const items = new DiaryBookmarkListRes();
     items.diaries = diaryRes;
-    items.totalDiaryCount = rows.length
+    items.totalDiaryCount = rows.length;
 
     return new InfiniteBookmarkScrollRes(items, hasMore, nextCursor);
   }
@@ -501,7 +525,9 @@ export class DiaryService {
     });
 
     if (diary === null) {
-      throw new NotFoundException('[toggleDiaryBookmark] 다이어리를 찾지 못했습니다')
+      throw new NotFoundException(
+        '[toggleDiaryBookmark] 다이어리를 찾지 못했습니다',
+      );
     }
 
     diary.is_bookmarked = !diary.is_bookmarked;
@@ -606,5 +632,73 @@ export class DiaryService {
 
     const uniqueEmotions = new Set(allEmotions);
     return uniqueEmotions.size;
+  }
+
+  /**
+   * diaryId를 인자로 받아, 연관된 diaryEmotion을 모두 불러와 감정 점수를 합산하여 반환합니다.
+   * @param diaryId 일기 ID
+   * @returns 일기 ID, 작성일, 감정 점수 합산
+   */
+  async getDiaryEmotionSumIntensity(diaryId: number) {
+    const diary = await this.diaryRepository.findOne({
+      where: { id: diaryId },
+      relations: ['diaryEmotions'],
+    });
+
+    if (!diary) {
+      throw new NotFoundException(`Diary with id ${diaryId} not found`);
+    }
+
+    const intensitySum = this.emotionService.getEmotionSumIntensity(
+      diary.diaryEmotions,
+    );
+
+    return {
+      diaryId: diary.id,
+      writtenDate: diary.written_date,
+      intensitySum,
+    };
+  }
+
+  /**
+   * LocalDate와 count를 인자로 받아, LocalDate보다 writtenDate가 같거나 작은 일기를
+   * count개 만큼 불러와 writtenDate순으로 먼저 정렬하고, 이후에 id 순으로 정렬합니다.
+   * 그 후 getDiaryEmotionSumIntensity에 정렬된 순서로 diaryId를 넘겨주면서 그 응답을 배열로 저장합니다.
+   * 이후 그 응답을 DTO로 감싸서 반환합니다.
+   * @param date 날짜
+   * @param count 개수
+   * @returns 감정 점수 DTO
+   */
+  async getEmotionScoresByDiary(
+    date: LocalDate,
+    count: number,
+  ): Promise<EmotionScoresResDto> {
+    const diaries = await this.diaryRepository.find({
+      where: {
+        written_date: LessThanOrEqual(date),
+      },
+      order: {
+        written_date: 'DESC',
+        id: 'DESC',
+      },
+      take: count,
+    });
+
+    const scores = await Promise.all(
+      diaries.map(async (diary) => {
+        const { intensitySum } = await this.getDiaryEmotionSumIntensity(
+          diary.id,
+        );
+        return new EmotionScoreDto(diary.id, diary.written_date, intensitySum);
+      }),
+    );
+
+    scores.sort((a, b) => {
+      if (a.writtenDate.isBefore(b.writtenDate)) return 1;
+      if (a.writtenDate.isAfter(b.writtenDate)) return -1;
+      return b.diaryId - a.diaryId;
+    });
+
+    return new EmotionScoresResDto(scores);
   }
 }

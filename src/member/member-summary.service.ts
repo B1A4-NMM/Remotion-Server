@@ -20,7 +20,6 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MemberSummaryService {
-
   private readonly logger = new Logger(MemberSummaryService.name);
 
   constructor(
@@ -29,22 +28,39 @@ export class MemberSummaryService {
     @InjectRepository(EmotionSummaryScore)
     private readonly emotionSummaryRepo: Repository<EmotionSummaryScore>,
     private readonly util: CommonUtilService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {}
 
   /**
    * 기간과 멤버 아이디를 받아 해당 기간 내의 사용자 요약 응답을 만들어 반환합니다
    */
   async findMemberSummaryByPeriod(memberId: string, period: number) {
-    const today = LocalDate.now();
+    return await this.getMemberSummaryByDateAndPeriod(LocalDate.now() ,period, memberId);
+
+  }
+
+  private async getMemberSummaryByDateAndPeriod(startDate:LocalDate ,period: number, memberId: string) {
+    const today = startDate;
     const end = today.minusDays(period);
 
     const result = await this.repo.find({
-      where: { member: {id: memberId}, date: Between(end, today) },
+      where: { member: { id: memberId }, date: Between(end, today) },
       relations: ['emotionScores'],
     });
 
     return this.createMemberSummaryRes(result, period);
+  }
+
+  /**
+   * 기간과 멤버 아이디를 받아 해당 기간 내의 사용자 감정 경고를 반환합니다
+   */
+  async getMemberWarningsByPeriod(startDate:LocalDate, memberId: string, period: number) {
+    const result = await this.getMemberSummaryByDateAndPeriod(startDate , period, memberId);
+    const stressWarning = result.stressWarning;
+    const depressionWarning = result.depressionWarning;
+    const anxietyWarning = result.anxietyWarning;
+
+    return { stressWarning, depressionWarning, anxietyWarning };
   }
 
   /**
@@ -87,23 +103,39 @@ export class MemberSummaryService {
       });
     }
 
+    const warnings = await this.getWarnings(totalEmotionScores);
+    result.depressionWarning = warnings.depressionWarning;
+    result.stressWarning = warnings.stressWarning;
+    result.anxietyWarning = warnings.anxietyWarning;
+
+    return result;
+  }
+
+  /**
+   * totalEmotionScore를 받아 부정적 감정 경고 플래그를 반환합니다
+   */
+  async getWarnings(totalEmotionScores: Record<EmotionGroup, number>) {
+    let result = {
+      depressionWarning: false,
+      stressWarning: false,
+      anxietyWarning: false,
+    };
+
     let threshold = this.configService.get('WARNING_THRESHOLD');
-    this.logger.log(`스트레스 종합 : ${totalEmotionScores[EmotionGroup.스트레스]}, 
+    this.logger
+      .log(`스트레스 종합 : ${totalEmotionScores[EmotionGroup.스트레스]}, 
     우울 종합 : ${totalEmotionScores[EmotionGroup.우울]},
     불안 종합 : ${totalEmotionScores[EmotionGroup.불안]},
-    임계값 : ${threshold}`)
+    임계값 : ${threshold}`);
 
     // 임계값 검사 및 경고 플래그 설정
-    if (totalEmotionScores[EmotionGroup.우울] > threshold
-    ) {
+    if (totalEmotionScores[EmotionGroup.우울] > threshold) {
       result.depressionWarning = true;
     }
-    if (totalEmotionScores[EmotionGroup.스트레스] > threshold
-    ) {
+    if (totalEmotionScores[EmotionGroup.스트레스] > threshold) {
       result.stressWarning = true;
     }
-    if (totalEmotionScores[EmotionGroup.불안] > threshold
-    ) {
+    if (totalEmotionScores[EmotionGroup.불안] > threshold) {
       result.anxietyWarning = true;
     }
 
@@ -114,7 +146,6 @@ export class MemberSummaryService {
    * 사용자 요약 엔티티를 찾아 반환하고, 만약 없다면 만들어서 반환합니다
    */
   async findMemberSummaryIfNotExistCreate(member: Member, date: LocalDate) {
-
     let summary = await this.repo.findOne({
       where: { member: member, date: date },
     });
@@ -201,10 +232,7 @@ export class MemberSummaryService {
     emotion: EmotionType,
     intensity: number,
   ) {
-    const summary = await this.findMemberSummaryIfNotExistCreate(
-      member,
-      date,
-    );
+    const summary = await this.findMemberSummaryIfNotExistCreate(member, date);
 
     let emotionSummary = await this.findEmotionSummaryIfNotExistCreate(
       summary,

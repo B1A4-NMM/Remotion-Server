@@ -856,4 +856,30 @@ export class EmotionService {
 
     return representEmotionGroup;
   }
+
+  /**
+   * 감정 배열을 받아 그룹별로 점수를 합산합니다.
+   * '무난' 감정은 제외하고, [우울, 불안, 스트레스] 그룹은 점수를 감산합니다.
+   * @param emotions 감정 배열
+   * @returns 감정 점수 합산
+   */
+  getEmotionSumIntensity(
+    emotions: { emotion: EmotionType; intensity: number }[],
+  ): number {
+    const negativeGroups = [
+      EmotionGroup.우울,
+      EmotionGroup.불안,
+      EmotionGroup.스트레스,
+    ];
+
+    return emotions
+      .filter((e) => e.emotion !== EmotionType.무난)
+      .reduce((acc, { emotion, intensity }) => {
+        const group = EmotionGroupMap[emotion];
+        if (group && negativeGroups.includes(group)) {
+          return acc - (intensity/2);
+        }
+        return acc + (intensity/2);
+      }, 0);
+  }
 }

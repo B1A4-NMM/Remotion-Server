@@ -1,6 +1,9 @@
 import { Diary } from '../../entities/Diary.entity';
 import { LocalDate } from 'js-joda';
 import { ApiProperty } from '@nestjs/swagger';
+import { EmotionScoresResDto } from './emotion-scores-res.dto';
+import { Type } from 'class-transformer';
+import { DiaryAnalysisDto } from './diary-analysis.dto';
 
 export class DiaryDetailRes {
   @ApiProperty({ description: '다이어리 ID' })
@@ -28,8 +31,21 @@ export class DiaryDetailRes {
   @ApiProperty({ description: '경도', required: false, nullable: true })
   longitude?: number | null;
 
-  @ApiProperty({ description: '다이어리 분석 내용' })
-  analysis: string;
+  @ApiProperty({description: '스트레스 경고', example: false})
+  stressWarning: boolean;
+
+  @ApiProperty({description: '불안 경고', example: false})
+  anxietyWarning: boolean;
+
+  @ApiProperty({description: '우울 경고', example: false})
+  depressionWarning: boolean;
+
+  @ApiProperty({description: '지금 일기 + 이전 일기 10개 감정 스코어'})
+  beforeDiaryScores:EmotionScoresResDto
+
+  @ApiProperty({ description: '다이어리 분석 결과', type: DiaryAnalysisDto })
+  @Type(() => DiaryAnalysisDto)
+  analysis: DiaryAnalysisDto;
 
   constructor(diary: Diary) {
     this.id = diary.id;

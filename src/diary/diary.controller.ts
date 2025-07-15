@@ -5,16 +5,21 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe, Patch,
+  ParseIntPipe,
+  Patch,
   Post,
   Query,
-  UploadedFile, UploadedFiles,
+  UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiBody, ApiConsumes, ApiExcludeEndpoint, ApiHeader,
+  ApiBody,
+  ApiConsumes,
+  ApiExcludeEndpoint,
+  ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -28,7 +33,11 @@ import { CurrentUser } from '../auth/user.decorator';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { DiaryHomeListRes } from './dto/diary-home-list.res';
 import { DiaryHomeRes } from './dto/diary-home.res';
-import { FileFieldsInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+  FilesInterceptor,
+} from '@nestjs/platform-express';
 import { S3Service } from '../upload/s3.service';
 import { CreateDiaryRes } from './dto/create-diary.res';
 import { ParseLocalDatePipe } from '../pipe/parse-local-date.pipe';
@@ -39,6 +48,7 @@ import { UploadService } from '../upload/upload.service';
 import { CreateDiaryWithMediaDto } from './dto/create-diary-swagger.dto';
 import { InfiniteScrollRes } from './dto/infinite-scroll.res';
 import { SearchDiaryRes } from './dto/search-diary.res';
+import { DiaryDetailRes } from './dto/diary-detail.res';
 
 @Controller('diary')
 @ApiBearerAuth('access-token')
@@ -175,12 +185,28 @@ export class DiaryController {
   @ApiResponse({
     status: 200,
     description: '일기 분석 결과',
-    schema: DiaryResponseSchema,
+    // schema: DiaryResponseSchema,
+    type: DiaryDetailRes
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: '조회할 일기 id',
+  })
+  @ApiQuery({
+    name: 'beforeDiaryCount',
+    type: Number,
+    description: '감정 스코어를 가져올 일기 갯수, default 10개'
   })
   @Get('json/:id')
-  async getDiaryToJson(@CurrentUser() user, @Param('id') id: string) {
+  async getDiaryToJson(
+    @CurrentUser() user,
+    @Param('id') id: string,
+    @Query('beforeDiaryCount', new DefaultValuePipe(10), ParseIntPipe)
+    count: number,
+  ) {
     const memberId: string = user.id;
-    return await this.diaryService.getDiaryJson(memberId, +id);
+    return await this.diaryService.getDiaryDetail(memberId, +id, count);
   }
 
   @ApiOperation({ summary: '일기 삭제' })
@@ -278,7 +304,11 @@ export class DiaryController {
   ) {
     const cursor = cursorId;
     const memberId = user.id;
-    return this.diaryService.getBookmarkedDiariesInfinite(memberId, limit, cursor);
+    return this.diaryService.getBookmarkedDiariesInfinite(
+      memberId,
+      limit,
+      cursor,
+    );
   }
 
   @ApiOperation({ summary: '특정 일기 가공 데이터 조회' })
@@ -307,7 +337,10 @@ export class DiaryController {
       },
     },
   })
-  async bookmarkDiary(@CurrentUser() user: any, @Param('id', ParseIntPipe) id: number) {
+  async bookmarkDiary(
+    @CurrentUser() user: any,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const memberId: string = user.id;
     return this.diaryService.toggleDiaryBookmark(memberId, id);
   }
