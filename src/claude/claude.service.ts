@@ -107,22 +107,16 @@ ${prompt}
   }
 
   private recommendCommentPrompt(
-    activities: string[],
+    activity: string,
     emotion: EmotionGroup,
     dayOfWeek: string,
   ): string {
-    const hasActivities = activities.length > 0;
-
-    const activityText = hasActivities
-      ? `다음 활동들 중 하나를 골라 활용하세요: ${activities.join(', ')}.`
-      : `활동 목록이 주어지지 않았습니다. ${emotion} 감정을 완화할 수 있는 일반적인 활동 중 하나를 추천하세요.`;
-
     return `
 당신은 사용자에게 내일의 감정 상태를 기반으로 기분 전환을 도와줄 활동을 추천하는 역할을 합니다.
 
 - 오늘은 ${dayOfWeek}입니다.
 - 사용자는 이 요일마다 '${emotion}' 감정을 자주 느낍니다.
-- ${activityText}
+- 사용자는 ${activity} 를 통해 긍정적인 감정을 느낍니다
 
 당신은 사용자에게 위로가 되는 **짧고 정중한 추천 멘트 1줄**과 **감성적인 한마디 1줄**을 작성해야 합니다.
 
@@ -448,11 +442,10 @@ ${prompt}
   }
 
   async getRecommendComment(
-    activites: string[],
+    activites: string,
     emotion: EmotionGroup,
     dayOfWeek: string,
   ): Promise<string> {
-    activites = this.utilService.pickRandomUnique(activites, 1);
     const processedPrompt = this.recommendCommentPrompt(
       activites,
       emotion,

@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { LocalDate } from 'js-joda';
 import { LocalDateTransformer } from '../util/local-date.transformer';
+import { RecommendCommentRes } from './dto/recommend-comment.res';
 
 @ApiTags('추천')
 @Controller('recommend')
@@ -79,6 +80,10 @@ export class RecommendController {
     summary: '요일별 감정 분석 후 행동 추천',
     description: '각 요일별로 어떤 감정이 크게 들었고, 감정에 따른 행동을 추천하는 멘트를 반환합니다'
   })
+  @ApiResponse({
+    type: RecommendCommentRes,
+    description: '추천된 멘트와 추천된 행동이 있던 일기 id를 반환합니다'
+  })
   @Get('activity/weekday/today')
   async getRecommendedActivity(@CurrentUser() user: any) {
     const memberId: string = user.id;
@@ -88,6 +93,10 @@ export class RecommendController {
   @ApiOperation({
     summary: '요일별 감정 분석 후 행동 추천',
     description: '각 요일별로 어떤 감정이 크게 들었고, 감정에 따른 행동을 추천하는 멘트를 반환합니다'
+  })
+  @ApiResponse({
+    type: RecommendCommentRes,
+    description: '추천된 멘트와 추천된 행동이 있던 일기 id를 반환합니다'
   })
   @Get('activity/weekday/tomorrow')
   async getRecommendedActivityTomorrow(@CurrentUser() user: any) {

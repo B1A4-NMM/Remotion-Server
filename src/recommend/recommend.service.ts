@@ -14,6 +14,12 @@ import { ActivityClusterService } from '../activity-cluster/activity-cluster.ser
 import { ClaudeService } from '../claude/claude.service';
 import { ActivityService } from '../activity/activity.service';
 import { getRandomComment } from '../constants/recommend-comment.constants';
+import { CommonUtilService } from '../util/common-util.service';
+import { Activity } from 'src/entities/Activity.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { RecommendCommentRes } from './dto/recommend-comment.res';
+import { numericPatterns } from 'date-fns/parse/_lib/constants';
 
 @Injectable()
 export class RecommendService {
@@ -26,6 +32,9 @@ export class RecommendService {
     private readonly activityClusterService: ActivityClusterService,
     private readonly LLMService: ClaudeService,
     private readonly activityService: ActivityService,
+    private readonly utilService: CommonUtilService,
+    @InjectRepository(Activity)
+    private readonly activityRepo: Repository<Activity>,
   ) {}
 
   /**
@@ -123,7 +132,11 @@ export class RecommendService {
     let comment = '';
     if (emotionGroup === null) {
       comment = '추천해드릴 감정 데이터가 쌓이질 않았어요. 일기를 써보세요';
-      return comment;
+      return {
+        diaryId : null,
+        activity: null,
+        comment: comment
+      }
     }
     let recommendEmotion = EmotionGroup.안정;
     const dayOfWeek = date.dayOfWeek().toString().toLowerCase();
@@ -140,7 +153,11 @@ export class RecommendService {
         break;
       default:
         comment = getRandomComment()
-        return comment
+        return {
+          diaryId : null,
+          activity: null,
+          comment: comment
+        }
     }
     this.logger.log(`recommendEmotion = ${recommendEmotion}`)
     const clusters =
@@ -149,19 +166,35 @@ export class RecommendService {
         recommendEmotion,
         0
       );
-    const activities = clusters.map((c) => c.content);
-    this.logger.log(`activites = ${activities}`)
-    // if (activities.length === 0) {
-    //   comment = '추천해드릴 행동 데이터가 쌓이질 않았어요. 일기를 써보세요';
-    //   return comment;
-    // }
+    const activities = clusters.map((c) => {
+      return { content: c.content, id: c.id };
+    });
+
+    this.logger.log(`activites = ${JSON.stringify(activities)}`)
+    const randomActivity = this.utilService.pickRandomUnique(activities,1)
     comment = await this.LLMService.getRecommendComment(
-      activities,
+      randomActivity[0].content,
       emotionGroup,
       dayOfWeek,
     );
 
-    return comment
+    const selectActivity = await this.activityRepo.findOne({
+      where: { id: randomActivity[0].id },
+      relations: ['diary']
+    })
+
+    if (!selectActivity) {
+      this.logger.warn(`No activity found for id: ${randomActivity[0].id}`)
+      return {
+        diaryId : null,
+        activity: null,
+        comment: comment
+      }
+    }
+
+    let res = new RecommendCommentRes(selectActivity, comment);
+
+    return res
   }
 
   private async getMostFrequentEmotionGroupByWeekday(memberId: string, date:LocalDate) {

@@ -8,6 +8,8 @@ import { YoutubeModule } from '../youtube/youtube.module';
 import { ClaudeModule } from '../claude/claude.module';
 import { ActivityClusterModule } from '../activity-cluster/activity-cluster.module';
 import { ActivityModule } from '../activity/activity.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Activity } from '../entities/Activity.entity';
 
 @Module({
   imports: [
@@ -17,7 +19,8 @@ import { ActivityModule } from '../activity/activity.module';
     YoutubeModule,
     ClaudeModule,
     ActivityClusterModule,
-    ActivityModule
+    ActivityModule,
+    TypeOrmModule.forFeature([Activity])
   ],
   controllers: [RecommendController],
   providers: [RecommendService],
