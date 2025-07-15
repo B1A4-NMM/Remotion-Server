@@ -5,16 +5,25 @@ import {
 } from '@aws-sdk/client-bedrock-runtime';
 import { ConfigService } from '@nestjs/config';
 import { DiaryAnalysis } from '../util/json.parser';
-import { PROMPT_ANALYZE, PROMPT_ROUTINE, PROMPT_VALIDATE, promptRAG } from '../constants/prompt.constants';
+import {
+  PROMPT_ANALYZE,
+  PROMPT_ROUTINE,
+  PROMPT_VALIDATE,
+  promptRAG,
+} from '../constants/prompt.constants';
 import { EmotionLevels } from '../util/routine.parser';
 import { EmotionGroup } from '../enums/emotion-type.enum';
 import { LocalDate } from 'js-joda';
+import { CommonUtilService } from '../util/common-util.service';
 
 @Injectable()
 export class ClaudeService {
   private readonly client: BedrockRuntimeClient;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly utilService: CommonUtilService,
+  ) {
     // @ts-ignore
     this.client = new BedrockRuntimeClient({
       region: this.configService.get<string>('AWS_REGION'),
@@ -81,18 +90,38 @@ export class ClaudeService {
 `;
   }
 
-  private recommendCommentPrompt(activites:string[], emotion:EmotionGroup, dayOfWeek:string): string {
+  private recommendCommentPrompt(
+    activities: string[],
+    emotion: EmotionGroup,
+    dayOfWeek: string,
+  ): string {
+    const hasActivities = activities.length > 0;
+
+    const activityText = hasActivities
+      ? `다음 활동들 중 하나를 골라 활용하세요: ${activities.join(', ')}.`
+      : `활동 목록이 주어지지 않았습니다. ${emotion} 감정을 완화할 수 있는 일반적인 활동 중 하나를 추천하세요.`;
+
     return `
-    당신은 사용자의 기분 전환을 위한 특정 행동을 추천해주는 멘트를 써줘야한다.
-    오늘은 ${dayOfWeek}이고, 사용자는 이 요일마다 ${emotion} 감정을 많이 받는다.
-    사용자는 다음 행동들에서 긍정적인 감정을 얻을 가능성이 높다.
-    ${activites.join(', ')}
-    이를 참고하여 사용자가 자연스럽게 위로를 받을 수 있는 멘트를 써라. 다음은 예시이다.
-    1. 월요일마다 우울한 감정이 많이 드시네요!! 러닝을 통해 기분전환 어떠세요?
-    2. 화요일마다 스트레스를 많이 받으시네요. 명상을 통해 화를 다스리시는 게 어떠세요? 
-    만약 아무 행동도 없다면, 저 감정을 위로할만한 행동 하나를 뽑아 응답하라.
-    또한 '**' 와 같은 강조 표시나, 멘트 이외의 다른 잡설은 넣지 마라.
-    `
+당신은 사용자에게 내일의 감정 상태를 기반으로 기분 전환을 도와줄 활동을 추천하는 역할을 합니다.
+
+- 오늘은 ${dayOfWeek}입니다.
+- 사용자는 이 요일마다 '${emotion}' 감정을 자주 느낍니다.
+- ${activityText}
+
+당신은 사용자에게 위로가 되는 **짧고 정중한 추천 멘트 1줄**과 **감성적인 한마디 1줄**을 작성해야 합니다.
+
+출력 조건:
+- 추천 멘트는 "~요", "~해보는 건 어떨까요?" 와 같은 자연스러운 정중체를 사용할 것
+- 추천 활동은 문장 흐름에 자연스럽게 녹여낼 것
+- '**', 이모지, 감탄사(!), 그리고 멘트 외의 문장 삽입은 금지
+- 총 2줄 이내로 작성
+
+예시:
+1. 화요일마다 스트레스를 많이 받으시네요. 명상을 통해 마음을 가다듬어보는 건 어떨까요?  
+   오늘 하루, 나를 위한 시간을 가져보세요.
+
+이제 위 정보를 참고해 출력하세요.
+`;
   }
 
   async querySummary(prompt: string): Promise<string> {
@@ -146,7 +175,6 @@ export class ClaudeService {
 
   async queryDiaryPatterns(prompt: string) {
     try {
-
       const processedPrompt = this.patternAnalysisPrompt(prompt);
 
       const command = new InvokeModelCommand({
@@ -154,9 +182,7 @@ export class ClaudeService {
         contentType: 'application/json',
         accept: 'application/json',
         body: JSON.stringify({
-          messages: [
-            { role: 'user', content: [{ text: processedPrompt }] },
-          ],
+          messages: [{ role: 'user', content: [{ text: processedPrompt }] }],
           inferenceConfig: {
             maxTokens: 4000,
             temperature: 0.05,
@@ -169,13 +195,12 @@ export class ClaudeService {
       const body = await response.body.transformToString();
       const parsed = JSON.parse(body);
 
-      let responseText = parsed?.output?.message?.content?.[0]?.text || 'No response';
-
+      let responseText =
+        parsed?.output?.message?.content?.[0]?.text || 'No response';
 
       if (!responseText) {
         throw new Error('No response text received');
       }
-
 
       const checkPrompt = this.resultAnalysis(responseText);
       const checkCommand = new InvokeModelCommand({
@@ -183,9 +208,7 @@ export class ClaudeService {
         contentType: 'application/json',
         accept: 'application/json',
         body: JSON.stringify({
-          messages: [
-            { role: 'user', content: [{ text: checkPrompt }] },
-          ],
+          messages: [{ role: 'user', content: [{ text: checkPrompt }] }],
           inferenceConfig: {
             maxTokens: 4000,
             temperature: 0.05,
@@ -198,13 +221,12 @@ export class ClaudeService {
       const checkedBody = await checkedResponse.body.transformToString();
       const checkedParsed = JSON.parse(checkedBody);
 
-      let finalResult = checkedParsed?.output?.message?.content?.[0]?.text || 'No response';
-
+      let finalResult =
+        checkedParsed?.output?.message?.content?.[0]?.text || 'No response';
 
       if (!finalResult) {
         throw new Error('No response text received');
       }
-
 
       function cleanJsonResponse(text) {
         // `````` 제거
@@ -224,58 +246,57 @@ export class ClaudeService {
         return cleaned;
       }
 
-
       // 마크다운 형식 제거
       finalResult = cleanJsonResponse(finalResult);
 
       const emotion_weights = {
-        '행복': 1.0,
-        '기쁨': 1.0,
-        '신남': 1.0,
-        '설렘': 0.95,
-        '유대': 0.95,
-        '신뢰': 0.95,
-        '친밀': 0.9,
-        '그리움': 0.9,
-        '자신감': 0.9,
-        '서운': 0.8,
-        '평온': 0.8,
-        '안정': 0.8,
-        '편안': 0.75,
-        '소외': 0.65,
-        '불안': 0.65,
-        '실망': 0.65,
-        '기대': 0.6,
-        '속상': 0.6,
-        '상처': 0.5,
-        '감사': 0.5,
-        '무난': 0.5,
-        '차분': 0.5,
-        '긴장': 0.45,
-        '화남': 0.4,
-        '짜증': 0.4,
-        '무기력': 0.35,
-        '지침': 0.3,
-        '지루': 0.3,
-        '억울': 0.3,
-        '외로움': 0.25,
-        '우울': 0.25,
-        '공허': 0.2,
-        '초조': 0.2,
-        '부담': 0.15,
-        '어색': 0.1,
-        '불편': 0.05,
-        '단절': 0.05,
+        행복: 1.0,
+        기쁨: 1.0,
+        신남: 1.0,
+        설렘: 0.95,
+        유대: 0.95,
+        신뢰: 0.95,
+        친밀: 0.9,
+        그리움: 0.9,
+        자신감: 0.9,
+        서운: 0.8,
+        평온: 0.8,
+        안정: 0.8,
+        편안: 0.75,
+        소외: 0.65,
+        불안: 0.65,
+        실망: 0.65,
+        기대: 0.6,
+        속상: 0.6,
+        상처: 0.5,
+        감사: 0.5,
+        무난: 0.5,
+        차분: 0.5,
+        긴장: 0.45,
+        화남: 0.4,
+        짜증: 0.4,
+        무기력: 0.35,
+        지침: 0.3,
+        지루: 0.3,
+        억울: 0.3,
+        외로움: 0.25,
+        우울: 0.25,
+        공허: 0.2,
+        초조: 0.2,
+        부담: 0.15,
+        어색: 0.1,
+        불편: 0.05,
+        단절: 0.05,
       };
 
       // 시간 간격을 숫자로 변환
       const time_mapping = {
-        'all': 24,
-        'most': 12,
-        'some': 6,
-        'little': 3,
-        'moment': 1,
-        'None': 0,
+        all: 24,
+        most: 12,
+        some: 6,
+        little: 3,
+        moment: 1,
+        None: 0,
       };
 
       function getEmotionWeight(emotion) {
@@ -307,10 +328,13 @@ export class ClaudeService {
           let avg_sub_emotion_weight = 0;
           if (sub_emotions && sub_emotions.length > 0) {
             const sub_emotion_weights = sub_emotions.map(getEmotionWeight);
-            avg_sub_emotion_weight = sub_emotion_weights.reduce((a, b) => a + b, 0) / sub_emotion_weights.length;
+            avg_sub_emotion_weight =
+              sub_emotion_weights.reduce((a, b) => a + b, 0) /
+              sub_emotion_weights.length;
           }
 
-          const final_emotion_weight = main_emotion_weight * 0.7 + avg_sub_emotion_weight * 0.3;
+          const final_emotion_weight =
+            main_emotion_weight * 0.7 + avg_sub_emotion_weight * 0.3;
           const duration_value = time_mapping[duration] || 0;
           const social_similarity_score =
             similarity.name_intimacy * 0.3 +
@@ -319,18 +343,25 @@ export class ClaudeService {
             similarity.emotional_expression * 0.3;
 
           // 순서대로 감정 강도, 지속시간, 언급 빈도, 지속시간, 친밀도
-          const alpha = 1.0, beta = 0.4, gamma = 0.25, delta = 0.2, epsilon = 0.7;
+          const alpha = 1.0,
+            beta = 0.4,
+            gamma = 0.25,
+            delta = 0.2,
+            epsilon = 0.7;
 
           // 수정된 심적 거리 계산 공식
           const psychological_distance =
-            alpha * intensity * (1 - final_emotion_weight) +  // 좋은 감정일수록 거리 감소
+            alpha * intensity * (1 - final_emotion_weight) + // 좋은 감정일수록 거리 감소
             beta * Math.log(duration_value + 1) +
             gamma * (mentions > 0 ? Math.pow(mentions, -1) : 1) +
-            delta * duration_value -                           // 지속시간은 거리 증가 요인
-            epsilon * social_similarity_score;                 // 친밀도 높을수록 거리 감소
+            delta * duration_value - // 지속시간은 거리 증가 요인
+            epsilon * social_similarity_score; // 친밀도 높을수록 거리 감소
 
           // 심적 거리는 양수가 되도록 조정
-          const final_psychological_distance = Math.max(0.1, psychological_distance);
+          const final_psychological_distance = Math.max(
+            0.1,
+            psychological_distance,
+          );
 
           // console.log(`=== ${person.name} ===`);
           // console.log(`감정: ${main_emotion} (가중치: ${final_emotion_weight.toFixed(3)})`);
@@ -343,7 +374,6 @@ export class ClaudeService {
       }
 
       return parsedResponse;
-
     } catch (error) {
       throw new Error(`Pattern analysis failed: ${error.message}`);
     }
@@ -359,9 +389,7 @@ export class ClaudeService {
         contentType: 'application/json',
         accept: 'application/json',
         body: JSON.stringify({
-          messages: [
-            { role: 'user', content: [{ text: processedPrompt }] },
-          ],
+          messages: [{ role: 'user', content: [{ text: processedPrompt }] }],
           inferenceConfig: {
             maxTokens: 4000,
             temperature: 0.8,
@@ -389,29 +417,38 @@ export class ClaudeService {
 
         finalResult = JSON.parse(cleaned);
       } catch (e) {
-        console.warn('Failed to parse cleaned responseText as JSON:', responseText);
+        console.warn(
+          'Failed to parse cleaned responseText as JSON:',
+          responseText,
+        );
         finalResult = { rawText: responseText };
       }
 
       return finalResult;
-    }catch (error) {
+    } catch (error) {
       console.error('Error in queryDiaryPatterns:', error);
       throw new Error(`Pattern analysis failed: ${error.message}`);
     }
-
   }
 
-  async getRecommendComment(activites:string[], emotion:EmotionGroup, dayOfWeek:string): Promise<string> {
-    const processedPrompt = this.recommendCommentPrompt(activites, emotion, dayOfWeek);
+  async getRecommendComment(
+    activites: string[],
+    emotion: EmotionGroup,
+    dayOfWeek: string,
+  ): Promise<string> {
+    activites = this.utilService.pickRandomUnique(activites, 1);
+    const processedPrompt = this.recommendCommentPrompt(
+      activites,
+      emotion,
+      dayOfWeek,
+    );
 
     const command = new InvokeModelCommand({
       modelId: 'apac.amazon.nova-lite-v1:0',
       contentType: 'application/json',
       accept: 'application/json',
       body: JSON.stringify({
-        messages: [
-          { role: 'user', content: [{ text: processedPrompt }] },
-        ],
+        messages: [{ role: 'user', content: [{ text: processedPrompt }] }],
         inferenceConfig: {
           maxTokens: 4000,
           temperature: 1.0,
@@ -424,29 +461,35 @@ export class ClaudeService {
     const body = await response.body.transformToString();
     const parsed = JSON.parse(body);
 
-    let responseText = parsed?.output?.message?.content?.[0]?.text || 'No response';
+    let responseText =
+      parsed?.output?.message?.content?.[0]?.text || 'No response';
     const result = responseText.replace(/\*\*(.*?)\*\*/g, '$1');
 
     return result;
   }
 
-  async getRAG(query: string, documents: {
-    diary_id: number;
-    memberId: string;
-    sentence: string;
-    date: string;
-  }[]) {
-    console.log(`sentence = ${documents.map(d => d.sentence).join('\n')}`);
-    const processedPrompt = promptRAG(query, documents, LocalDate.now().toString());
+  async getRAG(
+    query: string,
+    documents: {
+      diary_id: number;
+      memberId: string;
+      sentence: string;
+      date: string;
+    }[],
+  ) {
+    console.log(`sentence = ${documents.map((d) => d.sentence).join('\n')}`);
+    const processedPrompt = promptRAG(
+      query,
+      documents,
+      LocalDate.now().toString(),
+    );
 
     const command = new InvokeModelCommand({
       modelId: 'apac.amazon.nova-lite-v1:0',
       contentType: 'application/json',
       accept: 'application/json',
       body: JSON.stringify({
-        messages: [
-          { role: 'user', content: [{ text: processedPrompt }] },
-        ],
+        messages: [{ role: 'user', content: [{ text: processedPrompt }] }],
         inferenceConfig: {
           maxTokens: 4000,
           temperature: 1.0,
@@ -459,14 +502,17 @@ export class ClaudeService {
     const body = await response.body.transformToString();
     const parsed = JSON.parse(body);
 
-    let responseText = parsed?.output?.message?.content?.[0]?.text || 'No response';
-    responseText = responseText.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    let responseText =
+      parsed?.output?.message?.content?.[0]?.text || 'No response';
+    responseText = responseText
+      .trim()
+      .replace(/^```(?:json)?\n?/, '')
+      .replace(/\n?```$/, '');
 
     let result = responseText.replace(/\*\*(.*?)\*\*/g, '$1');
     result = JSON.parse(result);
-    console.log(`result = ${JSON.stringify(result)}`)
+    console.log(`result = ${JSON.stringify(result)}`);
 
     return result;
   }
-
 }

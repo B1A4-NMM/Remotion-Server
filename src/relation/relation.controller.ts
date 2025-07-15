@@ -24,9 +24,9 @@ export class RelationController {
   @ApiResponse({
     status: 200,
     description: '관계 그래프 조회',
+    type: GraphRes,
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiBody({ type: GraphRes })
   @UseGuards(AuthGuard('jwt'))
   @Get()
   async getRelation(@CurrentUser() user): Promise<GraphRes> {

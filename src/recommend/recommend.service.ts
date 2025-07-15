@@ -109,6 +109,11 @@ export class RecommendService {
     return this.getCommentByWeekday(memberId, date);
   }
 
+  getCommentByWeekdayOfTomorrow(memberId: string) {
+    const date = LocalDate.now().plusDays(1);
+    return this.getCommentByWeekday(memberId, date);
+  }
+
   /**
    * 각 요일마다 알맞은 추천 멘트를 줍니다
    */

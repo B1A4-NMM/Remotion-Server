@@ -42,4 +42,24 @@ export class CommonUtilService {
       intensity: ei.emotion_intensity[i],
     }));
   }
+
+  pickRandomUnique<T>(arr: T[], count: number): T[] {
+    if (count > arr.length) {
+      throw new Error('요청한 개수가 배열 길이보다 큽니다.');
+    }
+
+    const result: T[] = [];
+    const usedIndices = new Set<number>();
+
+    while (result.length < count) {
+      const i = Math.floor(Math.random() * arr.length);
+      if (!usedIndices.has(i)) {
+        usedIndices.add(i);
+        result.push(arr[i]);
+      }
+    }
+
+    return result;
+  }
+
 }
