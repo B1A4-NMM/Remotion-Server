@@ -103,6 +103,9 @@ export class AuthService {
       type: SocialType.DEMO,
     };
 
-    return this.validateOAuthLogin(demoUser);
+    let res = await this.validateOAuthLogin(demoUser);
+    return {
+      accessToken : res.access_token,
+    };
   }
 }
