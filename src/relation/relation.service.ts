@@ -35,16 +35,36 @@ export class RelationService {
    * @returns 각 관계 대상의 ID, 이름, 친밀도, 주요 감정 정보를 담은 RelationGraphDto 객체
    */
   async getRelation(memberId: string): Promise<RelationGraphDto> {
-    const result = await this.targetService.findAll(memberId);
+    const allTargets = await this.targetService.findAll(memberId);
     let res = new RelationGraphDto();
 
-    for (const target of result) {
+    if (allTargets.length === 0) {
+      return res;
+    }
+
+    // count 기준으로 상위 12명 필터링
+    const topTargets = allTargets
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 12);
+
+    const affections = topTargets.map((target) => target.affection);
+    const minAffection = Math.min(...affections);
+    const maxAffection = Math.max(...affections);
+
+    for (const target of topTargets) {
       let emotion = await this.emotionService.topEmotionsToTargetSecond(target);
       if (!emotion || emotion.length === 0) continue;
+
+      const normalizedAffection = this.normalizeAffection(
+        target.affection,
+        minAffection,
+        maxAffection,
+      );
+
       res.relations.push({
         id: target.id,
         name: target.name,
-        affection: target.affection,
+        affection: normalizedAffection,
         highestEmotion: emotion[0].emotion,
         secondEmotion: emotion[1]?.emotion ?? null,
         count: target.count,
@@ -52,6 +72,27 @@ export class RelationService {
     }
 
     return res;
+  }
+
+  /**
+   * affection 값을 30에서 150 사이로 정규화합니다.
+   * 가장 가까운 대상(affection이 높은)은 30, 먼 대상(affection이 낮은)은 150으로 설정합니다.
+   * @param affection 정규화할 affection 값
+   * @param minAffection affection의 최소값
+   * @param maxAffection affection의 최대값
+   * @returns 정규화된 affection 값
+   */
+  private normalizeAffection(
+    affection: number,
+    minAffection: number,
+    maxAffection: number,
+  ): number {
+    if (minAffection === maxAffection) {
+      return 30; // 모든 값이 같을 경우 최소값으로 설정
+    }
+    const normalized = 
+      150 - (affection - minAffection) * (120 / (maxAffection - minAffection));
+    return Math.round(normalized);
   }
 
   /**
