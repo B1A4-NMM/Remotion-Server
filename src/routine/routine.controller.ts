@@ -67,7 +67,7 @@ export class RoutineController {
     );
   }
 
-  @Get('nervous')
+  @Get('anxiety')
   @ApiOperation({
     summary: '불안 관리 루틴 조회',
     description: '사용자의 불안 관리 루틴을 조회합니다.',
@@ -82,7 +82,7 @@ export class RoutineController {
     return this.routineService.getRoutine(memberId, RoutineEnum.ANXIETY);
   }
 
-  @Post('nervous')
+  @Post('anxiety')
   @ApiOperation({
     summary: '불안 관리 루틴 생성',
     description: '사용자의 불안 관리 루틴을 생성합니다.',
