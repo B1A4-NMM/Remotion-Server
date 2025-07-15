@@ -12,6 +12,7 @@ import { MemberSummary } from '../entities/member-summary.entity';
 import { SentenceParserModule } from '../sentence-parser/sentence-parser.module';
 import { TargetModule } from '../target/target.module';
 import { ActivityModule } from '../activity/activity.module';
+import { RoutineModule } from '../routine/routine.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ActivityModule } from '../activity/activity.module';
     SentenceParserModule,
     TargetModule,
     ActivityModule,
+    RoutineModule
   ],
   controllers: [DiaryController],
   providers: [DiaryService],

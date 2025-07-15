@@ -89,12 +89,14 @@ export class RoutineService {
     if (!emotion) {
       res.routineId = null
       res.content = null
+      res.routineType = null
       return res
     }
     const routine = await this.getRecommendRoutineRandom(memberId, emotion)
     if (!routine) {
       res.routineId = null
       res.content = null
+      res.routineType = null
       return res
     }
 

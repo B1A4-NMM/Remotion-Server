@@ -6,7 +6,7 @@ export class RecommendRoutineRes {
   routineId?: number | null;
 
   @ApiProperty({ description: '루틴 타입', enum: RoutineEnum })
-  routineType: RoutineEnum;
+  routineType?: RoutineEnum | null;
 
   @ApiProperty({ description: '루틴 내용', type: String, nullable: true })
   content?: string | null;

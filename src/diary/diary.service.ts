@@ -34,6 +34,7 @@ import { DiaryDetailRes } from './dto/diary-detail.res';
 import { MemberSummaryService } from '../member/member-summary.service';
 import { EmotionScoreDto } from './dto/emotion-score.dto';
 import { EmotionScoresResDto } from './dto/emotion-scores-res.dto';
+import { RoutineService } from '../routine/routine.service';
 
 @Injectable()
 export class DiaryService {
@@ -52,6 +53,7 @@ export class DiaryService {
     private readonly activityService: ActivityService,
     private readonly memberSummaryService: MemberSummaryService,
     private readonly configService: ConfigService,
+    private readonly routineService: RoutineService
   ) {}
 
   /**
@@ -314,6 +316,9 @@ export class DiaryService {
       diary.written_date,
       beforeDiaryCount,
     );
+
+    diaryDetailRes.recommendRoutine = await this.routineService.getRecommendRoutine(memberId, diary.id)
+
     return diaryDetailRes;
   }
 

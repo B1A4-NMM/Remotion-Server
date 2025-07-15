@@ -10,5 +10,6 @@ import { EmotionModule } from '../emotion/emotion.module';
   imports: [TypeOrmModule.forFeature([Routine]), MemberModule, EmotionModule],
   controllers: [RoutineController],
   providers: [RoutineService],
+  exports: [RoutineService]
 })
 export class RoutineModule {}

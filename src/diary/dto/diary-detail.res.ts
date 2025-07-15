@@ -4,6 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { EmotionScoresResDto } from './emotion-scores-res.dto';
 import { Type } from 'class-transformer';
 import { DiaryAnalysisDto } from './diary-analysis.dto';
+import { RecommendRoutineRes } from '../../routine/dto/recommend-routine.res';
 
 export class DiaryDetailRes {
   @ApiProperty({ description: '다이어리 ID' })
@@ -39,6 +40,9 @@ export class DiaryDetailRes {
 
   @ApiProperty({description: '우울 경고', example: false})
   depressionWarning: boolean;
+
+  @ApiProperty({description: '추천되는 루틴 반환', type: RecommendRoutineRes})
+  recommendRoutine?:RecommendRoutineRes | null
 
   @ApiProperty({description: '지금 일기 + 이전 일기 10개 감정 스코어'})
   beforeDiaryScores:EmotionScoresResDto
