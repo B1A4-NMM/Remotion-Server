@@ -292,21 +292,21 @@ export class DiaryService {
     // 스트레스 테스트 날짜 기반 경고 플래그 업데이트
     // STRESS_WARNING_PERIOD_DAYS 환경 변수에서 기간을 가져오고, 없으면 기본값 30일 사용
     const stressPeriod = this.configService.get<number>('WARNING_PERIOD_DAYS', 30);
-    if (member.stress_test_date.plusDays(stressPeriod).isAfter(today) || member.stress_test_date.plusDays(stressPeriod).isEqual(today)) {
+    if (member.stress_test_date && (member.stress_test_date.plusDays(stressPeriod).isBefore(today) || member.stress_test_date.plusDays(stressPeriod).isEqual(today))) {
       diaryDetailRes.stressWarning = false;
     }
 
     // 불안 테스트 날짜 기반 경고 플래그 업데이트
     // ANXIETY_WARNING_PERIOD_DAYS 환경 변수에서 기간을 가져오고, 없으면 기본값 30일 사용
     const anxietyPeriod = this.configService.get<number>('WARNING_PERIOD_DAYS', 30);
-    if (member.anxiety_test_date.plusDays(anxietyPeriod).isAfter(today) || member.anxiety_test_date.plusDays(anxietyPeriod).isEqual(today)) {
+    if (member.anxiety_test_date && (member.anxiety_test_date.plusDays(anxietyPeriod).isBefore(today) || member.anxiety_test_date.plusDays(anxietyPeriod).isEqual(today))) {
       diaryDetailRes.anxietyWarning = false;
     }
 
     // 우울 테스트 날짜 기반 경고 플래그 업데이트
     // DEPRESSION_WARNING_PERIOD_DAYS 환경 변수에서 기간을 가져오고, 없으면 기본값 30일 사용
     const depressionPeriod = this.configService.get<number>('WARNING_PERIOD_DAYS', 30);
-    if (member.depression_test_date.plusDays(depressionPeriod).isAfter(today) || member.depression_test_date.plusDays(depressionPeriod).isEqual(today)) {
+    if (member.depression_test_date && (member.depression_test_date.plusDays(depressionPeriod).isBefore(today) || member.depression_test_date.plusDays(depressionPeriod).isEqual(today))) {
       diaryDetailRes.depressionWarning = false;
     }
 

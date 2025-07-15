@@ -56,14 +56,14 @@ export class Member {
     @OneToMany(() => Routine, (routine) => routine.member)
     routines!: Routine[];
 
-    @Column({ type:'date', transformer: new LocalDateTransformer(), default: () => "'1990-01-01'" })
-    stress_test_date! : LocalDate;
+    @Column({ type:'date', transformer: new LocalDateTransformer(), nullable: true })
+    stress_test_date? : LocalDate;
 
-    @Column({ type:'date', transformer: new LocalDateTransformer(), default: () => "'1990-01-01'" })
-    anxiety_test_date! : LocalDate;
+    @Column({ type:'date', transformer: new LocalDateTransformer(), nullable: true })
+    anxiety_test_date? : LocalDate;
 
-    @Column({ type:'date', transformer: new LocalDateTransformer(), default: () => "'1990-01-01'" })
-    depression_test_date! : LocalDate;
+    @Column({ type:'date', transformer: new LocalDateTransformer(), nullable: true })
+    depression_test_date? : LocalDate;
 
 
 }
