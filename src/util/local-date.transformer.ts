@@ -5,17 +5,15 @@ export class LocalDateTransformer implements ValueTransformer {
   from(value: Date | string | null): LocalDate | null {
     if (!value) return null;
 
-    if (typeof value === 'string') {
-      // MySQL 'DATE' 타입은 이 경우임 (예: '2025-07-16')
-      return LocalDate.parse(value);
+    if (typeof value === 'string' || value instanceof String) {
+      // 진짜 문자열이든 String 객체든 전부 처리
+      return LocalDate.parse(value.toString());
     }
 
     if (value instanceof Date) {
-      // 타입이 Date면 ISO 변환 후 앞 10자만 사용
       return LocalDate.parse(value.toISOString().slice(0, 10));
     }
 
-    // 예외 처리: 알 수 없는 타입
     throw new Error(
       `LocalDateTransformer.from(): Unsupported value type for LocalDate: ${JSON.stringify(value)}`
     );
