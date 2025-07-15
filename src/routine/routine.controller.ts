@@ -33,10 +33,10 @@ import { RecommendRoutineRes } from './dto/recommend-routine.res';
 export class RoutineController {
   constructor(private readonly routineService: RoutineService) {}
 
-  @Get('anger')
+  @Get('stress')
   @ApiOperation({
-    summary: '분노 관리 루틴 조회',
-    description: '사용자의 분노 관리 루틴을 조회합니다.',
+    summary: '스트레스 관리 루틴 조회',
+    description: '사용자의 스트레스 관리 루틴을 조회합니다.',
   })
   @ApiResponse({
     status: 200,
@@ -48,10 +48,10 @@ export class RoutineController {
     return this.routineService.getRoutine(memberId, RoutineEnum.STRESS);
   }
 
-  @Post('anger')
+  @Post('stress')
   @ApiOperation({
-    summary: '분노 관리 루틴 생성',
-    description: '사용자의 분노 관리 루틴을 생성합니다.',
+    summary: '스트레스 관리 루틴 생성',
+    description: '사용자의 스트레스 관리 루틴을 생성합니다.',
   })
   @ApiBody({ type: String, description: '루틴 내용' })
   @ApiResponse({ status: 201, description: '루틴 생성 성공', type: RoutineRes })
