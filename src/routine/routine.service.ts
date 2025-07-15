@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Routine } from '../entities/rotine.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -69,11 +69,16 @@ export class RoutineService {
    * 트리거를 토글하여 폴더에서 추가하거나, 삭제합니다
    */
   async toggleTrigger(id: number) {
-    const trigger = await this.routineRepository.findOneOrFail({
+    const trigger = await this.routineRepository.findOne({
       where: {
         id: id,
       },
     });
+
+    if (trigger === null){
+      throw new NotFoundException('[toggleTrigger] 해당 트리거를 찾지 못했습니다')
+    }
+
     trigger.isTrigger = !trigger.isTrigger;
     return await this.routineRepository.save(trigger);
   }
@@ -124,12 +129,16 @@ export class RoutineService {
   }
 
   async deleteRoutine(memberId: string, routineId: number) {
-    const routine = await this.routineRepository.findOneOrFail({
+    const routine = await this.routineRepository.findOne({
       where: {
         member: { id: memberId },
         id : routineId
       },
     });
+
+    if (routine === null) {
+      throw new NotFoundException('해당 루틴을 찾지 못했습니다')
+    }
 
     return await this.routineRepository.remove(routine);
   }

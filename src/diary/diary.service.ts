@@ -87,9 +87,14 @@ export class DiaryService {
     diaryId: number,
     period: number,
   ) {
-    const diary = await this.diaryRepository.findOneOrFail({
+    const diary = await this.diaryRepository.findOne({
       where: { id: diaryId },
     });
+
+    if (diary === null) {
+      throw new NotFoundException('[findMemberSummaryByDateAndPeriod] 일기를 찾지 못했습니다')
+    }
+
     const date = diary.written_date;
 
     const member = await this.memberService.findOne(memberId);
@@ -106,9 +111,13 @@ export class DiaryService {
    * 일기를 삭제합니다. 일기의 주인이 아닐 경우 에러가 발생합니다
    */
   async deleteDiary(memberId: string, id: number) {
-    const diary = await this.diaryRepository.findOneOrFail({
+    const diary = await this.diaryRepository.findOne({
       where: { id: id },
     });
+
+    if (diary === null) {
+      throw new NotFoundException("[deleteDiary] 일기를 찾지 못했습니다")
+    }
 
     if (diary.author.id != memberId) {
       throw new NotFoundException('해당 일기의 주인이 아닙니다');
@@ -236,9 +245,13 @@ export class DiaryService {
    * 해당 다이어리에 저장되어있는 json 본문을 포함한 정보를 반환합니다
    */
   async getDiaryJson(memberId: string, id: number) {
-    const diary = await this.diaryRepository.findOneOrFail({
+    const diary = await this.diaryRepository.findOne({
       where: { id: id },
     });
+
+    if (diary === null) {
+      throw new NotFoundException('없는 일기입니다')
+    }
 
     if (diary.author.id != memberId) {
       throw new NotFoundException('해당 일기의 주인이 아닙니다');
@@ -480,12 +493,17 @@ export class DiaryService {
    * 다이어리의 북마크 여부를 토글합니다
    */
   async toggleDiaryBookmark(memberId: string, id: number) {
-    let diary = await this.diaryRepository.findOneOrFail({
+    let diary = await this.diaryRepository.findOne({
       where: {
         author: { id: memberId },
         id: id,
       },
     });
+
+    if (diary === null) {
+      throw new NotFoundException('[toggleDiaryBookmark] 다이어리를 찾지 못했습니다')
+    }
+
     diary.is_bookmarked = !diary.is_bookmarked;
     diary = await this.diaryRepository.save(diary);
     return { id: diary.id, isBookmarked: diary.is_bookmarked };

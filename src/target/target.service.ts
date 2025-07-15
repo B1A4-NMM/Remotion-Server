@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Target } from '../entities/Target.entity';
 import { Repository } from 'typeorm';
@@ -106,12 +106,18 @@ export class TargetService {
   }
 
   async findOneById(memberId:string, targetId: number) {
-    return await this.targetRepository.findOneOrFail({
+    let result = await this.targetRepository.findOne({
       where: {
         member: { id: memberId },
         id : targetId
       },
     });
+
+    if (result === null) {
+      throw new NotFoundException('[findOneById] 대상을 찾지 못했습니다')
+    }
+
+    return result;
   }
 
   async findAll(memberId: string) {
