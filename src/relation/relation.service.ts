@@ -39,7 +39,8 @@ export class RelationService {
     let res = new RelationGraphDto();
 
     for (const target of result) {
-      let emotion = await this.emotionService.topEmotionsToTagetSecond(target);
+      let emotion = await this.emotionService.topEmotionsToTargetSecond(target);
+      if (!emotion || emotion.length === 0) continue;
       res.relations.push({
         id: target.id,
         name: target.name,

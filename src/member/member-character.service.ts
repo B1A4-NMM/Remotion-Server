@@ -17,11 +17,6 @@ import {
   import { CharacterAnimalMap, CharacterKey } from '../constants/character-map'
 import { EmotionService } from '../emotion/emotion.service';
 
-
-
-
-
-
 @Injectable()
 export class MemberCharacterService {
 
@@ -36,8 +31,7 @@ export class MemberCharacterService {
         this.logger.debug(`getMemberCharacter 호출 - memberId: ${memberId}`);
         
         const emotionBaseResult =await this.emotionService.getEmotionBaseAnalysis(memberId);
-        this.logger.verbose(`Emotion 분석 결과: ${JSON.stringify(emotionBaseResult)}`);
-        
+
         const hasSufficientData =
         emotionBaseResult.Relation?.length &&
         emotionBaseResult.State?.length &&
