@@ -33,9 +33,9 @@ export class AuthService {
       })
     }
 
-    const payload = { id: id, socialType:socialType };
+    const payload = { id: id, socialType: socialType, nickname: nickname };
     return {
-      access_token: this.jwtService.sign(payload)
+      access_token: this.jwtService.sign(payload),
     };
   }
 

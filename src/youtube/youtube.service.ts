@@ -30,8 +30,9 @@ export class YoutubeService {
   async handleCron() {
     this.logger.log('Calling searchAndStoreVideos() via cron job.');
     const env = this.configService.get<string>('ENVIRONMENT')!;
-    if (env === 'develop' || env === 'production') {}
-    await this.searchAndStoreVideos();
+    if (env === 'develop' || env === 'production') {
+      await this.searchAndStoreVideos();
+    }
   }
 
   /**
@@ -64,7 +65,9 @@ export class YoutubeService {
           }
         }
       } else {
-        this.logger.warn(`No search keywords defined for EmotionType: ${emotionType}. Skipping.`);
+        this.logger.warn(
+          `No search keywords defined for EmotionType: ${emotionType}. Skipping.`,
+        );
       }
     }
     this.logger.log('YouTube video search and storage completed.');
@@ -126,9 +129,11 @@ export class YoutubeService {
     }
   }
 
-  async getRandomVideoIdByEmotion(emotionType: EmotionType): Promise<string[] | null> {
+  async getRandomVideoIdByEmotion(
+    emotionType: EmotionType,
+  ): Promise<string[] | null> {
     const videos = await this.youtubeApiRepository.find({
-      where: { emotion : emotionType },
+      where: { emotion: emotionType },
     });
 
     if (videos.length === 0) {
@@ -136,13 +141,13 @@ export class YoutubeService {
       return null;
     }
 
-    const result:string[] = []
+    const result: string[] = [];
 
     for (let i = 0; i < 3; i++) {
       const randomIndex = Math.floor(Math.random() * videos.length);
-      result.push(videos[randomIndex].videoId)
+      result.push(videos[randomIndex].videoId);
     }
 
-    return result
+    return result;
   }
 }
