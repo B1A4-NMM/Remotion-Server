@@ -23,13 +23,12 @@ export class CommonUtilService {
   parseEnumValue<E extends { [K in keyof E]: string }>(
     enumObj: E,
     value: string,
-  ): E[keyof E] {
+  ): E[keyof E] | null {
     const enumValues = Object.values(enumObj) as string[];
     if (enumValues.includes(value)) {
       return value as E[keyof E];
     }
-    // @ts-ignore
-    return EmotionType.무난
+    return null; // 유효하지 않은 값은 null 반환
   }
 
   toCombinedEmotionTyped(ei: EmotionInteraction | undefined): CombinedEmotion[] {
@@ -37,10 +36,16 @@ export class CommonUtilService {
       return [];
     }
 
-    return ei.emotion.map((e, i) => ({
-      emotion: this.parseEnumValue(EmotionType, e),
-      intensity: ei.emotion_intensity[i],
-    }));
+    return ei.emotion.map((e, i) => {
+      const emotionType = this.parseEnumValue(EmotionType, e);
+      if (emotionType === null) {
+        return null; // 유효하지 않은 감정은 null로 표시
+      }
+      return {
+        emotion: emotionType,
+        intensity: ei.emotion_intensity[i],
+      };
+    }).filter(Boolean) as CombinedEmotion[]; // null 값 필터링
   }
 
   pickRandomUnique<T>(arr: T[], count: number): T[] {

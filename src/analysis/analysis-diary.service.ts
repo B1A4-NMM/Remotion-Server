@@ -6,7 +6,8 @@ import {
   TodoAnalysisDto,
 } from '../diary/dto/diary-analysis.dto';
 import {
-  CombinedEmotion,
+  ActivityAnalysis,
+  CombinedEmotion, DiaryAnalysis,
   EmotionInteraction,
   Person,
 } from '../util/json.parser';
@@ -59,7 +60,8 @@ export class AnalysisDiaryService {
     imageUrl?: string[] | null,
     audioUrl?: string | null,
   ) {
-    const result = await this.promptService.serializeAnalysis(dto.content);
+    let result = await this.promptService.serializeAnalysis(dto.content);
+    result = this.filterInvalidEmotionsFromResult(result); // 유효하지 않은 감정 필터링
 
     let author = await this.memberService.findOne(memberId);
     const activity_analysis = result.activity_analysis;
@@ -195,20 +197,88 @@ export class AnalysisDiaryService {
     if (!emotion.emotion) return [];
 
     for (let i = 0; i < emotion.emotion.length; i++) {
-      const dto = new EmotionAnalysisDto();
-      let emotionType = this.util.parseEnumValue(
+      const emotionType = this.util.parseEnumValue(
         EmotionType,
         emotion.emotion[i],
       );
-      // @ts-ignore
-      if (emotionType === 'DEFAULT') {
-        emotionType = EmotionType.무난;
+
+      if (emotionType === null) {
+        // 유효하지 않은 감정은 필터링
+        continue;
       }
+
+      const dto = new EmotionAnalysisDto();
       dto.emotionType = emotionType;
       dto.intensity = emotion.emotion_intensity[i];
       dtos.push(dto);
     }
 
     return dtos;
+  }
+
+  /**
+   * 분석 결과에서 EmotionType에 정의되지 않은 감정들을 필터링합니다.
+   * @param result Claude AI 분석 결과
+   * @returns 유효한 감정만 포함된 분석 결과
+   */
+  private filterInvalidEmotionsFromResult(result: DiaryAnalysis): DiaryAnalysis {
+    if (!result || !result.activity_analysis) {
+      return result;
+    }
+
+    result.activity_analysis.forEach((activity: ActivityAnalysis) => {
+      // self_emotions 필터링
+      if (activity.self_emotions) {
+        const validSelfEmotions: string[] = [];
+        const validSelfIntensities: number[] = [];
+        activity.self_emotions.emotion.forEach((emotionStr, index) => {
+          if (this.util.parseEnumValue(EmotionType, emotionStr) !== null) {
+            validSelfEmotions.push(emotionStr);
+            validSelfIntensities.push(
+              activity.self_emotions.emotion_intensity[index],
+            );
+          }
+        });
+        activity.self_emotions.emotion = validSelfEmotions;
+        activity.self_emotions.emotion_intensity = validSelfIntensities;
+      }
+
+      // state_emotions 필터링
+      if (activity.state_emotions) {
+        const validStateEmotions: string[] = [];
+        const validStateIntensities: number[] = [];
+        activity.state_emotions.emotion.forEach((emotionStr, index) => {
+          if (this.util.parseEnumValue(EmotionType, emotionStr) !== null) {
+            validStateEmotions.push(emotionStr);
+            validStateIntensities.push(
+              activity.state_emotions.emotion_intensity[index],
+            );
+          }
+        });
+        activity.state_emotions.emotion = validStateEmotions;
+        activity.state_emotions.emotion_intensity = validStateIntensities;
+      }
+
+      // peoples 내 interactions의 emotion 필터링
+      if (activity.peoples && Array.isArray(activity.peoples)) {
+        activity.peoples.forEach((person: Person) => {
+          if (person.interactions) {
+            const validPersonEmotions: string[] = [];
+            const validPersonIntensities: number[] = [];
+            person.interactions.emotion.forEach((emotionStr, index) => {
+              if (this.util.parseEnumValue(EmotionType, emotionStr) !== null) {
+                validPersonEmotions.push(emotionStr);
+                validPersonIntensities.push(
+                  person.interactions.emotion_intensity[index],
+                );
+              }
+            });
+            person.interactions.emotion = validPersonEmotions;
+            person.interactions.emotion_intensity = validPersonIntensities;
+          }
+        });
+      }
+    });
+    return result;
   }
 }

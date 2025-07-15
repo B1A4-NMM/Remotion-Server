@@ -103,6 +103,9 @@ export class ActivityService {
     emotionBase: EmotionBase,
   ) {
     let emotion = this.utilService.parseEnumValue(EmotionType, e.emotion);
+    if (emotion === null) {
+      return
+    }
     let entity: ActivityEmotion | null = await this.activityEmotionRepo.findOne(
       {
         where: {
