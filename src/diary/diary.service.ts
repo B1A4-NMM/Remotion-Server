@@ -316,6 +316,7 @@ export class DiaryService {
       diary.id,
       diary.written_date,
       beforeDiaryCount,
+      memberId,
     );
 
     diaryDetailRes.recommendRoutine = await this.routineService.getRecommendRoutine(memberId, diary.id)
@@ -707,16 +708,19 @@ export class DiaryService {
    * @param filterId
    * @param date 날짜
    * @param count 개수
+   * @param memberId
    * @returns 감정 점수 DTO
    */
   async getEmotionScoresByDiary(
     filterId: number,
     date: LocalDate,
     count: number,
+    memberId: string,
   ): Promise<EmotionScoresResDto> {
     const diaries = await this.diaryRepository.find({
       where: [
         {
+          author: { id: memberId },
           written_date: LessThan(date),
         },
         {
