@@ -16,9 +16,16 @@ import { EmotionGroup } from '../enums/emotion-type.enum';
 import { LocalDate } from 'js-joda';
 import { CommonUtilService } from '../util/common-util.service';
 
+export interface SimilarSentence {
+  diary_id: number;
+  sentence: string;
+  is_similar: boolean;
+}
+
 @Injectable()
 export class ClaudeService {
   private readonly client: BedrockRuntimeClient;
+  private readonly sonnetClient: BedrockRuntimeClient;
 
   constructor(
     private readonly configService: ConfigService,
@@ -27,6 +34,17 @@ export class ClaudeService {
     // @ts-ignore
     this.client = new BedrockRuntimeClient({
       region: this.configService.get<string>('AWS_REGION'),
+      credentials: {
+        accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID'),
+        secretAccessKey: this.configService.get<string>(
+          'AWS_SECRET_ACCESS_KEY',
+        ),
+      },
+    });
+
+    // @ts-ignore
+    this.sonnetClient = new BedrockRuntimeClient({
+      region: this.configService.get<string>('AWS_SONNET_REGION'),
       credentials: {
         accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID'),
         secretAccessKey: this.configService.get<string>(
@@ -81,7 +99,6 @@ export class ClaudeService {
 ${prompt}
 `;
   }
-
 
   private patternAnalysisPrompt(prompt: string): string {
     return `
@@ -161,18 +178,7 @@ ${prompt}
   async queryClaude(prompt: string): Promise<string> {
     const processedPrompt = this.preprocessPrompt(prompt);
 
-    const command = new InvokeModelCommand({
-      modelId: 'apac.anthropic.claude-sonnet-4-20250514-v1:0',
-      contentType: 'application/json',
-      accept: 'application/json',
-      body: JSON.stringify({
-        anthropic_version: 'bedrock-2023-05-31',
-        messages: [{ role: 'user', content: processedPrompt }],
-        max_tokens: 4000,
-      }),
-    });
-
-    const response = await this.client.send(command);
+    const response = await this.getResponseToSonnet(processedPrompt);
     const body = await response.body.transformToString();
     const parsed = JSON.parse(body);
 
@@ -394,25 +400,7 @@ ${prompt}
     try {
       const processedPrompt = this.ActionAnalysis(prompt);
 
-      const command = new InvokeModelCommand({
-        modelId: 'apac.amazon.nova-pro-v1:0',
-        contentType: 'application/json',
-        accept: 'application/json',
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: [{ text: processedPrompt }] }],
-          inferenceConfig: {
-            maxTokens: 4000,
-            temperature: 0.8,
-            topP: 0.7,
-          },
-        }),
-      });
-
-      const response = await this.client.send(command);
-      const body = await response.body.transformToString();
-      const parsed = JSON.parse(body);
-
-      let responseText = parsed?.output?.message?.content?.[0]?.text || '';
+      let responseText = await this.getResponseToNovaLite(processedPrompt);
 
       if (!responseText) {
         throw new Error('No response text received');
@@ -452,32 +440,13 @@ ${prompt}
       dayOfWeek,
     );
 
-    const command = new InvokeModelCommand({
-      modelId: 'apac.amazon.nova-lite-v1:0',
-      contentType: 'application/json',
-      accept: 'application/json',
-      body: JSON.stringify({
-        messages: [{ role: 'user', content: [{ text: processedPrompt }] }],
-        inferenceConfig: {
-          maxTokens: 4000,
-          temperature: 1.0,
-          topP: 0.9,
-        },
-      }),
-    });
-
-    const response = await this.client.send(command);
-    const body = await response.body.transformToString();
-    const parsed = JSON.parse(body);
-
-    let responseText =
-      parsed?.output?.message?.content?.[0]?.text || 'No response';
-    const result = responseText.replace(/\*\*(.*?)\*\*/g, '$1');
+    const response = await this.getResponseToNovaLite(processedPrompt);
+    const result = response.replace(/\*\*(.*?)\*\*/g, '$1');
 
     return result;
   }
 
-  async getRAG(
+  async getSearchDiary(
     query: string,
     documents: {
       diary_id: number;
@@ -485,7 +454,7 @@ ${prompt}
       sentence: string;
       date: string;
     }[],
-  ) {
+  ) : Promise<SimilarSentence[]> {
     console.log(`sentence = ${documents.map((d) => d.sentence).join('\n')}`);
     const processedPrompt = promptRAG(
       query,
@@ -493,26 +462,10 @@ ${prompt}
       LocalDate.now().toString(),
     );
 
-    const command = new InvokeModelCommand({
-      modelId: 'apac.amazon.nova-lite-v1:0',
-      contentType: 'application/json',
-      accept: 'application/json',
-      body: JSON.stringify({
-        messages: [{ role: 'user', content: [{ text: processedPrompt }] }],
-        inferenceConfig: {
-          maxTokens: 4000,
-          temperature: 1.0,
-          topP: 0.9,
-        },
-      }),
-    });
+    let responseText = await this.getResponseToSonnet(processedPrompt);
 
-    const response = await this.client.send(command);
-    const body = await response.body.transformToString();
-    const parsed = JSON.parse(body);
+    console.log(`response = ${responseText}`);
 
-    let responseText =
-      parsed?.output?.message?.content?.[0]?.text || 'No response';
     responseText = responseText
       .trim()
       .replace(/^```(?:json)?\n?/, '')
@@ -523,5 +476,47 @@ ${prompt}
     console.log(`result = ${JSON.stringify(result)}`);
 
     return result;
+  }
+
+  private async getResponseToSonnet(processedPrompt: string) {
+    const command = new InvokeModelCommand({
+      modelId: 'apac.anthropic.claude-sonnet-4-20250514-v1:0',
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify({
+        anthropic_version: 'bedrock-2023-05-31',
+        messages: [{ role: 'user', content: processedPrompt }],
+        max_tokens: 4000,
+      }),
+    });
+
+    const response = await this.sonnetClient.send(command);
+    const body = await response.body.transformToString();
+    const parsed = JSON.parse(body);
+
+    let responseText = parsed?.content?.[0]?.text || 'No response';
+    return responseText;
+  }
+
+  private async getResponseToNovaLite(processedPrompt: string) {
+    const command = new InvokeModelCommand({
+      modelId: 'apac.amazon.nova-lite-v1:0',
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: [{ text: processedPrompt }] }],
+        inferenceConfig: {
+          maxTokens: 4000,
+          temperature: 1.0,
+          topP: 0.9,
+        },
+      }),
+    });
+
+    const response = await this.client.send(command);
+    const body = await response.body.transformToString();
+    const parsed = JSON.parse(body);
+
+    return parsed?.output?.message?.content?.[0]?.text || 'No response';
   }
 }

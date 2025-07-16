@@ -556,6 +556,7 @@ export class DiaryService {
 
       // 중복된 diaryId를 제거하기 위해 Set을 사용하고, 여러 ID를 한번에 조회합니다.
       const diaryIds = [...new Set(searchResult.map((v) => v.diary_id))];
+      console.log(`diaryIds = ${diaryIds}`)
 
       if (diaryIds.length > 0) {
         diaries = await this.diaryRepository.find({
@@ -582,11 +583,15 @@ export class DiaryService {
       });
     }
 
+    console.log(`diaries id = ${diaries.map((v) => v.id)}`)
+
     // 조회된 일기들을 DTO로 변환합니다.
     res.diaries = await Promise.all(
       diaries.map((diary) => this.createDiaryRes(diary)),
     );
     res.totalCount = res.diaries.length;
+
+    console.log(`after diaries id = ${diaries.map((v) => v.id)}`)
 
     return res;
   }

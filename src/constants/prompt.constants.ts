@@ -252,9 +252,12 @@ export function promptRAG(
 - diary_id: 해당 문장이 포함된 일기의 고유 ID
 - sentence: 일기 문장 내용
 - date: 문장이 작성된 날짜 (YYYY-MM-DD 형식)
+또한, 문장에는 다음과 같이 전처리를 위한 태그가 붙어있을 수 있습니다.
+예시 : [tag] sentence
+태그를 먼저 검사하여 질의와 유사하다면, true를 달아주세요
 
-각 문장이 위 질문과 의미적으로 유사한지 판단해 주세요.
-유사하다면 true, 아니라면 출력하지 말고, 결과를 JSON 배열 형식으로 반환해 주세요.
+위 질문에 대한 검색으로 다음 문장 목록들이 유효한지 검사해주세요.
+유효하다면 true, 아니라면 false, 결과를 JSON 배열 형식으로 반환해 주세요.
 json 외의 다른 설명은 하지 말고 출력하세요
 
 문장 목록:
@@ -276,7 +279,7 @@ ${formattedDocs}
   {
     "diary_id": 84,
     "sentence" : "그러한 일이 있었다"
-    "is_similar": true
+    "is_similar": false
   }
 ]
   `;
