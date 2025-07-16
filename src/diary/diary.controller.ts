@@ -202,7 +202,7 @@ export class DiaryController {
   async getDiaryToJson(
     @CurrentUser() user,
     @Param('id') id: string,
-    @Query('beforeDiaryCount', new DefaultValuePipe(10), ParseIntPipe)
+    @Query('beforeDiaryCount', new DefaultValuePipe(5), ParseIntPipe)
     count: number,
   ) {
     const memberId: string = user.id;

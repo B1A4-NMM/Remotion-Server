@@ -4,7 +4,7 @@ import {
   Query,
   UseGuards,
   Logger,
-  ParseIntPipe, Param,
+  ParseIntPipe, Param, DefaultValuePipe,
 } from '@nestjs/common'; // ParseIntPipe 추가
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
@@ -51,7 +51,7 @@ export class RecommendController {
   })
   async getRecommendedVideo(
     @CurrentUser() member: Member,
-    @Query('period', ParseIntPipe) period: number, // ParseIntPipe 추가
+    @Query('period',  new DefaultValuePipe(10), ParseIntPipe) period: number, // ParseIntPipe 추가
   ): Promise<{ videoId: string[]; message: string }> {
     this.logger.log(
       `User ${member.id} requested recommended video for period: ${period} days`,

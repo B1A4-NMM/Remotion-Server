@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Between, LessThanOrEqual, Repository } from 'typeorm';
+import { Between, Equal, LessThan, LessThanOrEqual, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
@@ -313,6 +313,7 @@ export class DiaryService {
     }
 
     diaryDetailRes.beforeDiaryScores = await this.getEmotionScoresByDiary(
+      diary.id,
       diary.written_date,
       beforeDiaryCount,
     );
@@ -703,18 +704,26 @@ export class DiaryService {
    * count개 만큼 불러와 writtenDate순으로 먼저 정렬하고, 이후에 id 순으로 정렬합니다.
    * 그 후 getDiaryEmotionSumIntensity에 정렬된 순서로 diaryId를 넘겨주면서 그 응답을 배열로 저장합니다.
    * 이후 그 응답을 DTO로 감싸서 반환합니다.
+   * @param filterId
    * @param date 날짜
    * @param count 개수
    * @returns 감정 점수 DTO
    */
   async getEmotionScoresByDiary(
+    filterId: number,
     date: LocalDate,
     count: number,
   ): Promise<EmotionScoresResDto> {
     const diaries = await this.diaryRepository.find({
-      where: {
-        written_date: LessThanOrEqual(date),
-      },
+      where: [
+        {
+          written_date: LessThan(date),
+        },
+        {
+          written_date: Equal(date),
+          id: LessThanOrEqual(filterId),
+        },
+      ],
       order: {
         written_date: 'DESC',
         id: 'DESC',
