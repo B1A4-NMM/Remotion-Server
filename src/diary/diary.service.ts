@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Between, Equal, LessThan, LessThanOrEqual, Repository } from 'typeorm';
+import { Between, Equal, In, LessThan, LessThanOrEqual, Like, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
@@ -527,27 +527,65 @@ export class DiaryService {
   /**
    * 키워드를 통해 가장 유사한 문장을 가진 일기들을 반환합니다
    */
-  async getSearchDiary(memberId: string, keyword: string) {
-    const result = await this.sentenceParserService.searchSentenceByMember(
-      keyword,
-      memberId,
+  /**
+   * 키워드를 통해 가장 유사한 문장을 가진 일기들을 반환합니다
+   * @param memberId 멤버 ID
+   * @param keyword 검색 키워드
+   */
+  async getSearchDiary(
+    memberId: string,
+    keyword: string,
+  ): Promise<SearchDiaryRes> {
+    // 환경 변수에서 최소 검색어 길이를 가져오거나, 없으면 기본값 6을 사용합니다.
+    const minLength = this.configService.get<number>(
+      'SEARCH_KEYWORD_MIN_LENGTH',
+      6,
     );
-    let res = new SearchDiaryRes();
 
-    for (const vector of result) {
-      const diaryId = vector.diary_id;
-      const diary = await this.diaryRepository.findOne({
+    const res = new SearchDiaryRes();
+    let diaries: Diary[] = [];
+
+    // 키워드 길이가 최소 길이보다 길면, 의미 기반의 벡터 검색을 수행합니다.
+    if (keyword.length > minLength) {
+      this.logger.log(`'${keyword}'에 대한 벡터 검색을 수행합니다.`);
+      const searchResult =
+        await this.sentenceParserService.searchSentenceByMember(
+          keyword,
+          memberId,
+        );
+
+      // 중복된 diaryId를 제거하기 위해 Set을 사용하고, 여러 ID를 한번에 조회합니다.
+      const diaryIds = [...new Set(searchResult.map((v) => v.diary_id))];
+
+      if (diaryIds.length > 0) {
+        diaries = await this.diaryRepository.find({
+          where: {
+            id: In(diaryIds),
+          },
+          order: {
+            written_date: 'DESC',
+          },
+        });
+      }
+    } else {
+      // 키워드 길이가 짧으면, 내용에 키워드가 포함된 일기를 직접 검색합니다.
+      this.logger.log(`'${keyword}'에 대한 내용 기반 검색을 수행합니다.`);
+      diaries = await this.diaryRepository.find({
         where: {
-          id: diaryId,
+          author: { id: memberId },
+          // content 컬럼에서 키워드를 포함하는 일기를 찾습니다.
+          content: Like(`%${keyword}%`),
+        },
+        order: {
+          written_date: 'DESC', // 최신순으로 정렬합니다.
         },
       });
-      if (!diary) {
-        this.logger.warn('getSearchDiary : diary not found');
-        continue;
-      }
-      const dto = await this.createDiaryRes(diary);
-      res.diaries.push(dto);
     }
+
+    // 조회된 일기들을 DTO로 변환합니다.
+    res.diaries = await Promise.all(
+      diaries.map((diary) => this.createDiaryRes(diary)),
+    );
     res.totalCount = res.diaries.length;
 
     return res;
@@ -724,6 +762,7 @@ export class DiaryService {
           written_date: LessThan(date),
         },
         {
+          author: {id : memberId},
           written_date: Equal(date),
           id: LessThanOrEqual(filterId),
         },
