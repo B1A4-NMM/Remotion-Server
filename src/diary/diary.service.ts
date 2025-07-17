@@ -99,7 +99,9 @@ export class DiaryService {
   ) {
     this.logger.log('다이어리 생성');
 
-    const [result, routine, tagging] = await Promise.all([
+    const taggingPromise = this.analysisDiaryService.getTaggingContent(dto.content); // 시작만 하고 기다리진 않음
+
+    const [result, routine] = await Promise.all([
       this.analysisDiaryService.analysisAndSaveDiary(
         memberId,
         dto,
@@ -110,10 +112,13 @@ export class DiaryService {
         memberId,
         dto.content,
       ),
-      this.analysisDiaryService.getTaggingContent(dto.content)
     ]);
 
-    await this.sentenceParserService.createByDiary(result, tagging)
+    taggingPromise
+      .then((tagging) => this.sentenceParserService.createByDiary(result, tagging))
+      .catch((e) =>
+        this.logger.error(`Tagging 백그라운드 처리 중 오류 발생: ${e.message}`),
+      );
 
     this.logger.log(
       `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
@@ -123,6 +128,7 @@ export class DiaryService {
 
     return result.id;
   }
+
 
   /**
    * 날짜와 기간을 받아 해당 날짜부터 그 이전의 기간까지의 멤버 요약을 가져옵니다
@@ -572,7 +578,7 @@ export class DiaryService {
     // 환경 변수에서 최소 검색어 길이를 가져오거나, 없으면 기본값 6을 사용합니다.
     const minLength = this.configService.get<number>(
       'SEARCH_KEYWORD_MIN_LENGTH',
-      6,
+      5,
     );
 
     const res = new SearchDiaryRes();
