@@ -193,21 +193,21 @@ ${prompt}
     try {
       // 1. 1차 분석: LLM을 통해 일기에서 패턴 추출
       const analysisPrompt = this.patternAnalysisPrompt(prompt);
-      const initialAnalysisText = await this.getResponseToNovaPro(analysisPrompt, 0.05, 0.9);
-      // const initialAnalysisText = await this.getResponseToSonnet4(analysisPrompt);
-      if (!initialAnalysisText || initialAnalysisText === 'No response') {
+      // let response = await this.getResponseToNovaPro(analysisPrompt, 0.05, 0.9);
+      const response = await this.getResponseToSonnet3(analysisPrompt);
+      if (!response || response === 'No response') {
         throw new Error('Initial analysis failed to produce a response.');
       }
 
-      // 2. 2차 검증: LLM이 스스로 결과를 검증하고 수정
-      const validationPrompt = this.resultAnalysis(initialAnalysisText);
-      const validatedText = await this.getResponseToNovaPro(validationPrompt, 0.05, 0.9);
-      if (!validatedText || validatedText === 'No response') {
-        throw new Error('Validation step failed to produce a response.');
-      }
+      // // 2. 2차 검증: LLM이 스스로 결과를 검증하고 수정
+      // const validationPrompt = this.resultAnalysis(response);
+      // response = await this.getResponseToNovaPro(validationPrompt, 0.05, 0.9);
+      // if (!response || response === 'No response') {
+      //   throw new Error('Validation step failed to produce a response.');
+      // }
 
       // 3. 응답 정제 및 파싱
-      const cleanedJson = this._cleanJsonResponse(validatedText);
+      const cleanedJson = this._cleanJsonResponse(response);
       const parsedResponse = JSON.parse(cleanedJson);
 
       // 4. 심리적 거리 계산 및 적용
