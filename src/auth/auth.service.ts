@@ -95,11 +95,11 @@ export class AuthService {
     return response.data;
   }
 
-  async demoLogin() {
+  async demoLoginTemplate(id:string) {
     const demoUser = {
-      id: 'demo',
-      nickname: '하루뒤',
-      email: 'demo@example.com',
+      id: id,
+      nickname: `하루뒤 ${id}`,
+      email: `${id}@example.com`,
       type: SocialType.DEMO,
     };
 

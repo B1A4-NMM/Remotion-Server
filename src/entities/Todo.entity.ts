@@ -12,6 +12,7 @@ import{
 import { LocalDateTransformer } from '../util/local-date.transformer';
 
 import { Member } from './Member.entity';
+import { TodoCalendar } from './todo-calendar.entity';
 
 //import { DiaryTodo } from './diary-todo.entity';
 //diary-todo와의 관계 필요없음 
@@ -28,16 +29,16 @@ export class Todo {
   isCompleted: boolean;
 
   @Column({ type: 'date', nullable: true, transformer: new LocalDateTransformer() })
-  date!: LocalDate;
+  date?: LocalDate | null;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean' ,default: false })
   isRepeat: boolean;
 
-  @Column({ nullable: true })
-  repeatRule: string;
+  @Column({ type: 'varchar', nullable: true , default: null })
+  repeatRule?: string | null;
 
   @Column({ type: 'date', nullable: true, transformer: new LocalDateTransformer() })
-  repeatEndDate: LocalDate;
+  repeatEndDate?: LocalDate | null;
   
   //이 entity가 호출되면 이 시간 기준으로 저장해줌 service에서 따로 처리 필요없음
   @Column({ type: 'date',  transformer: new LocalDateTransformer() })
@@ -50,7 +51,6 @@ export class Todo {
   @ManyToOne(() => Member, (member) => member.todos)
   @JoinColumn({ name: 'user_id' })
   owner: Member;
-
 
   // // 💡 DiaryTodo와 양방향 설정
   // @OneToMany(() => DiaryTodo, (diaryTodo) => diaryTodo.todo)

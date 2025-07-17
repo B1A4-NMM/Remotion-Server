@@ -98,10 +98,12 @@ export class AuthController {
 
   @ApiOperation({
     summary: '데모 계정 로그인',
-    description: '데모 계정으로 로그인하여 JWT를 발급받습니다.',
+    description: '데모 계정으로 로그인하여 JWT를 발급받습니다. id를 쿼리스트링으로 받아, 해당 데모 id가 있다면 로그인, 없다면 회원가입합니다',
   })
   @Get('demo')
-  async demoLogin() {
-    return this.authService.demoLogin();
+  async demoLogin(
+    @Query('id') id: string,
+  ) {
+    return this.authService.demoLoginTemplate(id);
   }
 }

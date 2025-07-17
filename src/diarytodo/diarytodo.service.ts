@@ -14,13 +14,6 @@ import { Diary } from '../entities/Diary.entity';
 import { DiaryTodo } from '../entities/diary-todo.entity';
 import { Member } from '../entities/Member.entity';
 
-import {
-  ActivityAnalysisDto,
-  DiaryAnalysisDto,
-  EmotionAnalysisDto,
-  PeopleAnalysisDto,
-  TodoAnalysisDto,
-} from '../diary/dto/diary-analysis.dto';
 import { LocalDate } from 'js-joda';
 
 @Injectable()
