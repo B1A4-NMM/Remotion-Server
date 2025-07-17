@@ -28,16 +28,16 @@ export class Todo {
   isCompleted: boolean;
 
   @Column({ type: 'date', nullable: true, transformer: new LocalDateTransformer() })
-  date!: LocalDate;
+  date?: LocalDate | null;
 
-  @Column({ default: false })
+  @Column({ type: 'boolean' ,default: false })
   isRepeat: boolean;
 
-  @Column({ nullable: true })
-  repeatRule: string;
+  @Column({ type: 'varchar', nullable: true , default: null })
+  repeatRule?: string | null;
 
   @Column({ type: 'date', nullable: true, transformer: new LocalDateTransformer() })
-  repeatEndDate: LocalDate;
+  repeatEndDate?: LocalDate | null;
   
   //이 entity가 호출되면 이 시간 기준으로 저장해줌 service에서 따로 처리 필요없음
   @Column({ type: 'date',  transformer: new LocalDateTransformer() })

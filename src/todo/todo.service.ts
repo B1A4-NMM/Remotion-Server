@@ -34,17 +34,17 @@ export class TodoService {
     this.logger.log('Todo 생성 요청 시작');
     const member = await this.memberService.findOne(memberId);
 
-    const todo = this.todoRepository.create({
-      title: dto.title,
-      date: dto.date,
-      isRepeat: dto.isRepeat ?? false,
-      repeatRule: dto.repeatRule,
-      repeatEndDate: dto.repeatEndDate,
-      isCompleted: false,
-      owner: member,
-      createdAt: LocalDate.now(),
-      updatedAt: LocalDate.now(),
-    });
+    const todo = new Todo();
+    todo.title = dto.title;
+    todo.owner = member;
+    todo.createdAt = LocalDate.now()
+    todo.repeatEndDate = dto.repeatEndDate ? LocalDate.parse(dto.repeatEndDate) : null
+    todo.isCompleted = false;
+    todo.isRepeat = dto.isRepeat ? dto.isRepeat : false ;
+    todo.repeatRule = dto.repeatRule ? dto.repeatRule : null;
+    todo.updatedAt = LocalDate.now()
+    todo.date = dto.date ? LocalDate.parse(dto.date) : null
+
 
     const saved = await this.todoRepository.save(todo);
     this.logger.log(`Todo 저장 완료:${JSON.stringify(saved)}`);
