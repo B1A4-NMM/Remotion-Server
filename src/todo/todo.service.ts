@@ -13,6 +13,7 @@ import { TodoRes } from './dto/todo.res';
 import { TodoCalendar } from '../entities/todo-calendar.entity';
 import { CreateCalendarTodoDto } from './dto/create-calendar-todo.dto';
 import { TodoCalendarResDto } from './dto/todo-calendar.dto';
+import { TodoCalendarByMonthRes } from './dto/todo-calendar-by-month.dto';
 
 @Injectable()
 export class TodoService {
@@ -29,6 +30,61 @@ export class TodoService {
   ) {}
 
   /**
+   * 특정 월의 Todo-Calendar 현황을 날짜별로 그룹화하여 조회합니다.
+   * @param memberId - 회원 ID
+   * @param year - 조회할 연도
+   * @param month - 조회할 월
+   * @returns - 날짜별 Todo 현황 DTO 배열
+   */
+  async getTodoCalendarByMonth(
+    memberId: string,
+    year: number,
+    month: number,
+  ): Promise<TodoCalendarByMonthRes[]> {
+    // 1. 해당 월의 시작일과 종료일 계산
+    const startDate = LocalDate.of(year, month, 1);
+    const endDate = startDate.plusMonths(1).minusDays(1);
+
+    // 2. DB에서 해당 기간의 TodoCalendar 항목들을 조회
+    const todoCalendars = await this.todoCalendarRepository.find({
+      where: {
+        member: { id: memberId },
+        date: Between(startDate, endDate),
+      },
+      order: {
+        date: 'ASC',
+      },
+    });
+
+    // 3. 날짜(date)를 기준으로 그룹화
+    const groupedByDate = todoCalendars.reduce((acc, todo) => {
+      const dateKey = todo.date.toString(); // LocalDate 객체를 문자열 키로 사용
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
+      acc[dateKey].push(todo);
+      return acc;
+    }, {} as Record<string, TodoCalendar[]>);
+
+    // 4. 그룹화된 데이터를 DTO로 변환
+    const result = Object.entries(groupedByDate).map(([dateStr, todos]) => {
+      const date = LocalDate.parse(dateStr);
+      const todoTotalCount = todos.length;
+      const completedCount = todos.filter((todo) => todo.isCompleted).length;
+      const isAllCompleted = todoTotalCount === completedCount;
+
+      return new TodoCalendarByMonthRes(
+        date,
+        todoTotalCount,
+        completedCount,
+        isAllCompleted,
+      );
+    });
+
+    return result;
+  }
+
+  /**
    * 특정 기간 동안의 TodoCalendar 항목들을 조회합니다.
    * @param memberId - 회원 ID
    * @param startDate - 조회 시작일
@@ -37,13 +93,12 @@ export class TodoService {
    */
   async getTodoCalendar(
     memberId: string,
-    startDate: LocalDate,
-    endDate: LocalDate,
+    date: LocalDate
   ): Promise<TodoCalendarResDto[]> {
     const todoCalendars = await this.todoCalendarRepository.find({
       where: {
         member: { id: memberId },
-        date: Between(startDate, endDate),
+        date: date,
       },
     });
 

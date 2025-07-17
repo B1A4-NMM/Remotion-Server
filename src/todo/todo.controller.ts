@@ -32,6 +32,7 @@ import { ParseLocalDatePipe } from '../pipe/parse-local-date.pipe';
 import { TodoRes } from './dto/todo.res';
 import { CreateCalendarTodoDto } from './dto/create-calendar-todo.dto';
 import { TodoCalendarResDto } from './dto/todo-calendar.dto';
+import { TodoCalendarByMonthRes } from './dto/todo-calendar-by-month.dto';
 
 /*
 ============================================
@@ -53,29 +54,58 @@ export class TodoController {
 
   constructor(private readonly todoService: TodoService) {}
 
-  @ApiExcludeEndpoint()
   @Get('calendar')
   @ApiOperation({ summary: '기간별 Todo-Calendar 조회' })
   @ApiQuery({
-    name: 'startDate',
-    description: '조회 시작일 (YYYY-MM-DD)',
+    name: 'year',
+    description: '조회 연도',
     type: String,
   })
   @ApiQuery({
-    name: 'endDate',
-    description: '조회 종료일 (YYYY-MM-DD)',
+    name: 'month',
+    description: '조회 월',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: '성공',
+    type: [TodoCalendarByMonthRes],
+  })
+  async getTodoCalendar(
+    @CurrentUser() user: any,
+    @Query('year', ParseIntPipe) year: number,
+    @Query('month', ParseIntPipe) month: number,
+  ) {
+    return this.todoService.getTodoCalendarByMonth(user.id, year, month);
+  }
+
+  @Post('calendar')
+  @ApiOperation({ summary: 'Todo-Calendar 생성' })
+  @ApiBody({ type: CreateCalendarTodoDto })
+  @ApiResponse({ status: 200, description: '성공' })
+  async createCalendarTodo(
+    @CurrentUser() user: any,
+    @Body() body: CreateCalendarTodoDto,
+  ) {
+    const memberId = user.id;
+    return await this.todoService.createCalendarTodo(body, memberId);
+  }
+
+  @Get('calendar/date')
+  @ApiOperation({ summary: '특정 날짜의 Todo-Calendar 조회' })
+  @ApiQuery({
+    name: 'date',
+    description: '조회할 날짜 (YYYY-MM-DD)',
     type: String,
   })
   @ApiResponse({ status: 200, description: '성공', type: [TodoCalendarResDto] })
-  async getTodoCalendar(
+  async getTodoCalendarByDate(
     @CurrentUser() user: any,
-    @Query('startDate', ParseLocalDatePipe) startDate: LocalDate,
-    @Query('endDate', ParseLocalDatePipe) endDate: LocalDate,
+    @Query('date', ParseLocalDatePipe) date: LocalDate,
   ) {
-    return this.todoService.getTodoCalendar(user.id, startDate, endDate);
+    return this.todoService.getTodoCalendar(user.id, date);
   }
 
-  @ApiExcludeEndpoint()
   @Patch('calendar/:id')
   @ApiOperation({ summary: 'Todo-Calendar 완료/미완료 토글' })
   @ApiParam({
@@ -91,7 +121,6 @@ export class TodoController {
     return this.todoService.toggleTodoComplete(id, user.id);
   }
 
-  @ApiExcludeEndpoint()
   @Delete('calendar/:id')
   @ApiOperation({ summary: 'Todo-Calendar 삭제' })
   @ApiParam({
@@ -121,19 +150,6 @@ export class TodoController {
     const result = this.todoService.createTodos(user.id, dto);
 
     return result;
-  }
-
-  @ApiExcludeEndpoint()
-  @Post('calendar')
-  @ApiOperation({ summary: 'Todo-Calendar 생성' })
-  @ApiBody({ type: CreateCalendarTodoDto })
-  @ApiResponse({ status: 200, description: '성공' })
-  async createCalendarTodo(
-    @CurrentUser() user: any,
-    @Body() body: CreateCalendarTodoDto,
-  ) {
-    const memberId = user.id;
-    return await this.todoService.createCalendarTodo(body, memberId);
   }
 
   // 이 부분 캘린더 뷰로 수정 todo + 감정들 보내주기
