@@ -9,7 +9,7 @@ import {
   PROMPT_ANALYZE,
   PROMPT_ROUTINE,
   PROMPT_VALIDATE,
-  promptRAG,
+  promptRAG, taggingPrompt,
 } from '../constants/prompt.constants';
 import { EmotionLevels } from '../util/routine.parser';
 import { EmotionGroup } from '../enums/emotion-type.enum';
@@ -178,7 +178,7 @@ ${prompt}
   async queryClaude(prompt: string): Promise<string> {
     const processedPrompt = this.preprocessPrompt(prompt);
 
-    const response = await this.getResponseToSonnet(processedPrompt);
+    const response = await this.getResponseToSonnet4(processedPrompt);
     const body = await response.body.transformToString();
     const parsed = JSON.parse(body);
 
@@ -189,210 +189,116 @@ ${prompt}
     return this.queryDiaryPatterns(prompt);
   }
 
-  async queryDiaryPatterns(prompt: string) {
+  async queryDiaryPatterns(prompt: string): Promise<DiaryAnalysis> {
     try {
-      const processedPrompt = this.patternAnalysisPrompt(prompt);
-
-      const command = new InvokeModelCommand({
-        modelId: 'apac.amazon.nova-pro-v1:0',
-        contentType: 'application/json',
-        accept: 'application/json',
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: [{ text: processedPrompt }] }],
-          inferenceConfig: {
-            maxTokens: 4000,
-            temperature: 0.05,
-            topP: 0.9,
-          },
-        }),
-      });
-
-      const response = await this.client.send(command);
-      const body = await response.body.transformToString();
-      const parsed = JSON.parse(body);
-
-      let responseText =
-        parsed?.output?.message?.content?.[0]?.text || 'No response';
-
-      if (!responseText) {
-        throw new Error('No response text received');
+      // 1. 1차 분석: LLM을 통해 일기에서 패턴 추출
+      const analysisPrompt = this.patternAnalysisPrompt(prompt);
+      const initialAnalysisText = await this.getResponseToNovaPro(analysisPrompt, 0.05, 0.9);
+      // const initialAnalysisText = await this.getResponseToSonnet4(analysisPrompt);
+      if (!initialAnalysisText || initialAnalysisText === 'No response') {
+        throw new Error('Initial analysis failed to produce a response.');
       }
 
-      const checkPrompt = this.resultAnalysis(responseText);
-      const checkCommand = new InvokeModelCommand({
-        modelId: 'apac.amazon.nova-pro-v1:0',
-        contentType: 'application/json',
-        accept: 'application/json',
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: [{ text: checkPrompt }] }],
-          inferenceConfig: {
-            maxTokens: 4000,
-            temperature: 0.05,
-            topP: 0.9,
-          },
-        }),
-      });
-
-      const checkedResponse = await this.client.send(checkCommand);
-      const checkedBody = await checkedResponse.body.transformToString();
-      const checkedParsed = JSON.parse(checkedBody);
-
-      let finalResult =
-        checkedParsed?.output?.message?.content?.[0]?.text || 'No response';
-
-      if (!finalResult) {
-        throw new Error('No response text received');
+      // 2. 2차 검증: LLM이 스스로 결과를 검증하고 수정
+      const validationPrompt = this.resultAnalysis(initialAnalysisText);
+      const validatedText = await this.getResponseToNovaPro(validationPrompt, 0.05, 0.9);
+      if (!validatedText || validatedText === 'No response') {
+        throw new Error('Validation step failed to produce a response.');
       }
 
-      function cleanJsonResponse(text) {
-        // `````` 제거
-        let cleaned = text.replace(/``````\s*$/g, '');
+      // 3. 응답 정제 및 파싱
+      const cleanedJson = this._cleanJsonResponse(validatedText);
+      const parsedResponse = JSON.parse(cleanedJson);
 
-        // 앞뒤 공백 제거
-        cleaned = cleaned.trim();
-
-        // JSON 시작과 끝 확인
-        const startIndex = cleaned.indexOf('{');
-        const endIndex = cleaned.lastIndexOf('}');
-
-        if (startIndex !== -1 && endIndex !== -1) {
-          return cleaned.substring(startIndex, endIndex + 1);
-        }
-
-        return cleaned;
-      }
-
-      // 마크다운 형식 제거
-      finalResult = cleanJsonResponse(finalResult);
-
-      const emotion_weights = {
-        행복: 1.0,
-        기쁨: 1.0,
-        신남: 1.0,
-        설렘: 0.95,
-        유대: 0.95,
-        신뢰: 0.95,
-        친밀: 0.9,
-        그리움: 0.9,
-        자신감: 0.9,
-        서운: 0.8,
-        평온: 0.8,
-        안정: 0.8,
-        편안: 0.75,
-        소외: 0.65,
-        불안: 0.65,
-        실망: 0.65,
-        기대: 0.6,
-        속상: 0.6,
-        상처: 0.5,
-        감사: 0.5,
-        무난: 0.5,
-        차분: 0.5,
-        긴장: 0.45,
-        화남: 0.4,
-        짜증: 0.4,
-        무기력: 0.35,
-        지침: 0.3,
-        지루: 0.3,
-        억울: 0.3,
-        외로움: 0.25,
-        우울: 0.25,
-        공허: 0.2,
-        초조: 0.2,
-        부담: 0.15,
-        어색: 0.1,
-        불편: 0.05,
-        단절: 0.05,
-      };
-
-      // 시간 간격을 숫자로 변환
-      const time_mapping = {
-        all: 24,
-        most: 12,
-        some: 6,
-        little: 3,
-        moment: 1,
-        None: 0,
-      };
-
-      function getEmotionWeight(emotion) {
-        return emotion_weights[emotion] || 0.1; // 직접 접근으로 수정
-      }
-
-      let parsedResponse;
-      try {
-        parsedResponse = JSON.parse(finalResult);
-      } catch (error) {
-        console.error('JSON parsing failed:', error);
-        throw new Error('Invalid JSON response format');
-      }
-
-      // 심적 거리 계산 및 결과 추가
-      if (parsedResponse?.peoples && Array.isArray(parsedResponse.peoples)) {
-        parsedResponse.peoples.forEach((person) => {
-          const interactions = person.interactions || {};
-
-          const intensity = interactions.emotion_intensity || 0;
-          const main_emotion = interactions.emotion || '';
-          const sub_emotions = interactions.sub_emotions || [];
-          const mentions = interactions.mentions || 1;
-          const duration = interactions.duration || 'None';
-          const similarity = person.social_similarity || [];
-
-          const main_emotion_weight = getEmotionWeight(main_emotion);
-
-          let avg_sub_emotion_weight = 0;
-          if (sub_emotions && sub_emotions.length > 0) {
-            const sub_emotion_weights = sub_emotions.map(getEmotionWeight);
-            avg_sub_emotion_weight =
-              sub_emotion_weights.reduce((a, b) => a + b, 0) /
-              sub_emotion_weights.length;
-          }
-
-          const final_emotion_weight =
-            main_emotion_weight * 0.7 + avg_sub_emotion_weight * 0.3;
-          const duration_value = time_mapping[duration] || 0;
-          const social_similarity_score =
-            similarity.name_intimacy * 0.3 +
-            similarity.shared_activity * 0.2 +
-            similarity.information_sharing * 0.2 +
-            similarity.emotional_expression * 0.3;
-
-          // 순서대로 감정 강도, 지속시간, 언급 빈도, 지속시간, 친밀도
-          const alpha = 1.0,
-            beta = 0.4,
-            gamma = 0.25,
-            delta = 0.2,
-            epsilon = 0.7;
-
-          // 수정된 심적 거리 계산 공식
-          const psychological_distance =
-            alpha * intensity * (1 - final_emotion_weight) + // 좋은 감정일수록 거리 감소
-            beta * Math.log(duration_value + 1) +
-            gamma * (mentions > 0 ? Math.pow(mentions, -1) : 1) +
-            delta * duration_value - // 지속시간은 거리 증가 요인
-            epsilon * social_similarity_score; // 친밀도 높을수록 거리 감소
-
-          // 심적 거리는 양수가 되도록 조정
-          const final_psychological_distance = Math.max(
-            0.1,
-            psychological_distance,
-          );
-
-          // console.log(`=== ${person.name} ===`);
-          // console.log(`감정: ${main_emotion} (가중치: ${final_emotion_weight.toFixed(3)})`);
-          // console.log(`감정 강도: ${intensity}`);
-          // console.log(`언급 횟수: ${mentions}`);
-          // console.log(`사회적 유사성: ${social_similarity_score.toFixed(2)}`);
-          // console.log(`심적 거리: ${final_psychological_distance.toFixed(3)}`);
-          // console.log('---');
-        });
-      }
+      // 4. 심리적 거리 계산 및 적용
+      this._applyPsychologicalDistance(parsedResponse);
 
       return parsedResponse;
     } catch (error) {
+      console.error(`Pattern analysis failed: ${error.message}`, error.stack);
+      if (error instanceof SyntaxError) {
+        throw new Error('Failed to parse the analysis result as JSON.');
+      }
       throw new Error(`Pattern analysis failed: ${error.message}`);
     }
+  }
+
+  /**
+   * LLM 응답에서 마크다운 코드 블록을 제거하여 순수한 JSON 문자열을 추출합니다.
+   * @param text 원본 텍스트
+   * @returns 정제된 JSON 문자열
+   */
+  private _cleanJsonResponse(text: string): string {
+    let cleaned = text.replace(/``````\s*$/g, '').trim();
+    const startIndex = cleaned.indexOf('{');
+    const endIndex = cleaned.lastIndexOf('}');
+    if (startIndex !== -1 && endIndex !== -1) {
+      return cleaned.substring(startIndex, endIndex + 1);
+    }
+    return cleaned;
+  }
+
+  /**
+   * 분석된 데이터에 포함된 인물 정보를 바탕으로 심리적 거리를 계산하고 적용합니다.
+   * @param analysisData 파싱된 분석 데이터 객체
+   */
+  private _applyPsychologicalDistance(analysisData: any): void {
+    if (!analysisData?.peoples || !Array.isArray(analysisData.peoples)) {
+      return;
+    }
+
+    const emotion_weights = {
+      행복: 1.0, 기쁨: 1.0, 신남: 1.0, 설렘: 0.95, 유대: 0.95,
+      신뢰: 0.95, 친밀: 0.9, 그리움: 0.9, 자신감: 0.9, 서운: 0.8,
+      평온: 0.8, 안정: 0.8, 편안: 0.75, 소외: 0.65, 불안: 0.65,
+      실망: 0.65, 기대: 0.6, 속상: 0.6, 상처: 0.5, 감사: 0.5,
+      무난: 0.5, 차분: 0.5, 긴장: 0.45, 화남: 0.4, 짜증: 0.4,
+      무기력: 0.35, 지침: 0.3, 지루: 0.3, 억울: 0.3, 외로움: 0.25,
+      우울: 0.25, 공허: 0.2, 초조: 0.2, 부담: 0.15, 어색: 0.1,
+      불편: 0.05, 단절: 0.05,
+    };
+    const time_mapping = {
+      all: 24, most: 12, some: 6, little: 3, moment: 1, None: 0,
+    };
+
+    const getEmotionWeight = (emotion: string) => emotion_weights[emotion] || 0.1;
+
+    analysisData.peoples.forEach((person: any) => {
+      const interactions = person.interactions || {};
+      const intensity = interactions.emotion_intensity || 0;
+      const main_emotion = interactions.emotion || '';
+      const sub_emotions = interactions.sub_emotions || [];
+      const mentions = interactions.mentions || 1;
+      const duration = interactions.duration || 'None';
+      const similarity = person.social_similarity || {};
+
+      const main_emotion_weight = getEmotionWeight(main_emotion);
+      let avg_sub_emotion_weight = 0;
+      if (sub_emotions.length > 0) {
+        const sub_emotion_weights = sub_emotions.map(getEmotionWeight);
+        avg_sub_emotion_weight =
+          sub_emotion_weights.reduce((a, b) => a + b, 0) / sub_emotions.length;
+      }
+
+      const final_emotion_weight = main_emotion_weight * 0.7 + avg_sub_emotion_weight * 0.3;
+      const duration_value = time_mapping[duration] || 0;
+      const social_similarity_score =
+        (similarity.name_intimacy || 0) * 0.3 +
+        (similarity.shared_activity || 0) * 0.2 +
+        (similarity.information_sharing || 0) * 0.2 +
+        (similarity.emotional_expression || 0) * 0.3;
+
+      const alpha = 1.0, beta = 0.4, gamma = 0.25, delta = 0.2, epsilon = 0.7;
+
+      const psychological_distance =
+        alpha * intensity * (1 - final_emotion_weight) +
+        beta * Math.log(duration_value + 1) +
+        gamma * (mentions > 0 ? Math.pow(mentions, -1) : 1) +
+        delta * duration_value -
+        epsilon * social_similarity_score;
+
+      person.psychological_distance = Math.max(0.1, psychological_distance);
+    });
   }
 
   // 루틴 추출 메서드
@@ -400,7 +306,7 @@ ${prompt}
     try {
       const processedPrompt = this.ActionAnalysis(prompt);
 
-      let responseText = await this.getResponseToNovaLite(processedPrompt);
+      let responseText = await this.getResponseToNovaPro(processedPrompt, 0.9, 0.7);
 
       if (!responseText) {
         throw new Error('No response text received');
@@ -428,7 +334,6 @@ ${prompt}
       throw new Error(`Pattern analysis failed: ${error.message}`);
     }
   }
-
   async getRecommendComment(
     activites: string,
     emotion: EmotionGroup,
@@ -440,12 +345,15 @@ ${prompt}
       dayOfWeek,
     );
 
-    const response = await this.getResponseToNovaLite(processedPrompt);
+    const response = await this.getResponseToNovaLite(processedPrompt, 1.0, 0.9);
     const result = response.replace(/\*\*(.*?)\*\*/g, '$1');
 
     return result;
   }
 
+  /**
+   * RAG를 위한 LLM 질의
+   */
   async getSearchDiary(
     query: string,
     documents: {
@@ -454,7 +362,7 @@ ${prompt}
       sentence: string;
       date: string;
     }[],
-  ) : Promise<SimilarSentence[]> {
+  ): Promise<SimilarSentence[]> {
     console.log(`sentence = ${documents.map((d) => d.sentence).join('\n')}`);
     const processedPrompt = promptRAG(
       query,
@@ -462,9 +370,7 @@ ${prompt}
       LocalDate.now().toString(),
     );
 
-    let responseText = await this.getResponseToSonnet(processedPrompt);
-
-    console.log(`response = ${responseText}`);
+    let responseText = await this.getResponseToSonnet4(processedPrompt);
 
     responseText = responseText
       .trim()
@@ -478,7 +384,17 @@ ${prompt}
     return result;
   }
 
-  private async getResponseToSonnet(processedPrompt: string) {
+  /**
+   * 일기 태깅 
+   */
+  async getTaggingDiary(content:string){
+    const prompt = taggingPrompt(content)
+    const response = await this.getResponseToSonnet4(prompt);
+
+    return response;
+  }
+
+  private async getResponseToSonnet4(processedPrompt: string) {
     const command = new InvokeModelCommand({
       modelId: 'apac.anthropic.claude-sonnet-4-20250514-v1:0',
       contentType: 'application/json',
@@ -487,6 +403,7 @@ ${prompt}
         anthropic_version: 'bedrock-2023-05-31',
         messages: [{ role: 'user', content: processedPrompt }],
         max_tokens: 4000,
+        temperature : 0.05,
       }),
     });
 
@@ -498,7 +415,50 @@ ${prompt}
     return responseText;
   }
 
-  private async getResponseToNovaLite(processedPrompt: string) {
+  private async getResponseToSonnet3(processedPrompt: string) {
+    const command = new InvokeModelCommand({
+      modelId: 'apac.anthropic.claude-3-5-sonnet-20241022-v2:0',
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify({
+        anthropic_version: 'bedrock-2023-05-31',
+        messages: [{ role: 'user', content: processedPrompt }],
+        max_tokens: 4000,
+        temperature : 0.05,
+      }),
+    });
+
+    const response = await this.sonnetClient.send(command);
+    const body = await response.body.transformToString();
+    const parsed = JSON.parse(body);
+
+    let responseText = parsed?.content?.[0]?.text || 'No response';
+    return responseText;
+  }
+
+  private async getResponseToNovaPro(processedPrompt: string, temperature:number, topP:number) {
+    const command = new InvokeModelCommand({
+      modelId: 'apac.amazon.nova-pro-v1:0',
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: [{ text: processedPrompt }] }],
+        inferenceConfig: {
+          maxTokens: 4000,
+          temperature: temperature,
+          topP: topP,
+        },
+      }),
+    });
+
+    const response = await this.client.send(command);
+    const body = await response.body.transformToString();
+    const parsed = JSON.parse(body);
+
+    return parsed?.output?.message?.content?.[0]?.text || 'No response';
+  }
+
+  private async getResponseToNovaLite(processedPrompt: string, temperature:number, topP:number) {
     const command = new InvokeModelCommand({
       modelId: 'apac.amazon.nova-lite-v1:0',
       contentType: 'application/json',
@@ -507,8 +467,8 @@ ${prompt}
         messages: [{ role: 'user', content: [{ text: processedPrompt }] }],
         inferenceConfig: {
           maxTokens: 4000,
-          temperature: 1.0,
-          topP: 0.9,
+          temperature: temperature,
+          topP: topP,
         },
       }),
     });

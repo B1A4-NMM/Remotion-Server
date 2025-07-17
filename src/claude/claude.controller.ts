@@ -49,4 +49,14 @@ export class ClaudeController {
     }
   }
 
+  @Post('tag')
+  async getTagging(@Body('prompt') prompt: string) {
+    try {
+      const response = await this.claudeService.getTaggingDiary(prompt);
+      return { response };
+    } catch (error) {
+      throw new Error(`Routine analysis failed: ${error.message}`);
+    }
+  }
+
 }

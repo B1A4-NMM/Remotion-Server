@@ -53,7 +53,7 @@ export class DiaryService {
     private readonly activityService: ActivityService,
     private readonly memberSummaryService: MemberSummaryService,
     private readonly configService: ConfigService,
-    private readonly routineService: RoutineService
+    private readonly routineService: RoutineService,
   ) {}
 
   /**
@@ -69,7 +69,7 @@ export class DiaryService {
   ) {
     this.logger.log('다이어리 생성');
 
-    const [result, routine] = await Promise.all([
+    const [result, routine, tagging] = await Promise.all([
       this.analysisDiaryService.analysisAndSaveDiary(
         memberId,
         dto,
@@ -80,7 +80,10 @@ export class DiaryService {
         memberId,
         dto.content,
       ),
+      this.analysisDiaryService.getTaggingContent(dto.content)
     ]);
+
+    await this.sentenceParserService.createByDiary(result, tagging)
 
     this.logger.log(
       `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
@@ -567,6 +570,23 @@ export class DiaryService {
             written_date: 'DESC',
           },
         });
+
+        // RDB에 존재하는 diary ID만 필터링합니다.
+        const existingDiaryIds = new Set(diaries.map((d) => d.id));
+        const deletedDiaryIds = diaryIds.filter(
+          (id) => !existingDiaryIds.has(id),
+        );
+
+        // RDB에서 삭제되었지만 Qdrant에 남아있는 벡터 데이터를 비동기적으로 삭제합니다.
+        if (deletedDiaryIds.length > 0) {
+          this.logger.warn(
+            `RDB와 정합성 깨짐!!, Qdrant에서 다음을 삭제합니다: ${deletedDiaryIds.join(', ')}`,
+          );
+          // 정합성을 맞추기 위한 작업이므로, 검색 결과 반환을 기다리게 하지 않습니다.
+          deletedDiaryIds.forEach((id) =>
+            this.sentenceParserService.deleteAllByDiaryId(id),
+          );
+        }
       }
     } else {
       // 키워드 길이가 짧으면, 내용에 키워드가 포함된 일기를 직접 검색합니다.
@@ -583,15 +603,11 @@ export class DiaryService {
       });
     }
 
-    console.log(`diaries id = ${diaries.map((v) => v.id)}`)
-
     // 조회된 일기들을 DTO로 변환합니다.
     res.diaries = await Promise.all(
       diaries.map((diary) => this.createDiaryRes(diary)),
     );
     res.totalCount = res.diaries.length;
-
-    console.log(`after diaries id = ${diaries.map((v) => v.id)}`)
 
     return res;
   }

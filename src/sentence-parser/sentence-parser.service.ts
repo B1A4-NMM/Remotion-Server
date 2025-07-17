@@ -44,8 +44,8 @@ export class SentenceParserService {
   /**
    * 일기를 인자로 받아 일기의 내용을 파싱하여 메타데이터와 함께 벡터 디비에 저장합니다
    */
-  async createByDiary(diary: Diary) {
-    const content = diary.content;
+  async createByDiary(diary: Diary, taggingContent:string) {
+    const content = taggingContent;
     const sentences: string[] = await this.parsingText(content);
     const author = diary.author;
     const date = diary.written_date;
@@ -137,6 +137,9 @@ export class SentenceParserService {
     return ragResult.slice(0, SEARCH_TOP_K); // Top-K 개수 제한
   }
 
+  /**
+   * diary_id를 사용해서 벡터 DB에 저장된 문서들을 삭제합니다
+   */
   async deleteAllByDiaryId(diaryId: number) {
     await this.qdrantService.deleteAllByCondition(this.collection, 'diary_id', diaryId)
   }

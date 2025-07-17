@@ -111,9 +111,15 @@ export class AnalysisDiaryService {
       saveDiary,
       author,
     );
-    await this.sentenceParserService.createByDiary(saveDiary);
 
     return saveDiary;
+  }
+
+  /**
+   * 일기 내용을 파싱해서 태깅된 상태로 반환합니다
+   */
+  async getTaggingContent(content: string) {
+    return this.promptService.getTaggingDiary(content)
   }
 
   /**
