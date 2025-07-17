@@ -10,13 +10,14 @@ import {
   Query,
   Param,
   Delete,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiBody,
   ApiOperation,
   ApiResponse,
   ApiTags,
-  ApiProperty, ApiBearerAuth, ApiQuery,
+  ApiProperty, ApiBearerAuth, ApiQuery, ApiParam, ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 
 import { CreateTodoDto } from './dto/create-todo.dto';
@@ -28,6 +29,9 @@ import { UpdateTodoDto } from './dto/update-todo.dto';
 import { GetTodosResponseDto } from './dto/get-todos-response.dto';
 import { LocalDate } from 'js-joda';
 import { ParseLocalDatePipe } from '../pipe/parse-local-date.pipe';
+import { TodoRes } from './dto/todo.res';
+import { CreateCalendarTodoDto } from './dto/create-calendar-todo.dto';
+import { TodoCalendarResDto } from './dto/todo-calendar.dto';
 
 /*
 ============================================
@@ -49,6 +53,60 @@ export class TodoController {
 
   constructor(private readonly todoService: TodoService) {}
 
+  @ApiExcludeEndpoint()
+  @Get('calendar')
+  @ApiOperation({ summary: '기간별 Todo-Calendar 조회' })
+  @ApiQuery({
+    name: 'startDate',
+    description: '조회 시작일 (YYYY-MM-DD)',
+    type: String,
+  })
+  @ApiQuery({
+    name: 'endDate',
+    description: '조회 종료일 (YYYY-MM-DD)',
+    type: String,
+  })
+  @ApiResponse({ status: 200, description: '성공', type: [TodoCalendarResDto] })
+  async getTodoCalendar(
+    @CurrentUser() user: any,
+    @Query('startDate', ParseLocalDatePipe) startDate: LocalDate,
+    @Query('endDate', ParseLocalDatePipe) endDate: LocalDate,
+  ) {
+    return this.todoService.getTodoCalendar(user.id, startDate, endDate);
+  }
+
+  @ApiExcludeEndpoint()
+  @Patch('calendar/:id')
+  @ApiOperation({ summary: 'Todo-Calendar 완료/미완료 토글' })
+  @ApiParam({
+    name: 'id',
+    description: '토글할 Todo-Calendar의 ID',
+    type: Number,
+  })
+  @ApiResponse({ status: 200, description: '성공' })
+  async toggleTodoComplete(
+    @CurrentUser() user: any,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.todoService.toggleTodoComplete(id, user.id);
+  }
+
+  @ApiExcludeEndpoint()
+  @Delete('calendar/:id')
+  @ApiOperation({ summary: 'Todo-Calendar 삭제' })
+  @ApiParam({
+    name: 'id',
+    description: '삭제할 Todo-Calendar의 ID',
+    type: Number,
+  })
+  @ApiResponse({ status: 200, description: '성공' })
+  async deleteTodoCalendar(
+    @CurrentUser() user: any,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.todoService.deleteTodoCalendar(id, user.id);
+  }
+
   @Post()
   @ApiOperation({ summary: ' User Todo 요청 시 DB 저장 ' })
   @ApiResponse({
@@ -65,40 +123,34 @@ export class TodoController {
     return result;
   }
 
+  @ApiExcludeEndpoint()
+  @Post('calendar')
+  @ApiOperation({ summary: 'Todo-Calendar 생성' })
+  @ApiBody({ type: CreateCalendarTodoDto })
+  @ApiResponse({ status: 200, description: '성공' })
+  async createCalendarTodo(
+    @CurrentUser() user: any,
+    @Body() body: CreateCalendarTodoDto,
+  ) {
+    const memberId = user.id;
+    return await this.todoService.createCalendarTodo(body, memberId);
+  }
+
   // 이 부분 캘린더 뷰로 수정 todo + 감정들 보내주기
   @Get()
   @ApiOperation({
-    summary: '전체 Todo & emotions 조회',
-    description:
-      'User식별해서 전체 todo목록 및 캘린더 뷰를 위한 누적 감정 목록을 조회합니다.',
+    summary: '전체 Todo 조회',
+    description: 'User식별해서 전체 todo 목록을 조회합니다.',
   })
   @ApiResponse({
     status: 200,
     description: '할 일 조회 성공',
-    type: GetTodosResponseDto,
+    type: [TodoRes],
   })
   @ApiBearerAuth('access-token')
   @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiQuery({
-    name: 'from',
-    type: String,
-    required: true,
-    description: '시작일자 (YYYY-MM-DD)',
-    example: '2025-01-01',
-  })
-  @ApiQuery({
-    name: 'to',
-    type: String,
-    required: true,
-    description: '종료일자 (YYYY-MM-DD)',
-    example: '2025-08-01',
-  })
-  async getTodos(
-    @Query('from', ParseLocalDatePipe) from: LocalDate,
-    @Query('to', ParseLocalDatePipe) to: LocalDate,
-    @CurrentUser() user,
-  ) {
-    return this.todoService.getTodoAndEmotions(user.id, from, to);
+  async getTodos(@CurrentUser() user) {
+    return this.todoService.getAllTodos(user.id);
   }
 
   @Patch(':id')

@@ -11,9 +11,10 @@ import { Member } from '../entities/Member.entity';
 import { MemberService } from '../member/member.service';
 import { Neo4jModule } from '../neo4j/neo4j.module'; // ✅ 추가
 import { EmotionModule } from '../emotion/emotion.module';
+import { TodoCalendar } from '../entities/todo-calendar.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Todo,DiaryTodo,Member]) , MemberModule, Neo4jModule, EmotionModule ],
+  imports: [TypeOrmModule.forFeature([Todo,DiaryTodo,Member, TodoCalendar]) , MemberModule, Neo4jModule, EmotionModule ],
   controllers: [TodoController],
   providers: [TodoService,MemberService],
   exports : [TodoService],
