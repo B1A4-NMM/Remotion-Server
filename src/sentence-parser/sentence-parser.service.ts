@@ -88,10 +88,6 @@ export class SentenceParserService {
         vectorScore: hit.score,
       }));
 
-    candidates.map((c) => (
-      console.log(`candidates text = ${c.text}, vectorScore = ${c.vectorScore}`)
-    ))
-
     // rerank 요청
     const rerankUrl = this.configService.get('RERANK_MODEL_URL');
     const rerankRes = await axios.post(rerankUrl, {
@@ -118,20 +114,12 @@ export class SentenceParserService {
       };
     });
 
-    final.map((f) => (
-      console.log(`final text = ${f.text}, rankScore = ${f.rerankScore}`)
-    ))
-
     // 🔽 필터 추가: rerankScore가 0.7 이상인 것만
     const filtered = final.filter((item) => item.rerankScore >= SEARCH_THRESHOLD);
 
     const payloads: {diary_id:number, memberId:string, sentence:string, date:string}[] = filtered.map((item) => item.payload);
     let ragResult = await this.LLMService.getSearchDiary(query, payloads);
     ragResult = ragResult.filter(rag => rag.is_similar == true)
-
-    ragResult.map((rag) => (
-      console.log(`rag text = ${rag.sentence}, diaryId = ${rag.diary_id}`)
-    ))
 
 // 🔽 Top-K 제한
     return ragResult.slice(0, SEARCH_TOP_K); // Top-K 개수 제한
