@@ -21,6 +21,7 @@ import {
 } from './dto/diary-analysis.dto';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { EmotionBase } from '../enums/emotion-type.enum';
+import { WrittenDaysDto } from './dto/written-days.dto';
 import { LocalDate } from 'js-joda';
 import { MemberSummary } from '../entities/member-summary.entity';
 import { SentenceParserService } from '../sentence-parser/sentence-parser.service';
@@ -55,6 +56,35 @@ export class DiaryService {
     private readonly configService: ConfigService,
     private readonly routineService: RoutineService
   ) {}
+
+  /**
+   * 특정 연월에 작성된 일기의 날짜(day)들을 반환합니다.
+   * @param memberId - 회원 ID
+   * @param year - 연도
+   * @param month - 월
+   * @returns - 일기가 작성된 날짜(day) 배열
+   */
+  async getWrittenDays(
+    memberId: string,
+    year: number,
+    month: number,
+  ): Promise<WrittenDaysDto> {
+    const startDate = LocalDate.of(year, month, 1);
+    const endDate = startDate.plusMonths(1).minusDays(1);
+
+    const diaries = await this.diaryRepository.find({
+      where: {
+        author: { id: memberId },
+        written_date: Between(startDate, endDate),
+      },
+      select: ['written_date'],
+    });
+
+    const writtenDays = [...new Set(diaries.map((diary) => diary.written_date.dayOfMonth()))];
+
+    return { writtenDays };
+  }
+
 
   /**
    * 다이어리 생성 함수
@@ -556,7 +586,6 @@ export class DiaryService {
 
       // 중복된 diaryId를 제거하기 위해 Set을 사용하고, 여러 ID를 한번에 조회합니다.
       const diaryIds = [...new Set(searchResult.map((v) => v.diary_id))];
-      console.log(`diaryIds = ${diaryIds}`)
 
       if (diaryIds.length > 0) {
         diaries = await this.diaryRepository.find({
@@ -583,15 +612,11 @@ export class DiaryService {
       });
     }
 
-    console.log(`diaries id = ${diaries.map((v) => v.id)}`)
-
     // 조회된 일기들을 DTO로 변환합니다.
     res.diaries = await Promise.all(
       diaries.map((diary) => this.createDiaryRes(diary)),
     );
     res.totalCount = res.diaries.length;
-
-    console.log(`after diaries id = ${diaries.map((v) => v.id)}`)
 
     return res;
   }

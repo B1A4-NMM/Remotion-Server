@@ -455,7 +455,6 @@ ${prompt}
       date: string;
     }[],
   ) : Promise<SimilarSentence[]> {
-    console.log(`sentence = ${documents.map((d) => d.sentence).join('\n')}`);
     const processedPrompt = promptRAG(
       query,
       documents,
@@ -464,8 +463,6 @@ ${prompt}
 
     let responseText = await this.getResponseToSonnet(processedPrompt);
 
-    console.log(`response = ${responseText}`);
-
     responseText = responseText
       .trim()
       .replace(/^```(?:json)?\n?/, '')
@@ -473,7 +470,6 @@ ${prompt}
 
     let result = responseText.replace(/\*\*(.*?)\*\*/g, '$1');
     result = JSON.parse(result);
-    console.log(`result = ${JSON.stringify(result)}`);
 
     return result;
   }

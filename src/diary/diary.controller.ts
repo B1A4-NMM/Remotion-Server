@@ -49,6 +49,8 @@ import { CreateDiaryWithMediaDto } from './dto/create-diary-swagger.dto';
 import { InfiniteScrollRes } from './dto/infinite-scroll.res';
 import { SearchDiaryRes } from './dto/search-diary.res';
 import { DiaryDetailRes } from './dto/diary-detail.res';
+import { WrittenDaysDto } from './dto/written-days.dto';
+// import { Member } from '../entities/Member.entity';
 
 @Controller('diary')
 @ApiBearerAuth('access-token')
@@ -309,6 +311,22 @@ export class DiaryController {
       limit,
       cursor,
     );
+  }
+
+  @Get('writtenDays')
+  @ApiOperation({
+    summary: '해당 연월에 일기가 작성된 날짜 조회',
+    description: '주어진 연도와 월에 일기가 작성된 날짜(day)들을 반환합니다.',
+  })
+  @ApiQuery({ name: 'year', required: true, description: '조회할 연도' })
+  @ApiQuery({ name: 'month', required: true, description: '조회할 월' })
+  @ApiResponse({ status: 200, description: '성공', type: WrittenDaysDto })
+  async getWrittenDays(
+    @CurrentUser() member: any,
+    @Query('year', ParseIntPipe) year: number,
+    @Query('month', ParseIntPipe) month: number,
+  ): Promise<WrittenDaysDto> {
+    return this.diaryService.getWrittenDays(member.id, year, month);
   }
 
   @ApiOperation({ summary: '특정 일기 가공 데이터 조회' })
