@@ -361,6 +361,12 @@ export class DiaryService {
       memberId,
     );
 
+    diaryDetailRes.beforeDiaryScores.scores.sort((a, b) => {
+      if (a.writtenDate.isBefore(b.writtenDate)) return 1;
+      if (a.writtenDate.isAfter(b.writtenDate)) return -1;
+      return b.diaryId - a.diaryId;
+    });
+
     diaryDetailRes.recommendRoutine = await this.routineService.getRecommendRoutine(memberId, diary.id)
 
     return diaryDetailRes;
