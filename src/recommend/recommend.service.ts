@@ -46,8 +46,8 @@ export class RecommendService {
     const memberId = member.id;
 
     // 1. 기간 파싱 및 다이어리 조회
-    const startDate = LocalDate.now();
-    const endDate = startDate.minusDays(periodDays);
+    const endDate = LocalDate.now();
+    const startDate = endDate.minusDays(periodDays);
 
     const emotionsDataByDate =
       await this.emotionService.getAllEmotionsGroupedByDateRange(
