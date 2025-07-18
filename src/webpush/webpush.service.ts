@@ -84,7 +84,8 @@ export class WebpushService {
       memberId,
       '테스트 메세지 제목',
       '테스트 메세지 body',
-      options,
+      options.icon,
+      options.image
     );
   }
 
@@ -95,9 +96,11 @@ export class WebpushService {
     memberId: string,
     title: string,
     body: string,
-    options?: PushNotificationOptions,
+    iconPath: string,
+    imagePath?: string,
+    actions?: { action: string; title: string; icon: string }[],
   ): Promise<void> {
-    const payload = this.createPayload(title, body, options);
+    const payload = this.createPayload(title, body, iconPath, imagePath, actions);
 
     const subscriptions = await this.findPushSubscriptions(memberId);
 
@@ -128,18 +131,17 @@ export class WebpushService {
   private createPayload(
     title: string,
     body: string,
-    options?: PushNotificationOptions,
+    icon: string,
+    image?: string,
+    actions?: { action: string; title: string; icon: string }[],
   ) {
     const payload = JSON.stringify({
       title: title,
       options: {
         body: body,
-        icon: options?.icon || '/assets/icons/icon-96x96.png', // 기본 아이콘 경로
-        image: options?.image,
-        badge: options?.badge,
-        vibrate: options?.vibrate,
-        data: options?.data,
-        actions: options?.actions,
+        icon: icon,
+        image: image,
+        actions: actions,
       },
     });
     return payload;

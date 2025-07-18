@@ -35,6 +35,8 @@ import { NoCacheInterceptor } from './no-cache.interceptor';
 import { SentenceParserModule } from './sentence-parser/sentence-parser.module';
 import { RoutineModule } from './routine/routine.module';
 import { WebpushModule } from './webpush/webpush.module';
+import { NotificationEntity } from './entities/notification.entity';
+import { NotificationModule } from './notification/notification.module';
 
 
 @Module({
@@ -68,6 +70,7 @@ import { WebpushModule } from './webpush/webpush.module';
     SentenceParserModule,
     RoutineModule,
     WebpushModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [
