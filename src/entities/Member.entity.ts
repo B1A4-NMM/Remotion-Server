@@ -10,6 +10,7 @@ import { scheduled } from 'rxjs';
 import { Routine } from './rotine.entity';
 import { LocalDateTransformer } from '../util/local-date.transformer';
 import { LocalDate } from 'js-joda';
+import { PushSubscription } from './push-subscription.entity';
 
 @Entity()
 export class Member {
@@ -55,6 +56,9 @@ export class Member {
 
     @OneToMany(() => Routine, (routine) => routine.member)
     routines!: Routine[];
+
+    @OneToMany(() => PushSubscription, (p) => p.author)
+    pushSubscriptions!: PushSubscription[];
 
     @Column({ type:'date', transformer: new LocalDateTransformer(), nullable: true })
     stress_test_date? : LocalDate;
