@@ -208,7 +208,9 @@ export class DiaryController {
     count: number,
   ) {
     const memberId: string = user.id;
-    return await this.diaryService.getDiaryDetail(memberId, id, count);
+    let diaryDetailRes = await this.diaryService.getDiaryDetail(memberId, id, count);
+    console.log(diaryDetailRes)
+    return diaryDetailRes;
   }
 
   @ApiOperation({ summary: '일기 삭제' })
