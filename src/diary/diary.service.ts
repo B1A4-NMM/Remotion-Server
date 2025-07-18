@@ -367,8 +367,6 @@ export class DiaryService {
       return b.diaryId - a.diaryId;
     });
 
-    console.log(diaryDetailRes.beforeDiaryScores.scores)
-
     diaryDetailRes.recommendRoutine = await this.routineService.getRecommendRoutine(memberId, diary.id)
 
     return diaryDetailRes;

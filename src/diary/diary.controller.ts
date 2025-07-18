@@ -9,7 +9,6 @@ import {
   Patch,
   Post,
   Query,
-  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -19,7 +18,6 @@ import {
   ApiBody,
   ApiConsumes,
   ApiExcludeEndpoint,
-  ApiHeader,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -33,16 +31,11 @@ import { CurrentUser } from '../auth/user.decorator';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { DiaryHomeListRes } from './dto/diary-home-list.res';
 import { DiaryHomeRes } from './dto/diary-home.res';
-import {
-  FileFieldsInterceptor,
-  FileInterceptor,
-  FilesInterceptor,
-} from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { S3Service } from '../upload/s3.service';
 import { CreateDiaryRes } from './dto/create-diary.res';
 import { ParseLocalDatePipe } from '../pipe/parse-local-date.pipe';
 import { LocalDate } from 'js-joda';
-import { DiaryResponseSchema } from '../constants/swagger-scheme.constant';
 import { MemberSummaryRes } from '../member/dto/member-summary.res';
 import { UploadService } from '../upload/upload.service';
 import { CreateDiaryWithMediaDto } from './dto/create-diary-swagger.dto';
@@ -50,6 +43,7 @@ import { InfiniteScrollRes } from './dto/infinite-scroll.res';
 import { SearchDiaryRes } from './dto/search-diary.res';
 import { DiaryDetailRes } from './dto/diary-detail.res';
 import { WrittenDaysDto } from './dto/written-days.dto';
+
 // import { Member } from '../entities/Member.entity';
 
 @Controller('diary')
@@ -188,7 +182,7 @@ export class DiaryController {
     status: 200,
     description: '일기 분석 결과',
     // schema: DiaryResponseSchema,
-    type: DiaryDetailRes
+    type: DiaryDetailRes,
   })
   @ApiParam({
     name: 'id',
@@ -198,7 +192,7 @@ export class DiaryController {
   @ApiQuery({
     name: 'beforeDiaryCount',
     type: Number,
-    description: '감정 스코어를 가져올 일기 갯수, default 10개'
+    description: '감정 스코어를 가져올 일기 갯수, default 10개',
   })
   @Get('json/:id')
   async getDiaryToDetail(
@@ -208,9 +202,7 @@ export class DiaryController {
     count: number,
   ) {
     const memberId: string = user.id;
-    let diaryDetailRes = await this.diaryService.getDiaryDetail(memberId, id, count);
-    console.log(JSON.stringify(diaryDetailRes, null ,2));
-    return diaryDetailRes;
+    return await this.diaryService.getDiaryDetail(memberId, id, count);
   }
 
   @ApiOperation({ summary: '일기 삭제' })
