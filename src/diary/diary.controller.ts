@@ -209,7 +209,7 @@ export class DiaryController {
   ) {
     const memberId: string = user.id;
     let diaryDetailRes = await this.diaryService.getDiaryDetail(memberId, id, count);
-    console.log(diaryDetailRes)
+    console.log(JSON.stringify(diaryDetailRes, null ,2));
     return diaryDetailRes;
   }
 
