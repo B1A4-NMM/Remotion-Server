@@ -102,6 +102,7 @@ export class DiaryService {
     return { writtenDays };
   }
 
+
   /**
    * 다이어리 생성 함수
    * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장
@@ -150,6 +151,7 @@ export class DiaryService {
 
     return result.id;
   }
+
 
   /**
    * 날짜와 기간을 받아 해당 날짜부터 그 이전의 기간까지의 멤버 요약을 가져옵니다
@@ -323,6 +325,9 @@ export class DiaryService {
    * @returns 일기 상세 정보 DTO
    */
   async getDiaryDetail(memberId: string, id: number, beforeDiaryCount: number) {
+
+    this.logger.log(`memberId = ${memberId}, 일기 디테일 뷰 조회중 - 일기 id : ${id}`)
+
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
     });
@@ -400,8 +405,7 @@ export class DiaryService {
       memberId,
     );
 
-    diaryDetailRes.recommendRoutine =
-      await this.routineService.getRecommendRoutine(memberId, diary.id);
+    diaryDetailRes.recommendRoutine = await this.routineService.getRecommendRoutine(memberId, diary.id)
 
     return diaryDetailRes;
   }

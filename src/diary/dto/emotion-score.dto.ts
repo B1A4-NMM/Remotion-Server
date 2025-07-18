@@ -8,7 +8,7 @@ export class EmotionScoreDto {
   @ApiProperty({ description: '일기 ID' })
   diaryId: number;
 
-  @ApiProperty({ description: '일기 작성일' })
+  @ApiProperty({ description: '일기 작성일', type: LocalDate, example: '2024-01-01' })
   writtenDate: LocalDate;
 
   @ApiProperty({ description: '감정 점수 합산' })
