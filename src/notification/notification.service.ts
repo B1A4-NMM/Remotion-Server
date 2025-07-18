@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { NotificationEntity } from '../entities/notification.entity';
 import { MemberService } from '../member/member.service';
 import { WebpushService } from '../webpush/webpush.service';
+import { LocalDate } from 'js-joda';
 
 @Injectable()
 export class NotificationService {
@@ -19,19 +20,23 @@ export class NotificationService {
     memberId: string,
     content: string,
     type: NotificationType,
-    photoPath?: string,
+    diaryId?:number,
+    photoPath?: string | null,
   ) {
     let entity = new NotificationEntity();
     entity.author = await this.memberService.findOne(memberId);
     entity.photoPath = photoPath;
     entity.content = content;
     entity.type = type;
+    entity.createDate = LocalDate.now()
+    entity.isRead = false;
+    entity.diaryId = diaryId;
 
     await this.sendWebPush(memberId, content, type, photoPath);
     await this.notificationRepo.save(entity);
   }
 
-  private async sendWebPush(memberId:string, content:string, type:NotificationType, photoPath?:string) {
+  private async sendWebPush(memberId:string, content:string, type:NotificationType, photoPath?:string | null) {
 
     let title = ''
     switch (type) {
@@ -49,13 +54,23 @@ export class NotificationService {
         break
     }
 
-    await this.webpushService.sendNotification(
-      memberId,
-      title,
-      content,
-      './static/harudew_logo.png',
-      photoPath
-    )
+    if (photoPath === null) {
+      await this.webpushService.sendNotification(
+        memberId,
+        title,
+        content,
+        './static/harudew_logo.png'
+      )
+    }else{
+      await this.webpushService.sendNotification(
+        memberId,
+        title,
+        content,
+        './static/harudew_logo.png',
+        photoPath
+      )
+    }
+
   }
 
 

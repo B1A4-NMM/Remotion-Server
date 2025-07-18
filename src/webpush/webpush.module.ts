@@ -14,5 +14,6 @@ import { MemberModule } from '../member/member.module';
   ],
   controllers: [WebpushController],
   providers: [WebpushService],
+  exports: [WebpushService]
 })
 export class WebpushModule {}

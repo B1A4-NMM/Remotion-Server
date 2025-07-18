@@ -1,33 +1,44 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import {
-  ConnectedRelationEmotions,
-  DistancedRelationEmotions,
   getRelationLabel,
   getSelfLabel,
   getStateLabel,
 } from '../enums/emotion-type.enum';
 
 import {
-  EmotionBaseAnalysisResponseDto,
   EmotionBaseAnalysisDto,
+  EmotionBaseAnalysisResponseDto,
 } from '../emotion/dto/emotion-base-analysis.dto';
 
 import { CharacterResponseDto } from './dto/member-character-response.dto';
 
 import { CharacterAnimalMap, CharacterKey } from '../constants/character-map';
 import { EmotionService } from '../emotion/emotion.service';
+import { MemberService } from './member.service';
+import { NotificationService } from '../notification/notification.service';
+import { changeCharacterMessage } from '../constants/noti-message.constants';
+import { NotificationType } from '../enums/notification-type.enum';
 
 @Injectable()
 export class MemberCharacterService {
   private readonly logger = new Logger(MemberCharacterService.name);
 
-  constructor(private readonly emotionService: EmotionService) {}
+  constructor(
+    private readonly emotionService: EmotionService,
+    private readonly memberService: MemberService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   /**
-   * 사용자에게 어울리는 캐릭터를 추천합니다
+   * 사용자에게 어울리는 캐릭터를 계산합니다
    */
-  async getMemberCharacter(memberId: string): Promise<CharacterResponseDto> {
-    this.logger.debug(`getMemberCharacter 호출 - memberId: ${memberId}`);
+  async calculateMemberCharacter(
+    memberId: string,
+  ) {
+    this.logger.debug(`calculateMemberCharacter 호출 - memberId: ${memberId}`);
+
+    const member = await this.memberService.findOne(memberId);
+    const prevCharacter = member.character;
 
     const emotionBaseResult =
       await this.emotionService.getEmotionBaseAnalysis(memberId);
@@ -44,11 +55,15 @@ export class MemberCharacterService {
       return { character: 'unknown' };
     }
 
-    const character = this.classifyCharacter(emotionBaseResult);
-    this.logger.log(`분류된 캐릭터: ${character}`);
+    const newCharacter = this.classifyCharacter(emotionBaseResult);
+    this.logger.log(`분류된 캐릭터: ${newCharacter}`);
 
-    return { character };
-    //Dto 형식이랑 동일하게 반환해주기
+    if (prevCharacter !== newCharacter)
+      await this.notificationService.createNotification(
+        memberId,
+        changeCharacterMessage(newCharacter),
+        NotificationType.CHARACTER
+      );
   }
 
   /**
@@ -94,5 +109,15 @@ export class MemberCharacterService {
     */
 
     return CharacterAnimalMap[key];
+  }
+
+  /**
+   * 현재 멤버의 캐릭터 반환
+   */
+  async getMemberCharacter(memberId: string) {
+    const member = await this.memberService.findOne(memberId);
+    let dto = new CharacterResponseDto();
+    dto.character = member.character;
+    return dto;
   }
 }

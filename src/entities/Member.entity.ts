@@ -34,6 +34,9 @@ export class Member {
     @Column()
     daily_limit! :number;
 
+    @Column({default: 'unknown'})
+    character:string
+
     @OneToMany(() => Diary, (diary) => diary.author)
     diaries! : Diary[];
     
