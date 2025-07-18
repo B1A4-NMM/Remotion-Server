@@ -895,7 +895,7 @@ export class DiaryService {
     return new EmotionScoresResDto(scores);
   }
 
-  @Cron('0 0 * * *') // 매 자정마다 실행
+  @Cron('0 11 * * *') // 매 자정마다 실행
   async handleCron() {
     this.logger.log('Calling recapDiary() via cron job.');
     const env = this.configService.get<string>('ENVIRONMENT')!;
