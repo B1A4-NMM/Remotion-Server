@@ -140,7 +140,6 @@ export class RecommendService {
     }
     let recommendEmotion = EmotionGroup.안정;
     const dayOfWeek = date.dayOfWeek().toString().toLowerCase();
-    this.logger.log(`${dayOfWeek} : recommendEmotion = ${recommendEmotion}`)
     switch (emotionGroup) {
       case EmotionGroup.스트레스:
         recommendEmotion = EmotionGroup.안정;
@@ -159,7 +158,6 @@ export class RecommendService {
           comment: comment
         }
     }
-    this.logger.log(`recommendEmotion = ${recommendEmotion}`)
     const clusters =
       await this.activityService.getActivitiesByEmotionGroup(
         memberId,
@@ -170,7 +168,6 @@ export class RecommendService {
       return { content: c.content, id: c.id };
     });
 
-    this.logger.log(`activites = ${JSON.stringify(activities)}`)
     const randomActivity = this.utilService.pickRandomUnique(activities,1)
     comment = await this.LLMService.getRecommendComment(
       randomActivity[0].content,
