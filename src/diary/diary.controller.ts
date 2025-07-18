@@ -201,14 +201,14 @@ export class DiaryController {
     description: '감정 스코어를 가져올 일기 갯수, default 10개'
   })
   @Get('json/:id')
-  async getDiaryToJson(
+  async getDiaryToDetail(
     @CurrentUser() user,
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Query('beforeDiaryCount', new DefaultValuePipe(5), ParseIntPipe)
     count: number,
   ) {
     const memberId: string = user.id;
-    return await this.diaryService.getDiaryDetail(memberId, +id, count);
+    return await this.diaryService.getDiaryDetail(memberId, id, count);
   }
 
   @ApiOperation({ summary: '일기 삭제' })

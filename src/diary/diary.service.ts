@@ -302,6 +302,9 @@ export class DiaryService {
    * @returns 일기 상세 정보 DTO
    */
   async getDiaryDetail(memberId: string, id: number, beforeDiaryCount: number) {
+
+    this.logger.log(`memberId = ${memberId}, 일기 디테일 뷰 조회중 - 일기 id : ${id}`)
+
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
     });
