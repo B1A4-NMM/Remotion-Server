@@ -111,6 +111,7 @@ export class RelationService {
       await this.emotionService.getEmotionSummaryByTarget(targetId);
     const diaries = await this.targetService.getDiariesByTarget(targetId);
     const diaryRes: DiaryRes[] = [];
+    const bonusScore = await this.targetService.getRecentMentionsScore(targetId)
 
     for (const diary of diaries) {
       diaryRes.push(await this.diaryService.createDiaryRes(diary));
@@ -125,6 +126,6 @@ export class RelationService {
       return res
     })
 
-    return new TargetDetailAnalysis(target, remotionDetails, diaryRes, activityRes);
+    return new TargetDetailAnalysis(target, remotionDetails, diaryRes, activityRes, bonusScore);
   }
 }

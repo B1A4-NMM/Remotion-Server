@@ -33,8 +33,8 @@ export class MemberService {
     return this.repo.save(member);
   }
 
-  findAll() {
-    return `This action returns all member`;
+  async findAll() {
+    return await this.repo.find();
   }
 
   async findOne(id: string): Promise<Member> {

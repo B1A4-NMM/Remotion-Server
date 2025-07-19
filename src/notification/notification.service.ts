@@ -13,6 +13,7 @@ import {
   ROUTINE_MESSAGE,
   TODO_MESSAGE,
 } from '../constants/noti-message.constants';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class NotificationService {
@@ -248,15 +249,30 @@ export class NotificationService {
   /**
    * 현재 읽지않은 알림의 갯수를 반환합니다
    */
-  async getNoReadNotificationCount(memberId:string) {
+  async getNoReadNotificationCount(memberId: string) {
     const result = await this.notificationRepo.find({
-      where:{
-        author: {id : memberId},
-        isRead : false
+      where: {
+        author: { id: memberId },
+        isRead: false,
       },
-      select: ['id']
-    })
+      select: ['id'],
+    });
 
-    return result.length
+    return result.length;
+  }
+
+  @Cron('41 0 0 * * *')
+  async testNotification() {
+    const members = await this.memberService.findAll();
+    members.map((m) => {
+      this.createNotification(
+        m.id,
+        '테스트 메세지입니다',
+        NotificationType.RECAP,
+        null,
+        null,
+        null,
+      );
+    });
   }
 }

@@ -35,12 +35,13 @@ export class TargetDetailAnalysis {
     emotions: EmotionSummaryByTargetResponseDto[],
     diaries: DiaryRes[],
     activities: TargetActivityRes[],
+    bonusScore: number,
   ) {
     this.targetId = target.id;
     this.targetName = target.name;
     this.emotions = emotions;
     this.diaries = diaries;
     this.activities = activities;
-    this.closenessScore = target.closenessScore;
+    this.closenessScore = target.closenessScore + bonusScore;
   }
 }
