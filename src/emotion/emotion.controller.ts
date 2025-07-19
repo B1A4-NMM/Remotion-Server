@@ -46,7 +46,7 @@ export class EmotionController {
   ) {
     const memberId = user.id;
 
-    return this.service.getEmotionSummaryPeriodByEmotionGroup(memberId, period, emotion)
+    return this.service.getEmotionSummaryPeriodByEmotionGroup(memberId, period, [emotion])
   }
 
   @Get('people')
@@ -59,7 +59,7 @@ export class EmotionController {
   ) {
     const memberId = user.id;
 
-    return this.service.getTargetEmotionSummaryByPeriodAndEmotionGroup(memberId, period, emotion)
+    return this.service.getTargetEmotionSummaryByPeriodAndEmotionGroup(memberId, period, [emotion])
   }
 
   @Get()
@@ -91,6 +91,7 @@ export class EmotionController {
   }
 
   @Get('activity/negative')
+  @ApiOperation({summary:'행동 분석 부정적 감정 데이터 조회', description: '활동별 부정적 감정 분석 데이터를 모두 조회합니다'})
   @UseGuards(AuthGuard('jwt'))
   @ApiResponse({
     schema:{
@@ -118,6 +119,7 @@ export class EmotionController {
   }
 
   @Get('activity/positive')
+  @ApiOperation({summary:'행동 분석 긍정적 감정 데이터 조회', description: '활동별 긍정적 감정 분석 데이터를 모두 조회합니다'})
   @UseGuards(AuthGuard('jwt'))
   @ApiResponse({
     schema:{
@@ -145,20 +147,33 @@ export class EmotionController {
   }
 
   @Get('negative')
+  @ApiOperation({summary:'대상/날짜 분석 부정적 감정 데이터 조회', description: '대상별, 활동별 부정적 감정 분석 데이터를 모두 조회합니다'})
   @UseGuards(AuthGuard('jwt'))
   @ApiResponse({
     schema:{
       type: 'object',
       properties: {
-        stress: {
+        stressTarget: {
           type: 'array',
           items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
         },
-        depression: {
+        depressionTarget: {
           type: 'array',
           items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
         },
-        anxiety: {
+        anxietyTarget: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        stressDate: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        depressionDate: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        anxietyDate: {
           type: 'array',
           items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
         },
@@ -172,20 +187,33 @@ export class EmotionController {
   }
 
   @Get('positive')
+  @ApiOperation({summary:'대상/날짜 분석 긍정적 감정 데이터 조회', description: '대상별, 활동별 긍정적 감정 분석 데이터를 모두 조회합니다'})
   @UseGuards(AuthGuard('jwt'))
   @ApiResponse({
     schema:{
       type: 'object',
       properties: {
-        stability: {
+        stabilityTarget: {
           type: 'array',
           items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
         },
-        bond: {
+        bondTarget: {
           type: 'array',
           items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
         },
-        vitality: {
+        vitalityTarget: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        stabilityDate: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        bondDate: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        vitalityDate: {
           type: 'array',
           items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
         },

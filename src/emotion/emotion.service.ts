@@ -157,41 +157,19 @@ export class EmotionService {
    * @param period
    */
   async getPositiveEmotionsTargetAndSummary(memberId: string, period: number) {
-    const [
-      stabilityTarget,
-      bondTarget,
-      vitalityTarget,
-      stabilitySummary,
-      bondSummary,
-      vitalitySummary,
-    ] = await Promise.all([
-      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
-        memberId,
-        period,
-        EmotionGroup.안정,
-      ),
-      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
-        memberId,
-        period,
-        EmotionGroup.유대,
-      ),
-      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
-        memberId,
-        period,
-        EmotionGroup.활력,
-      ),
-      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, EmotionGroup.안정),
-      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, EmotionGroup.유대),
-      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, EmotionGroup.활력)
+    const positiveGroups = [EmotionGroup.안정, EmotionGroup.유대, EmotionGroup.활력];
+    const [targetSummaries, dateSummaries] = await Promise.all([
+      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(memberId, period, positiveGroups),
+      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, positiveGroups),
     ]);
 
     return {
-      stabilityTarget: stabilityTarget,
-      bondTarget: bondTarget,
-      vitalityTarget: vitalityTarget,
-      stabilitySummary: stabilitySummary,
-      bondSummary: bondSummary,
-      vitalitySummary: vitalitySummary,
+      stabilityTarget: targetSummaries.filter(t => t.emotion === EmotionGroup.안정),
+      bondTarget: targetSummaries.filter(t => t.emotion === EmotionGroup.유대),
+      vitalityTarget: targetSummaries.filter(t => t.emotion === EmotionGroup.활력),
+      stabilityDate: dateSummaries.filter(s => s.emotionGroup === EmotionGroup.안정),
+      bondDate: dateSummaries.filter(s => s.emotionGroup === EmotionGroup.유대),
+      vitalityDate: dateSummaries.filter(s => s.emotionGroup === EmotionGroup.활력),
     };
   }
 
@@ -201,41 +179,19 @@ export class EmotionService {
    * @param period
    */
   async getNegativeEmotionsTargetAndSummary(memberId: string, period: number) {
-    const [
-      depressionTarget,
-      anxietyTarget,
-      stressTarget,
-      depressionSummary,
-      anxietySummary,
-      stressSummary,
-    ] = await Promise.all([
-      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
-        memberId,
-        period,
-        EmotionGroup.우울,
-      ),
-      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
-        memberId,
-        period,
-        EmotionGroup.불안,
-      ),
-      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
-        memberId,
-        period,
-        EmotionGroup.스트레스,
-      ),
-      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, EmotionGroup.우울),
-      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, EmotionGroup.불안),
-      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, EmotionGroup.스트레스)
+    const negativeGroups = [EmotionGroup.우울, EmotionGroup.불안, EmotionGroup.스트레스];
+    const [targetSummaries, dateSummaries] = await Promise.all([
+        this.getTargetEmotionSummaryByPeriodAndEmotionGroup(memberId, period, negativeGroups),
+        this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, negativeGroups),
     ]);
 
     return {
-      depressionTarget: depressionTarget,
-      anxietyTarget: anxietyTarget,
-      stressTarget: stressTarget,
-      depressionSummary: depressionSummary,
-      anxietySummary: anxietySummary,
-      stressSummary: stressSummary,
+        depressionTarget: targetSummaries.filter(t => t.emotion === EmotionGroup.우울),
+        anxietyTarget: targetSummaries.filter(t => t.emotion === EmotionGroup.불안),
+        stressTarget: targetSummaries.filter(t => t.emotion === EmotionGroup.스트레스),
+        depressionDate: dateSummaries.filter(s => s.emotionGroup === EmotionGroup.우울),
+        anxietyDate: dateSummaries.filter(s => s.emotionGroup === EmotionGroup.불안),
+        stressDate: dateSummaries.filter(s => s.emotionGroup === EmotionGroup.스트레스),
     };
   }
 
@@ -312,7 +268,7 @@ export class EmotionService {
     const res = new EmotionAnalysisPeriodRes();
 
     const [date, activities, people] = await Promise.all([
-      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, emotion),
+      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, [emotion]),
       this.getActivityEmotionSummaryByPeriodAndEmotionGroup(
         memberId,
         period,
@@ -321,7 +277,7 @@ export class EmotionService {
       this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
         memberId,
         period,
-        emotion,
+        [emotion],
       ),
     ]);
 
@@ -410,35 +366,34 @@ export class EmotionService {
   }
 
   /**
-   * 기간과 감정 그룹을 받아 해당 기간 내에 등장한 인물들에게 느꼈던 감정 그룹들을 요약하여 반환합니다. (성능 개선 버전)
+   * 기간과 감정 그룹 배열을 받아 해당 기간 내에 등장한 인물들에게 느꼈던 감정 그룹들을 요약하여 반환합니다.
    * @param memberId - 회원 ID
    * @param period - 조회 기간 (일)
-   * @param emotionGroup - 조회할 감정 그룹
+   * @param emotionGroups - 조회할 감정 그룹 배열
    * @returns 대상별 감정 요약 정보 배열
    */
   async getTargetEmotionSummaryByPeriodAndEmotionGroup(
     memberId: string,
     period: number,
-    emotionGroup: EmotionGroup,
+    emotionGroups: EmotionGroup[],
   ): Promise<TargetEmotionSummaryRes[]> {
     const today = LocalDate.now();
     const pastDate = today.minusDays(period);
     const threshold = this.configService.get('TARGET_THRESHOLD') ?? 10;
 
-    // EmotionGroup에 속하는 모든 EmotionType을 가져옵니다.
-    const emotionsInGroup = Object.entries(EmotionGroupMap)
-      .filter(([, group]) => group === emotionGroup)
+    const emotionsInGroups = Object.entries(EmotionGroupMap)
+      .filter(([, group]) => group && emotionGroups.includes(group))
       .map(([emotion]) => emotion as EmotionType);
 
-    if (emotionsInGroup.length === 0) {
+    if (emotionsInGroups.length === 0) {
       return [];
     }
 
-    // QueryBuilder를 사용하여 DB에서 직접 집계
     const results = await this.emotionTargetRepository
-      .createQueryBuilder('et') // 'et'는 emotion_target의 별칭
+      .createQueryBuilder('et')
       .select('t.id', 'targetId')
       .addSelect('t.name', 'targetName')
+      .addSelect('et.emotion', 'emotionType') // 감정 타입을 가져와서 그룹을 식별
       .addSelect('SUM(et.emotion_intensity)', 'totalIntensity')
       .addSelect('SUM(et.count)', 'count')
       .innerJoin('et.target', 't')
@@ -449,51 +404,76 @@ export class EmotionService {
         startDate: pastDate.toString(),
         endDate: today.toString(),
       })
-      .andWhere('et.emotion IN (:...emotions)', { emotions: emotionsInGroup })
-      .groupBy('t.id, t.name') // 대상별로 그룹핑
-      .having('SUM(et.emotion_intensity) > :threshold', { threshold }) // 집계 후 필터링
-      .orderBy('totalIntensity', 'DESC')
-      .limit(3)
+      .andWhere('et.emotion IN (:...emotions)', { emotions: emotionsInGroups })
+      .groupBy('t.id, t.name, et.emotion')
       .getRawMany();
 
-    // getRawMany 결과를 DTO로 변환
-    return results.map((row) => ({
-      targetId: row.targetId,
-      targetName: row.targetName,
-      totalIntensity: parseFloat(row.totalIntensity),
-      count: parseInt(row.count, 10),
-      emotion: emotionGroup,
-    }));
+    const summaryMap = new Map<string, TargetEmotionSummaryRes>();
+
+    for (const row of results) {
+        const emotionGroup = EmotionGroupMap[row.emotionType as EmotionType];
+        if (!emotionGroup) continue;
+
+        const key = `${row.targetId}-${emotionGroup}`;
+
+        if (!summaryMap.has(key)) {
+            summaryMap.set(key, {
+                targetId: row.targetId,
+                targetName: row.targetName,
+                totalIntensity: 0,
+                count: 0,
+                emotion: emotionGroup,
+            });
+        }
+
+        const summary = summaryMap.get(key)!;
+        summary.totalIntensity += parseFloat(row.totalIntensity);
+        summary.count += parseInt(row.count, 10);
+    }
+
+    const allSummaries = Array.from(summaryMap.values());
+
+    // 각 그룹별로 상위 3개 필터링
+    const finalResult: TargetEmotionSummaryRes[] = [];
+    for (const group of emotionGroups) {
+        const groupSummaries = allSummaries
+            .filter(s => s.emotion === group)
+            .filter(s => s.totalIntensity > threshold)
+            .sort((a, b) => b.totalIntensity - a.totalIntensity)
+            .slice(0, 3);
+        finalResult.push(...groupSummaries);
+    }
+
+    return finalResult;
   }
 
   /**
-   * 기간과 감정 그룹을 받아 해당 기간 내의 그룹에 속하는 감정들의 요약 정보를 반환합니다. (성능 개선 버전)
+   * 기간과 감정 그룹 배열을 받아 해당 기간 내의 그룹에 속하는 감정들의 요약 정보를 반환합니다.
    * @param memberId - 회원 ID
    * @param period - 조회 기간 (일)
-   * @param emotionGroup - 조회할 감정 그룹
+   * @param emotionGroups - 조회할 감정 그룹 배열
    * @returns 감정 요약 정보 배열
    */
   async getEmotionSummaryPeriodByEmotionGroup(
     memberId: string,
     period: number,
-    emotionGroup: EmotionGroup,
+    emotionGroups: EmotionGroup[],
   ): Promise<EmotionSummaryPeriodRes[]> {
     const today = LocalDate.now();
     const pastDate = today.minusDays(period);
 
-    // EmotionGroup에 속하는 모든 EmotionType을 가져옵니다.
-    const emotionsInGroup = Object.entries(EmotionGroupMap)
-      .filter(([, group]) => group === emotionGroup)
+    const emotionsInGroups = Object.entries(EmotionGroupMap)
+      .filter(([, group]) => group && emotionGroups.includes(group))
       .map(([emotion]) => emotion as EmotionType);
 
-    if (emotionsInGroup.length === 0) {
-      return []; // 해당 그룹에 속한 감정이 없으면 빈 배열 반환
+    if (emotionsInGroups.length === 0) {
+      return [];
     }
 
-    // QueryBuilder를 사용하여 DB에서 직접 집계
     const results = await this.diaryEmotionRepository
       .createQueryBuilder('diaryEmotion')
       .select('diary.written_date', 'date')
+      .addSelect('diaryEmotion.emotion', 'emotionType') // 감정 타입을 가져와서 그룹을 식별
       .addSelect('SUM(diaryEmotion.intensity)', 'intensity')
       .addSelect('COUNT(diaryEmotion.id)', 'count')
       .innerJoin('diaryEmotion.diary', 'diary')
@@ -503,19 +483,34 @@ export class EmotionService {
         endDate: today.toString(),
       })
       .andWhere('diaryEmotion.emotion IN (:...emotions)', {
-        emotions: emotionsInGroup,
+        emotions: emotionsInGroups,
       })
-      .groupBy('diary.written_date')
+      .groupBy('diary.written_date, diaryEmotion.emotion')
       .orderBy('diary.written_date', 'ASC')
       .getRawMany();
 
-    // getRawMany 결과를 DTO로 변환
-    return results.map((row) => ({
-      date: LocalDate.parse(new Date(row.date).toISOString().slice(0, 10)),
-      intensity: parseFloat(row.intensity),
-      count: parseInt(row.count, 10),
-      emotionGroup: emotionGroup,
-    }));
+    const summaryMap = new Map<string, EmotionSummaryPeriodRes>();
+
+    for (const row of results) {
+        const emotionGroup = EmotionGroupMap[row.emotionType as EmotionType];
+        if (!emotionGroup) continue;
+
+        const key = `${row.date}-${emotionGroup}`;
+
+        if (!summaryMap.has(key)) {
+            summaryMap.set(key, {
+                date: LocalDate.parse(new Date(row.date).toISOString().slice(0, 10)),
+                intensity: 0,
+                count: 0,
+                emotionGroup: emotionGroup,
+            });
+        }
+        const summary = summaryMap.get(key)!;
+        summary.intensity += parseFloat(row.intensity);
+        summary.count += parseInt(row.count, 10);
+    }
+
+    return Array.from(summaryMap.values());
   }
 
   /**
