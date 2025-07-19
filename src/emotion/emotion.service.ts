@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, In, Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { EmotionTarget } from '../entities/emotion-target.entity';
 import { Target } from '../entities/Target.entity';
 import {
@@ -9,10 +9,7 @@ import {
   EmotionGroupMap,
   EmotionType,
   isEmotionType,
-  getEmotionBase,
 } from '../enums/emotion-type.enum';
-
-import { EmotionAnalysisDto } from '../diary/dto/diary-analysis.dto';
 import {
   EmotionBaseAnalysisDto,
   EmotionBaseAnalysisResponseDto,
@@ -28,7 +25,7 @@ import { Diary } from '../entities/Diary.entity';
 
 import { weekday } from '../constants/weekday.constant';
 import { ChronoUnit, LocalDate } from 'js-joda';
-import { CombinedEmotion, EmotionInteraction } from '../util/json.parser';
+import { CombinedEmotion } from '../util/json.parser';
 import { EmotionSummaryPeriodRes } from './dto/emotion-summary-period.res';
 import { TargetEmotionSummaryRes } from './dto/target-emotion-summary.res';
 import { ActivityService } from '../activity/activity.service';
@@ -155,6 +152,156 @@ export class EmotionService {
   }
 
   /**
+   * 기간을 인자로 받아 해당 기간 내에 받았던 대상별, 날짜별 긍정적인 감정들을 가져옵니다
+   * @param memberId
+   * @param period
+   */
+  async getPositiveEmotionsTargetAndSummary(memberId: string, period: number) {
+    const [
+      stabilityTarget,
+      bondTarget,
+      vitalityTarget,
+      stabilitySummary,
+      bondSummary,
+      vitalitySummary,
+    ] = await Promise.all([
+      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        EmotionGroup.안정,
+      ),
+      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        EmotionGroup.유대,
+      ),
+      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        EmotionGroup.활력,
+      ),
+      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, EmotionGroup.안정),
+      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, EmotionGroup.유대),
+      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, EmotionGroup.활력)
+    ]);
+
+    return {
+      stabilityTarget: stabilityTarget,
+      bondTarget: bondTarget,
+      vitalityTarget: vitalityTarget,
+      stabilitySummary: stabilitySummary,
+      bondSummary: bondSummary,
+      vitalitySummary: vitalitySummary,
+    };
+  }
+
+  /**
+   * 기간을 인자로 받아 해당 기간 내에 받았던 대상별, 날짜별 부정적인 감정들을 가져옵니다
+   * @param memberId
+   * @param period
+   */
+  async getNegativeEmotionsTargetAndSummary(memberId: string, period: number) {
+    const [
+      depressionTarget,
+      anxietyTarget,
+      stressTarget,
+      depressionSummary,
+      anxietySummary,
+      stressSummary,
+    ] = await Promise.all([
+      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        EmotionGroup.우울,
+      ),
+      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        EmotionGroup.불안,
+      ),
+      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        EmotionGroup.스트레스,
+      ),
+      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, EmotionGroup.우울),
+      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, EmotionGroup.불안),
+      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, EmotionGroup.스트레스)
+    ]);
+
+    return {
+      depressionTarget: depressionTarget,
+      anxietyTarget: anxietyTarget,
+      stressTarget: stressTarget,
+      depressionSummary: depressionSummary,
+      anxietySummary: anxietySummary,
+      stressSummary: stressSummary,
+    };
+  }
+
+  /**
+   * 특정 기간 내에 부정적 감정이 들었던 행동들을 가져옵니다
+   * @param memberId
+   * @param period
+   */
+  async getNegativeActivities(memberId: string, period: number) {
+    const [depression, anger, stress] = await Promise.all([
+      this.getActivityEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        EmotionGroup.불안,
+      ),
+      this.getActivityEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        EmotionGroup.우울,
+      ),
+      this.getActivityEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        EmotionGroup.스트레스,
+      ),
+    ]);
+
+    return {
+      depression: depression,
+      anger: anger,
+      stress: stress,
+    };
+  }
+
+  /**
+   * 특정 기간 내에 긍정적 감정이 들었던 행동들을 가져옵니다
+   * @param memberId
+   * @param period
+   */
+  async getPositiveActivities(memberId: string, period: number) {
+    const [stability, bond, vitality] = await Promise.all([
+      this.getActivityEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        EmotionGroup.안정,
+      ),
+      this.getActivityEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        EmotionGroup.유대,
+      ),
+      this.getActivityEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        EmotionGroup.활력,
+      ),
+    ]);
+
+    return {
+      stability: stability,
+      bond: bond,
+      vitality: vitality,
+    };
+  }
+
+  /**
    * 기간,멤버,감정 그룹을 인자로 받아 멤버와 연관된 해당 기간 내의 감정 그룹들을 반환합니다
    */
   async getEmotionAnalysis(
@@ -164,14 +311,18 @@ export class EmotionService {
   ) {
     const res = new EmotionAnalysisPeriodRes();
 
-    const [
-      date,
-      activities,
-      people,
-    ] = await Promise.all([
+    const [date, activities, people] = await Promise.all([
       this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, emotion),
-      this.getActivityEmotionSummaryByPeriodAndEmotionGroup(memberId, period, emotion),
-      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(memberId, period, emotion),
+      this.getActivityEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        emotion,
+      ),
+      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        emotion,
+      ),
     ]);
 
     res.date = date;
@@ -180,7 +331,6 @@ export class EmotionService {
 
     return res;
   }
-
 
   /**
    * 기간과 감정 그룹을 받아 해당 기간 내에 행동을 통해 받은 감정 그룹들을 합산하여 반환합니다. (성능 개선 버전)
@@ -219,7 +369,7 @@ export class EmotionService {
       await this.activityService.clusteringActivities(allActivities);
 
     // 3. JS에서 데이터 가공 (DB 조회 없이 이미 로드된 데이터 활용)
-    const activityMap = new Map(allActivities.map(a => [a.id, a]));
+    const activityMap = new Map(allActivities.map((a) => [a.id, a]));
 
     const result: ActivityEmotionSummaryRes[] = [];
     for (const cluster of clusters.clusters) {
@@ -801,7 +951,9 @@ export class EmotionService {
    * @returns 가장 높은 감정 그룹
    * @param diaryId
    */
-  async getRepresentEmotionGroup(diaryId: number): Promise<EmotionGroup | null> {
+  async getRepresentEmotionGroup(
+    diaryId: number,
+  ): Promise<EmotionGroup | null> {
     // 1. diary에 연결된 모든 diaryEmotion을 조회합니다.
     const diaryEmotions = await this.diaryEmotionRepository.find({
       where: { diary: { id: diaryId } },
@@ -816,7 +968,8 @@ export class EmotionService {
     for (const diaryEmotion of diaryEmotions) {
       const emotionGroup = EmotionGroupMap[diaryEmotion.emotion];
       if (emotionGroup) {
-        emotionGroupCounts[emotionGroup] = (emotionGroupCounts[emotionGroup] || 0) + 1;
+        emotionGroupCounts[emotionGroup] =
+          (emotionGroupCounts[emotionGroup] || 0) + 1;
       }
     }
 
@@ -854,9 +1007,9 @@ export class EmotionService {
       .reduce((acc, { emotion, intensity }) => {
         const group = EmotionGroupMap[emotion];
         if (group && negativeGroups.includes(group)) {
-          return acc - (intensity/2);
+          return acc - intensity / 2;
         }
-        return acc + (intensity/2);
+        return acc + intensity / 2;
       }, 0);
   }
 }

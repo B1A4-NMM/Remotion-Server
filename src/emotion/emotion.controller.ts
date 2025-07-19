@@ -3,10 +3,11 @@ import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
 import { EmotionGroup } from '../enums/emotion-type.enum';
 import { EmotionService } from './emotion.service';
-import { ApiExcludeEndpoint, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeEndpoint, ApiOperation, ApiQuery, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { EmotionAnalysisPeriodRes } from './dto/emotion-analysis-period.res';
 
 import { EmotionSummaryByTargetResponseDto } from './dto/emotion-summary-by-target.res.dto';
+import { ActivityEmotionSummaryRes } from './dto/activity-emotion-summary.res';
 
 @Controller('emotion')
 @ApiTags('감정')
@@ -87,6 +88,114 @@ export class EmotionController {
       console.timeEnd(label); // 혹시 모를 예외 대비
       throw e;
     }
+  }
+
+  @Get('activity/negative')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiResponse({
+    schema:{
+      type: 'object',
+      properties: {
+        stress: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        depression: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        anxiety: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+      }
+    }
+  })
+  @ApiQuery({ name: 'period', type: Number, required: true, description: '조회할 기간(일 단위)' })
+  async getNegativeActivities(@CurrentUser() user:any, @Query('period', ParseIntPipe) period:number){
+    const memberId:string = user.id;
+    return await this.service.getNegativeActivities(memberId, period);
+  }
+
+  @Get('activity/positive')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiResponse({
+    schema:{
+      type: 'object',
+      properties: {
+        stability: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        bond: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        vitality: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+      }
+    }
+  })
+  @ApiQuery({ name: 'period', type: Number, required: true, description: '조회할 기간(일 단위)' })
+  async getPositiveActivities(@CurrentUser() user:any, @Query('period', ParseIntPipe) period:number){
+    const memberId:string = user.id;
+    return await this.service.getPositiveActivities(memberId, period);
+  }
+
+  @Get('negative')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiResponse({
+    schema:{
+      type: 'object',
+      properties: {
+        stress: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        depression: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        anxiety: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+      }
+    }
+  })
+  @ApiQuery({ name: 'period', type: Number, required: true, description: '조회할 기간(일 단위)' })
+  async getNegativeEmotionTargetAndSummary(@CurrentUser() user:any, @Query('period', ParseIntPipe) period:number){
+    const memberId:string = user.id;
+    return await this.service.getNegativeEmotionsTargetAndSummary(memberId, period);
+  }
+
+  @Get('positive')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiResponse({
+    schema:{
+      type: 'object',
+      properties: {
+        stability: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        bond: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+        vitality: {
+          type: 'array',
+          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+        },
+      }
+    }
+  })
+  @ApiQuery({ name: 'period', type: Number, required: true, description: '조회할 기간(일 단위)' })
+  async getPositiveEmotionTargetAndSummary(@CurrentUser() user:any, @Query('period', ParseIntPipe) period:number){
+    const memberId:string = user.id;
+    return await this.service.getPositiveEmotionsTargetAndSummary(memberId, period);
   }
 
 }
