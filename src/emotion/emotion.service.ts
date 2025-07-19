@@ -162,28 +162,32 @@ export class EmotionService {
     period: number,
     emotion: EmotionGroup,
   ) {
-    let res = new EmotionAnalysisPeriodRes();
-    res.date = await this.getEmotionSummaryPeriodByEmotionGroup(
-      memberId,
-      period,
-      emotion,
-    );
-    res.activities =
-      await this.getActivityEmotionSummaryByPeriodAndEmotionGroup(
-        memberId,
-        period,
-        emotion,
-      );
-    res.people = await this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
-      memberId,
-      period,
-      emotion,
-    );
+    const res = new EmotionAnalysisPeriodRes();
+
+    const [
+      date,
+      activities,
+      people,
+    ] = await Promise.all([
+      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, emotion),
+      this.getActivityEmotionSummaryByPeriodAndEmotionGroup(memberId, period, emotion),
+      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(memberId, period, emotion),
+    ]);
+
+    res.date = date;
+    res.activities = activities;
+    res.people = people;
+
     return res;
   }
 
+
   /**
-   * 기간과 감정 그룹을 받아 해당 기간 내에 행동을 통해 받은 감정 그룹들을 합산하여 반환합니다
+   * 기간과 감정 그룹을 받아 해당 기간 내에 행동을 통해 받은 감정 그룹들을 합산하여 반환합니다. (성능 개선 버전)
+   * @param memberId - 회원 ID
+   * @param period - 조회 기간 (일)
+   * @param emotionGroup - 조회할 감정 그룹
+   * @returns 활동별 감정 요약 정보 배열
    */
   async getActivityEmotionSummaryByPeriodAndEmotionGroup(
     memberId: string,
@@ -193,49 +197,34 @@ export class EmotionService {
     const today = LocalDate.now();
     const pastDate = today.minusDays(period);
 
-    const diaries = await this.diaryRepository.find({
-      where: {
-        author: { id: memberId },
-        written_date: Between(pastDate, today),
-      },
-      relations: ['activities'],
-    });
-    const result: ActivityEmotionSummaryRes[] = [];
+    // 1. 단일 DB 쿼리로 필요한 모든 데이터를 한번에 조회
+    // Activity를 기준으로 Diary와 Emotions를 조인하여 필터링
+    const allActivities = await this.activityRepository
+      .createQueryBuilder('activity')
+      .innerJoin('activity.diary', 'diary')
+      .leftJoinAndSelect('activity.emotions', 'emotions') // 감정 정보도 함께 가져옴
+      .where('diary.author_id = :memberId', { memberId })
+      .andWhere('diary.written_date BETWEEN :startDate AND :endDate', {
+        startDate: pastDate.toString(),
+        endDate: today.toString(),
+      })
+      .getMany();
 
-    // 1. 모든 활동 펼치기
-    const allActivities = diaries.flatMap((diary) => diary.activities);
+    if (allActivities.length === 0) {
+      return [];
+    }
 
-    if (allActivities.length === 0) return result;
-
-    // 2. 클러스터링 실행
+    // 2. 외부 서비스 호출 (이 부분은 동일)
     const clusters: ClusteringResult =
       await this.activityService.clusteringActivities(allActivities);
 
-    // 3. 클러스터 안의 모든 activity id 수집
-    const allActivityIds = clusters.clusters.flatMap((cluster) =>
-      cluster.sentences.map((s) => s.id),
-    );
+    // 3. JS에서 데이터 가공 (DB 조회 없이 이미 로드된 데이터 활용)
+    const activityMap = new Map(allActivities.map(a => [a.id, a]));
 
-    // 4. 한번에 전체 조회 (중복 제거)
-    const uniqueIds = Array.from(new Set(allActivityIds));
-    const activities = await this.activityRepository.find({
-      where: { id: In(uniqueIds) },
-      relations: ['emotions'],
-    });
-
-    // 5. id → activity 매핑
-    const activityMap = new Map<number, Activity>();
-    for (const activity of activities) {
-      activityMap.set(activity.id, activity);
-    }
-
-    // 6. 감정 요약 계산
-
+    const result: ActivityEmotionSummaryRes[] = [];
     for (const cluster of clusters.clusters) {
       const res = new ActivityEmotionSummaryRes();
-      const label = cluster.representative_sentence.text;
-
-      res.activityContent = label;
+      res.activityContent = cluster.representative_sentence.text;
       res.activityId = cluster.representative_sentence.id;
       res.emotion = emotionGroup;
       res.totalIntensity = 0;
@@ -243,7 +232,7 @@ export class EmotionService {
 
       for (const sentence of cluster.sentences) {
         const activity = activityMap.get(sentence.id);
-        if (!activity) continue;
+        if (!activity || !activity.emotions) continue; // emotions가 로드되었는지 확인
 
         for (const emotion of activity.emotions) {
           if (emotion.emotionGroup !== emotionGroup) continue;
@@ -253,14 +242,13 @@ export class EmotionService {
       }
 
       const threshold = this.configService.get('ACTIVITY_THRESHOLD');
-
       if (res.count > 0 && res.totalIntensity > threshold) {
         result.push(res);
       }
     }
 
+    // 4. 최종 결과 계산
     const total = result.reduce((sum, r) => sum + r.totalIntensity, 0);
-
     for (const r of result) {
       r.percentage =
         total > 0
@@ -272,7 +260,11 @@ export class EmotionService {
   }
 
   /**
-   * 기간과 감정 그룹을 받아서 그 기간 내에 등장한 인물들에게 느꼈던 감정 그룹들을 반환
+   * 기간과 감정 그룹을 받아 해당 기간 내에 등장한 인물들에게 느꼈던 감정 그룹들을 요약하여 반환합니다. (성능 개선 버전)
+   * @param memberId - 회원 ID
+   * @param period - 조회 기간 (일)
+   * @param emotionGroup - 조회할 감정 그룹
+   * @returns 대상별 감정 요약 정보 배열
    */
   async getTargetEmotionSummaryByPeriodAndEmotionGroup(
     memberId: string,
@@ -281,68 +273,55 @@ export class EmotionService {
   ): Promise<TargetEmotionSummaryRes[]> {
     const today = LocalDate.now();
     const pastDate = today.minusDays(period);
-
-    const diaries = await this.diaryRepository.find({
-      where: {
-        author: { id: memberId },
-        written_date: Between(pastDate, today),
-      },
-      relations: [
-        'diaryTargets',
-        'diaryTargets.target',
-        'diaryTargets.target.emotionTargets',
-      ],
-    });
-
-    const emotionSummary: Record<
-      string,
-      {
-        targetId: number;
-        targetName: string;
-        totalIntensity: number;
-        count: number;
-      }
-    > = {};
-
-    for (const diary of diaries) {
-      for (const diaryTarget of diary.diaryTargets) {
-        for (const emotionTarget of diaryTarget.target.emotionTargets) {
-          const emotionType = emotionTarget.emotion;
-          const currentEmotionGroup = EmotionGroupMap[emotionType];
-
-          if (currentEmotionGroup === emotionGroup) {
-            const key = diaryTarget.target.id.toString();
-            if (!emotionSummary[key]) {
-              emotionSummary[key] = {
-                targetId: diaryTarget.target.id,
-                targetName: diaryTarget.target.name,
-                totalIntensity: 0,
-                count: 0,
-              };
-            }
-            emotionSummary[key].totalIntensity +=
-              emotionTarget.emotion_intensity;
-            emotionSummary[key].count += emotionTarget.count;
-          }
-        }
-      }
-    }
-
-    // 예시: 환경변수에서 임계값 가져오기 (혹은 직접 상수로 지정)
     const threshold = this.configService.get('TARGET_THRESHOLD') ?? 10;
 
-    return Object.values(emotionSummary)
-      .filter((data) => data.totalIntensity > threshold)
-      .map((data) => ({
-        ...data,
-        emotion: emotionGroup,
-      }))
-      .sort((a, b) => b.totalIntensity - a.totalIntensity)
-      .slice(0, 3);
+    // EmotionGroup에 속하는 모든 EmotionType을 가져옵니다.
+    const emotionsInGroup = Object.entries(EmotionGroupMap)
+      .filter(([, group]) => group === emotionGroup)
+      .map(([emotion]) => emotion as EmotionType);
+
+    if (emotionsInGroup.length === 0) {
+      return [];
+    }
+
+    // QueryBuilder를 사용하여 DB에서 직접 집계
+    const results = await this.emotionTargetRepository
+      .createQueryBuilder('et') // 'et'는 emotion_target의 별칭
+      .select('t.id', 'targetId')
+      .addSelect('t.name', 'targetName')
+      .addSelect('SUM(et.emotion_intensity)', 'totalIntensity')
+      .addSelect('SUM(et.count)', 'count')
+      .innerJoin('et.target', 't')
+      .innerJoin('t.diaryTargets', 'dt')
+      .innerJoin('dt.diary', 'd')
+      .where('d.author_id = :memberId', { memberId })
+      .andWhere('d.written_date BETWEEN :startDate AND :endDate', {
+        startDate: pastDate.toString(),
+        endDate: today.toString(),
+      })
+      .andWhere('et.emotion IN (:...emotions)', { emotions: emotionsInGroup })
+      .groupBy('t.id, t.name') // 대상별로 그룹핑
+      .having('SUM(et.emotion_intensity) > :threshold', { threshold }) // 집계 후 필터링
+      .orderBy('totalIntensity', 'DESC')
+      .limit(3)
+      .getRawMany();
+
+    // getRawMany 결과를 DTO로 변환
+    return results.map((row) => ({
+      targetId: row.targetId,
+      targetName: row.targetName,
+      totalIntensity: parseFloat(row.totalIntensity),
+      count: parseInt(row.count, 10),
+      emotion: emotionGroup,
+    }));
   }
 
   /**
-   * 기간과 감정 그룹을 받아 해당 기간 내의 그룹에 속하는 감정들만 가져옵니다
+   * 기간과 감정 그룹을 받아 해당 기간 내의 그룹에 속하는 감정들의 요약 정보를 반환합니다. (성능 개선 버전)
+   * @param memberId - 회원 ID
+   * @param period - 조회 기간 (일)
+   * @param emotionGroup - 조회할 감정 그룹
+   * @returns 감정 요약 정보 배열
    */
   async getEmotionSummaryPeriodByEmotionGroup(
     memberId: string,
@@ -352,41 +331,39 @@ export class EmotionService {
     const today = LocalDate.now();
     const pastDate = today.minusDays(period);
 
-    const diaries = await this.diaryRepository.find({
-      where: {
-        author: { id: memberId },
-        written_date: Between(pastDate, today),
-      },
-      relations: ['diaryEmotions'],
-    });
+    // EmotionGroup에 속하는 모든 EmotionType을 가져옵니다.
+    const emotionsInGroup = Object.entries(EmotionGroupMap)
+      .filter(([, group]) => group === emotionGroup)
+      .map(([emotion]) => emotion as EmotionType);
 
-    const emotionSummary: Record<
-      string,
-      { date: LocalDate; intensity: number; count: number }
-    > = {};
-
-    for (const diary of diaries) {
-      for (const diaryEmotion of diary.diaryEmotions) {
-        const emotionType = diaryEmotion.emotion;
-        const currentEmotionGroup = EmotionGroupMap[emotionType];
-
-        if (currentEmotionGroup === emotionGroup) {
-          const key = diary.written_date.toString();
-          if (!emotionSummary[key]) {
-            emotionSummary[key] = {
-              date: diary.written_date,
-              intensity: 0,
-              count: 0,
-            };
-          }
-          emotionSummary[key].intensity += diaryEmotion.intensity;
-          emotionSummary[key].count += 1;
-        }
-      }
+    if (emotionsInGroup.length === 0) {
+      return []; // 해당 그룹에 속한 감정이 없으면 빈 배열 반환
     }
 
-    return Object.values(emotionSummary).map((data) => ({
-      ...data,
+    // QueryBuilder를 사용하여 DB에서 직접 집계
+    const results = await this.diaryEmotionRepository
+      .createQueryBuilder('diaryEmotion')
+      .select('diary.written_date', 'date')
+      .addSelect('SUM(diaryEmotion.intensity)', 'intensity')
+      .addSelect('COUNT(diaryEmotion.id)', 'count')
+      .innerJoin('diaryEmotion.diary', 'diary')
+      .where('diary.author_id = :memberId', { memberId })
+      .andWhere('diary.written_date BETWEEN :startDate AND :endDate', {
+        startDate: pastDate.toString(),
+        endDate: today.toString(),
+      })
+      .andWhere('diaryEmotion.emotion IN (:...emotions)', {
+        emotions: emotionsInGroup,
+      })
+      .groupBy('diary.written_date')
+      .orderBy('diary.written_date', 'ASC')
+      .getRawMany();
+
+    // getRawMany 결과를 DTO로 변환
+    return results.map((row) => ({
+      date: LocalDate.parse(new Date(row.date).toISOString().slice(0, 10)),
+      intensity: parseFloat(row.intensity),
+      count: parseInt(row.count, 10),
       emotionGroup: emotionGroup,
     }));
   }
