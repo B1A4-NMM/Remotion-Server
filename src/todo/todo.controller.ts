@@ -17,7 +17,11 @@ import {
   ApiOperation,
   ApiResponse,
   ApiTags,
-  ApiProperty, ApiBearerAuth, ApiQuery, ApiParam, ApiExcludeEndpoint,
+  ApiProperty,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiParam,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 
 import { CreateTodoDto } from './dto/create-todo.dto';
@@ -104,6 +108,34 @@ export class TodoController {
     @Query('date', ParseLocalDatePipe) date: LocalDate,
   ) {
     return this.todoService.getTodoCalendar(user.id, date);
+  }
+
+  @Patch('calendar/date/:id')
+  @ApiOperation({ summary: 'Todo-Calendar 날짜 변경' })
+  @ApiParam({
+    name: 'id',
+    description: '날짜를 변경할 Todo-Calendar의 ID',
+    type: Number,
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        date: {
+          type: 'string',
+          description: '변경할 날짜 (YYYY-MM-DD)',
+          example: '2024-01-01',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: '성공' })
+  async moveTodoCalendarDate(
+    @CurrentUser() user: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body('date', ParseLocalDatePipe) date: LocalDate,
+  ) {
+    return this.todoService.changeTodoCalendarDate(user.id, id, date);
   }
 
   @Patch('calendar/:id')

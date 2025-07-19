@@ -44,6 +44,35 @@ export class TodoService {
   ) {}
 
   /**
+   * todocalendar 날짜 변경
+   * @param memberId
+   * @param todoId
+   * @param date
+   */
+  async changeTodoCalendarDate(
+    memberId: string,
+    todoId: number,
+    date: LocalDate,
+  ){
+    const todoCalendar = await this.todoCalendarRepository.findOne({
+      where: {
+        member: {id : memberId},
+        id : todoId
+      }
+    })
+
+    if (!todoCalendar) throw new NotFoundException('TodoCalendar not found');
+
+    todoCalendar.date = date;
+    await this.todoCalendarRepository.save(todoCalendar);
+    return {
+      id: todoCalendar.id,
+      content: todoCalendar.content,
+      changeDate: todoCalendar.date,
+    };
+  }
+
+  /**
    * 특정 월의 Todo-Calendar 현황을 날짜별로 그룹화하여 조회합니다.
    * @param memberId - 회원 ID
    * @param year - 조회할 연도
