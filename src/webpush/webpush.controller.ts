@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, BadRequestException, Get, Query } from '@nestjs/common';
 import { WebpushService } from './webpush.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
@@ -89,5 +89,10 @@ export class WebpushController {
       throw new BadRequestException('Endpoint is required.');
     }
     await this.webpushService.unsubscribe(user.id, endpoint);
+  }
+
+  @Get('status')
+  async getStatus(@CurrentUser() user: any, @Query('endpoint') endpoint: string) {
+    return await this.webpushService.getSubscriptionStatus(user.id, endpoint);
   }
 }
