@@ -83,6 +83,9 @@ export class WebpushService {
     ];
 
     const all = await this.pushRepo.find({
+      where: {
+        isSubscribed: true,
+      },
       relations: ['author'],
     });
 
