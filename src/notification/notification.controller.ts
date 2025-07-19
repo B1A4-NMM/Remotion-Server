@@ -43,4 +43,14 @@ export class NotificationController {
   async getNotificationAll(@CurrentUser() user: any) {
     return this.notificationService.getNotificationAll(user.id);
   }
+
+  @Get('count')
+  @ApiOperation({ summary: '안읽은 알림 갯수 조회' })
+  @ApiOkResponse({
+    description: '안읽은 알림 갯수',
+    type: Number,
+  })
+  async getNotificationCount(@CurrentUser() user: any) {
+    return this.notificationService.getNoReadNotificationCount(user.id);
+  }
 }

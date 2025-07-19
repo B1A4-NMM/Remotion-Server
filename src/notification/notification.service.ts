@@ -244,4 +244,19 @@ export class NotificationService {
       );
     }
   }
+
+  /**
+   * 현재 읽지않은 알림의 갯수를 반환합니다
+   */
+  async getNoReadNotificationCount(memberId:string) {
+    const result = await this.notificationRepo.find({
+      where:{
+        author: {id : memberId},
+        isRead : false
+      },
+      select: ['id']
+    })
+
+    return result.length
+  }
 }
