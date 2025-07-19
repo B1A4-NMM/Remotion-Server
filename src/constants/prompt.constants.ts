@@ -121,14 +121,14 @@ RETURN **ONLY valid JSON** that fits the schema above.
 
 ==============  GLOBAL RULES  ==============
 • Analyse ONLY from writer's view, no speculation ➜ if unclear → "None".  
-• All *_text fields* = "**띄어쓰기 포함** 14자 이하 한국어 명사구". (예: "기술 미흡", "추가 논의", "운동 완료")
+• All *_text fields* = "Korean noun phrases of 14 characters or less including spaces". (예: "기술 미흡", "추가 논의", "운동 완료")
 • Self-check before output: enum match, array length sync.
 
 ==============  1. ACTIVITY  ==============
-Definition = 작성자가 실재로 수행한 행위(의도·계획 제외).  
-Extract ALL regardless of importance. 
-동사 없이 명사만 나열하기 금지. 반드시 동사로 뽑아야 함. 
-예: 일하다·회의하다·수영하기·요리하기·대화하기·도와주기 등.
+Definition = Actions performed by the author (including intentions and plans).
+Extract ALL regardless of importance.  
+예: 일하다·회의하다·수영·요리·대화 등.
+Without specific actions, activity_analysis = []
 
 ==============  2. PROBLEM  ==============
 Problem must occur DURING the activity.  
@@ -136,13 +136,15 @@ Fields
   • situation  = 부정 맥락 핵심어(어려움, 갈등, 실패, …)  
   • approach   = 해결 행동
   • outcome    = 현재 상태/결과  
-  • conflict_response_code    =   CHOOSE ONE FROM enum [회피형, 경쟁형, 타협형, 수용형, 협력형]
+  • decision_code    = CHOOSE ONE FROM enum [합리적, 직관적, 의존적, 회피적, 충동적]
+  • conflict_response_code    =   CHOOSE ONE FROM enum [회피형, 경쟁형, 타협형, 수용형, 협력형형]
 ↳ situation="None" ⇒ 나머지 4필드도 "None".  
 ↳ approach="None"  ⇒ outcome="None".
 
 ==============  3. EMOTIONS  ==============
 Relation(22) ↔ 특정 인물, Self(10) ↔ 자기평가, State(28) ↔ 대상 없음.  
 NEVER use words outside each list.
+If emotions that are not in the category are inferred, write them as emotions that are most similar to the category. example, "그리움"->"애정"
 
 [ Relation ]  
 감사, 존경, 신뢰, 애정, 친밀, 유대, 사랑, 공감, 질투, 시기, 분노, 짜증, 실망, 억울, 속상, 상처, 배신감, 경멸, 거부감, 불쾌
@@ -170,8 +172,6 @@ example:
   - peoples.interactions.relation_emotion OR
   - state_emotions.state_emotion
   둘 중 하나 이상에 최소 1개 감정을 기록해야 한다.
-• diary 본문에서 해당 활동에 감정 표현이 전혀 없으면
-  state_emotions.state_emotion := ["무난"];  intensity := [4].
 • relation_emotion이 비어 있으면 해당 person 객체 삭제.
 
 ==============  4. STRENGTH  ==============
@@ -179,7 +179,9 @@ Choose ONE per activity from 24 enum, else "None".
 창의성 호기심 판단력 학습애 통찰력 용감함 끈기 정직함 활력 사랑 친절함 사회적지능 팀워크 공정함 리더십 용서 겸손 신중함 자기조절 미적감상 감사 희망 유머 None  
 
 ==============  5. PEOPLE  ==============
-  • Include only directly mentioned persons.  
+  • Include only directly mentioned persons.
+  • unclear 묘사(“모자 쓴 분”) 삭제  
+  • remove 호칭·애칭(“민수형”→“민수”, “도영이”→“도영”)    
   • Remove person p if
         p.name matches /(친구|팀원|동료|코치)$/ AND p.interactions.relation_emotion == [].
 
@@ -198,6 +200,13 @@ Choose ONE per activity from 24 enum, else "None".
       ⇒ state_emotions.state_emotion = ["무난"]; s_emotion_intensity = [4]
 
   • name_intimacy: 애칭1.0/친근0.9/이름0.5/성+직함0.4/거리0.2.
+
+============== CASE : NO ACTIVITY  ==============
+**If there is no specific action at all:**:
+- activity_analysis = []
+- All emotions and thoughts move to reflection
+- Record internal conflicts/concerns in shortcomings
+- Record action plans in todo
 `;
 
 export const PROMPT_ROUTINE = `

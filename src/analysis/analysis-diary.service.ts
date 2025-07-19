@@ -46,7 +46,6 @@ export class AnalysisDiaryService {
     private readonly emotionService: EmotionService,
     private readonly diaryTodoService: DiarytodoService,
     private readonly achievementService: AchievementService,
-    private readonly sentenceParserService: SentenceParserService,
     @InjectRepository(Routine)
     private readonly routineRepository: Repository<Routine>,
   ) {}
@@ -61,6 +60,7 @@ export class AnalysisDiaryService {
     audioUrl?: string | null,
   ) {
     let result = await this.promptService.serializeAnalysis(dto.content);
+    console.log("일기 분석 완료")
     result = this.filterInvalidEmotionsFromResult(result); // 유효하지 않은 감정 필터링
 
     let author = await this.memberService.findOne(memberId);
@@ -90,8 +90,8 @@ export class AnalysisDiaryService {
     ]);
 
     const activities = activity_analysis;
-    await this.activityService.createByDiary(activities, saveDiary);
     await this.targetService.createByDiary(allPeopleInDiary, saveDiary, author);
+    await this.activityService.createByDiary(activities, saveDiary);
     await this.emotionService.createDiaryStateEmotion(stateEmotions, saveDiary);
     await this.emotionService.createDiarySelfEmotion(selfEmotions, saveDiary);
     await this.memberSummaryService.updateSummaryFromDiary(
@@ -130,17 +130,20 @@ export class AnalysisDiaryService {
 
     const response = await this.promptService.serializeRoutine(content);
 
+    let isNewAngerRoutine = false,
+      isNewNervousRoutine = false,
+      isNewDepressionRoutine = false
     if (response.anger != 'None') {
-      await this.saveRoutine(member, response.anger, RoutineEnum.STRESS);
+      isNewAngerRoutine = await this.saveRoutine(member, response.anger, RoutineEnum.STRESS);
     }
     if (response.nervous != 'None') {
-      await this.saveRoutine(member, response.nervous, RoutineEnum.ANXIETY);
+      isNewNervousRoutine = await this.saveRoutine(member, response.nervous, RoutineEnum.ANXIETY);
     }
     if (response.depression != 'None') {
-      await this.saveRoutine(member, response.depression, RoutineEnum.DEPRESSION);
+      isNewDepressionRoutine = await this.saveRoutine(member, response.depression, RoutineEnum.DEPRESSION);
     }
 
-    return response.anger != 'None' || response.nervous != 'None' || response.depression != 'None';
+    return isNewAngerRoutine || isNewNervousRoutine || isNewDepressionRoutine;
   }
 
   /**
@@ -155,7 +158,7 @@ export class AnalysisDiaryService {
     const find = await this.routineRepository.findOne({
       where: { member: {id: member.id}, routineType: routineType },
     })
-    if (find) return;
+    if (find) return false;
 
     const entity = new Routine();
     entity.member = member;
@@ -165,6 +168,7 @@ export class AnalysisDiaryService {
     this.logger.log(`루틴 생성, 타입 : ${routineType}, 루틴 : ${content}`)
 
     await this.routineRepository.save(entity);
+    return true
   }
 
   private todoAnalysis(todos: string[]) {

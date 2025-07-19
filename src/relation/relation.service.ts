@@ -6,7 +6,7 @@ import { EmotionService } from '../emotion/emotion.service';
 import { GraphRes } from './dto/graph.res';
 import { DiaryService } from '../diary/diary.service';
 import { DiaryRes } from '../diary/dto/diary-home-list.res';
-import { TargetDetailAnalysis } from './dto/target-detail-analysis';
+import { TargetActivityRes, TargetDetailAnalysis } from './dto/target-detail-analysis';
 
 @Injectable()
 export class RelationService {
@@ -117,6 +117,14 @@ export class RelationService {
     }
     diaryRes.sort((a, b) => a.writtenDate.compareTo(b.writtenDate));
 
-    return new TargetDetailAnalysis(target, remotionDetails, diaryRes);
+    const activityClusters = await this.targetService.analyzeActivityClustersByTarget(targetId)
+    const activityRes = activityClusters.map((a) => {
+      const res = new TargetActivityRes()
+      res.count = a.count
+      res.content = a.content
+      return res
+    })
+
+    return new TargetDetailAnalysis(target, remotionDetails, diaryRes, activityRes);
   }
 }

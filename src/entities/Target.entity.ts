@@ -48,7 +48,7 @@ export class Target {
   @Column({ type: 'float', default: 0 })
   affection!: number;
 
-  @Column({ type: 'int', default: 30})
+  @Column({ type: 'float', default: 30})
   closenessScore: number
 
   // 1 : N 관계 User와 감정객체
@@ -72,6 +72,7 @@ export class Target {
     relation: TargetRelation,
     affection: number,
     member: Member,
+    score: number
   ) {
     this.name = name;
     this.count = count;
@@ -79,5 +80,6 @@ export class Target {
     this.relation = relation;
     this.affection = affection;
     this.member = member;
+    this.closenessScore = score;
   }
 }

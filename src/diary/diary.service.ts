@@ -338,6 +338,7 @@ export class DiaryService {
 
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
+      relations: ['diaryTargets', 'diaryTargets.target'],
     });
 
     if (diary === null) {

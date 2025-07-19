@@ -3,6 +3,11 @@ import { DiaryRes } from '../../diary/dto/diary-home-list.res';
 import { Target } from '../../entities/Target.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
+export class TargetActivityRes {
+  content:string
+  count:number
+}
+
 export class TargetDetailAnalysis {
   @ApiProperty({ description: '대상 ID' })
   targetId: number;
@@ -19,14 +24,19 @@ export class TargetDetailAnalysis {
   @ApiProperty({ type: [DiaryRes], description: '대상이 포함된 일기 목록' })
   diaries: DiaryRes[] = [];
 
+  @ApiProperty({ type: [TargetActivityRes], description: '대상이 나타난 활동 클러스터' })
+  activities: TargetActivityRes[] = [];
+
   constructor(
     target: Target,
     emotions: EmotionSummaryByTargetResponseDto[],
     diaries: DiaryRes[],
+    activities: TargetActivityRes[],
   ) {
     this.targetId = target.id;
     this.targetName = target.name;
     this.emotions = emotions;
     this.diaries = diaries;
+    this.activities = activities;
   }
 }

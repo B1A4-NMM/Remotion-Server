@@ -22,6 +22,7 @@ import { Routine } from './src/entities/rotine.entity';
 import { TodoCalendar } from './src/entities/todo-calendar.entity';
 import { PushSubscription } from './src/entities/push-subscription.entity';
 import { NotificationEntity } from './src/entities/notification.entity';
+import { ActivityTarget } from './src/entities/ActivityTarget.entity';
 
 //__dirname + '/**/*.entity{.ts,.js}'
 
@@ -55,7 +56,8 @@ const config: TypeOrmModuleOptions = {
     Routine,
     TodoCalendar,
     PushSubscription,
-    NotificationEntity
+    NotificationEntity,
+    ActivityTarget
   ],
   synchronize: true, // 한번 true한 뒤로는 무조건 false
   autoLoadEntities: true,

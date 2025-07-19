@@ -23,6 +23,9 @@ export class DiaryDetailRes {
   })
   audioPath?: string | null;
 
+  @ApiProperty({description: '일기에 나타난 사람들'})
+  people:{name:string, changeScore:number}[] = []
+
   @ApiProperty({ description: '다이어리 내용' })
   content: string;
 
@@ -60,5 +63,8 @@ export class DiaryDetailRes {
     this.latitude = diary.latitude;
     this.longitude = diary.longitude;
     this.analysis = diary.metadata;
+    this.people = diary.diaryTargets.map((dt) => {
+      return {name:dt.target.name, changeScore:dt.changeScore}
+    })
   }
 }

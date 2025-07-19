@@ -19,6 +19,9 @@ import {
 import { ClusteringResult } from '../util/cluster-json.parser';
 import { SimsceEmbedderService } from '../vector/simsce-embedder.service';
 import { ActivityClusterService } from '../activity-cluster/activity-cluster.service';
+import { ActivityTarget } from '../entities/ActivityTarget.entity';
+import { TargetService } from '../target/target.service';
+import { Target } from '../entities/Target.entity';
 
 @Injectable()
 export class ActivityService {
@@ -32,6 +35,10 @@ export class ActivityService {
     private readonly utilService: CommonUtilService,
     private readonly embedder: SimsceEmbedderService,
     private readonly activityClusterService: ActivityClusterService,
+    @InjectRepository(ActivityTarget)
+    private readonly activityTargetRepo: Repository<ActivityTarget>,
+    @InjectRepository(Target)
+    private readonly targetRepo: Repository<Target>,
   ) {}
 
   /**
@@ -73,6 +80,23 @@ export class ActivityService {
           activityEntity,
           EmotionBase.State,
         );
+      }
+
+      for (const person of activity.peoples){
+        const target = await this.targetRepo.findOne({
+          where: {
+            name: person.name,
+            member: {id : diary.author.id}
+          }
+        })
+        if (!target){
+          this.logger.warn(`target not found. person: ${person.name}, diary: ${diary.id}`)
+          continue
+        }
+        let activityTarget = new ActivityTarget();
+        activityTarget.activity = activityEntity
+        activityTarget.target = target
+        await this.activityTargetRepo.save(activityTarget)
       }
     }
   }

@@ -21,7 +21,7 @@ export class DiaryTarget {
   @JoinColumn({ name: 'target_id' })
   target!: Target;
   
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'float', default: 0 })
   changeScore:number
 
 

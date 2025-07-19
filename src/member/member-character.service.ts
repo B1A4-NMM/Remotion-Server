@@ -58,10 +58,12 @@ export class MemberCharacterService {
     const newCharacter = this.classifyCharacter(emotionBaseResult);
     this.logger.log(`분류된 캐릭터: ${newCharacter}`);
 
-    if (prevCharacter !== newCharacter){}
+    if (prevCharacter != newCharacter){
       await this.notificationService.createCharacterNotification(
         memberId,
       );
+    }
+
 
     return newCharacter
   }
