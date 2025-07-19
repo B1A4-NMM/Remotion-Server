@@ -35,9 +35,9 @@ export class AnalysisService {
   private async analysisProblem(problems: ProblemAnalysis[]) {
     problems.forEach(problem => {
       const problemTitle = problem.situation
-      const cause = problem.cause
       const approach = problem.approach
       const outcome = problem.outcome
+      const conflict_response_code = problem.conflict_response_code
     })
   }
 

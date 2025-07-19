@@ -10,24 +10,17 @@ export interface EmotionInteraction {
   emotion_intensity: number[];
 }
 
-export interface SocialSimilarity {
-  name_intimacy: number;
-  shared_activity: number;
-  information_sharing: number;
-  emotional_expression: number;
-}
-
 export interface Person {
   name: string;
   interactions: EmotionInteraction;
-  name_similarity: number;
+  name_intimacy: number;
 }
 
 export interface ProblemAnalysis {
   situation: string;
-  cause: string;
   approach: string;
   outcome: string;
+  conflict_response_code: string;
 }
 
 export interface ActivityAnalysis {

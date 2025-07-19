@@ -48,6 +48,9 @@ export class Target {
   @Column({ type: 'float', default: 0 })
   affection!: number;
 
+  @Column({ type: 'int', default: 30})
+  closenessScore: number
+
   // 1 : N 관계 User와 감정객체
   @ManyToOne(() => Member, (user) => user.Targets)
   @JoinColumn({ name: 'member_id' })

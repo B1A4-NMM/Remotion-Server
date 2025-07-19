@@ -424,7 +424,9 @@ ${prompt}
         anthropic_version: 'bedrock-2023-05-31',
         messages: [{ role: 'user', content: processedPrompt }],
         max_tokens: 4000,
-        temperature : 0.05,
+        temperature : 0,
+        top_p: 0.9,
+        top_k: 10
       }),
     });
 
