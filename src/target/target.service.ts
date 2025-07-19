@@ -29,39 +29,32 @@ export class TargetService {
   ) {}
 
   /**
-   * 대상이 최근에 언급된 빈도를 기반으로 점수를 반환하는 함수
+   * 대상이 최근에 언급된 빈도를 기반으로 점수를 반환하는 함수 (성능 개선 버전)
    * @param targetId 점수를 계산할 대상의 ID
    * @returns 최근 언급 빈도에 따른 점수 (10, 6, 4, 2, 0)
    */
   async getRecentMentionsScore(targetId: number): Promise<number> {
-    // 1. 인자로 받은 targetId를 통해 diaryTarget을 모두 가져옵니다.
-    const diaryTargets = await this.diaryTargetRepository.find({
-      where: { target: { id: targetId } },
-      relations: ['diary'], // diary 정보를 함께 로드합니다.
-    });
-
-    if (!diaryTargets || diaryTargets.length === 0) {
-      return 0; // 언급된 기록이 없으면 0점을 반환합니다.
-    }
-
     const today = LocalDate.now();
     const oneMonthAgo = today.minusMonths(1);
 
-    // 2. 한 달 이내의 written_date만 필터링하고 중복을 제거합니다.
-    const recentDates = [
-      ...new Set(
-        diaryTargets
-          .map((dt) => dt.diary.written_date)
-          .filter((date) => date.isAfter(oneMonthAgo) || date.isEqual(oneMonthAgo)),
-      ),
-    ];
+    // QueryBuilder를 사용하여 가장 최근의 관련 기록 하나만 효율적으로 조회
+    const mostRecentDiaryTarget = await this.diaryTargetRepository
+      .createQueryBuilder('diaryTarget')
+      .innerJoinAndSelect('diaryTarget.diary', 'diary') // diary 정보를 함께 선택
+      .where('diaryTarget.target_id = :targetId', { targetId })
+      .andWhere('diary.written_date >= :oneMonthAgo', {
+        oneMonthAgo: oneMonthAgo.toString(),
+      })
+      // DB가 written_date를 문자열이 아닌 날짜로 확실히 인지하고 정렬하도록 CAST 사용
+      .orderBy('CAST(diary.written_date AS DATE)', 'DESC')
+      .getOne(); // 가장 최근 기록 하나만 가져옴
 
-    if (recentDates.length === 0) {
-      return 0; // 최근 한 달 내에 언급된 기록이 없으면 0점을 반환합니다.
+    if (!mostRecentDiaryTarget) {
+      return 0; // 최근 한 달 내 기록이 없으면 0점
     }
 
-    // 3. 가장 최근 날짜를 기준으로 점수를 계산합니다.
-    const mostRecentDate = recentDates.reduce((max, date) => (date.isAfter(max) ? date : max), recentDates[0]);
+    // 가장 최근 날짜를 기준으로 점수 계산
+    const mostRecentDate = mostRecentDiaryTarget.diary.written_date;
     const daysDiff = ChronoUnit.DAYS.between(mostRecentDate, today);
 
     if (daysDiff <= 7) {
