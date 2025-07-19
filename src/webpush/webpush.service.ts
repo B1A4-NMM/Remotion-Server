@@ -82,13 +82,20 @@ export class WebpushService {
       },
     ];
 
-    await this.sendNotification(
-      memberId,
-      '테스트 메세지 제목',
-      '테스트 메세지 body',
-      options.icon,
-      options.image
-    );
+    const all = await this.pushRepo.find({
+      relations: ['author'],
+    });
+
+    for (const push of all) {
+      await this.sendNotification(
+        push.author.id,
+        '테스트 메세지 제목',
+        '테스트 메세지 body',
+        options.icon,
+        options.image
+      );
+    }
+
   }
 
   /**
