@@ -32,6 +32,7 @@ export class WebpushService {
    * 멤버 ID와 pushSubscription 정보를 받아 데이터베이스에 저장
    */
   async subscribe(memberId: string, subscription: PushSubscriptionInterface) {
+    this.logger.log(`subscribe memberId:${memberId}, endpoint:${subscription.endpoint}`);
     await this.saveOrFlagOnPushSubscription(memberId, subscription);
 
     return 'Subscription successful';
@@ -41,6 +42,7 @@ export class WebpushService {
    * 멤버의 브라우저의 알림 정보를 해제합니다
    */
   async unsubscribe(memberId: string, endpoint: string) {
+    this.logger.log(`unsubscribe memberId:${memberId}, endpoint:${endpoint}`);
     const subscribe = await this.pushRepo.findOne({
       where: {
         author: { id: memberId },
@@ -190,6 +192,9 @@ export class WebpushService {
     memberId: string,
     endpoint: string,
   ): Promise<{ isSubscribed: boolean }> {
+
+    this.logger.log(`getSubscriptionStatus memberId:${memberId}, endpoint:${endpoint}`);
+
     const subscription = await this.pushRepo.findOne({
       where: {
         author: { id: memberId },
