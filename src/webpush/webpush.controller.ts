@@ -36,6 +36,7 @@ export interface PushAction {
 }
 
 @Controller('webpush')
+@UseGuards(AuthGuard('jwt'))
 @ApiTags('Web-Push')
 export class WebpushController {
   constructor(private readonly webpushService: WebpushService) {}
@@ -46,7 +47,6 @@ export class WebpushController {
     description: '사용자의 웹 푸시 구독 정보를 저장합니다.',
   })
   @ApiResponse({ status: 201, description: '구독 성공' })
-  @UseGuards(AuthGuard('jwt'))
   async subscribe(
     @CurrentUser() user: any,
     @Body() subscription: PushSubscriptionInterface,
@@ -56,7 +56,6 @@ export class WebpushController {
 
   @ApiExcludeEndpoint()
   @Post('send-notification')
-  @UseGuards(AuthGuard('jwt'))
   sendNotification(
     @CurrentUser() user: any,
     @Body()
@@ -80,7 +79,6 @@ export class WebpushController {
     description:'웹푸시 엔드포인트',
   })
   @ApiResponse({ status: 200, description: '구독 해제 성공' })
-  @UseGuards(AuthGuard('jwt'))
   async unsubscribe(
     @CurrentUser() user: any,
     @Body('endpoint') endpoint: string,
