@@ -76,10 +76,17 @@ export class EmotionController {
   ) {
     const memberId = user.id;
 
-    console.time('emotion-analysis');
-    let emotionAnalysis = await this.service.getEmotionAnalysis(memberId, period, emotion);
-    console.timeEnd('emotion-analysis');
-    return emotionAnalysis;
+    const label = `emotion-analysis-${user.id}-${Date.now()}`;
+    console.time(label);
+
+    try {
+      const result = await this.service.getEmotionAnalysis(memberId, period, emotion);
+      console.timeEnd(label);
+      return result;
+    } catch (e) {
+      console.timeEnd(label); // 혹시 모를 예외 대비
+      throw e;
+    }
   }
 
 }
