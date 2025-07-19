@@ -2,10 +2,12 @@ import { Controller, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@n
 import { NotificationService } from './notification.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { NotificationRes } from './dto/notification.res';
 
 @Controller('noti')
+@ApiTags('알림')
+@ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
