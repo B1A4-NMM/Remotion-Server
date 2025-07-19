@@ -10,6 +10,8 @@ import { scheduled } from 'rxjs';
 import { Routine } from './rotine.entity';
 import { LocalDateTransformer } from '../util/local-date.transformer';
 import { LocalDate } from 'js-joda';
+import { PushSubscription } from './push-subscription.entity';
+import { NotificationEntity } from './notification.entity';
 
 @Entity()
 export class Member {
@@ -31,6 +33,9 @@ export class Member {
 
     @Column()
     daily_limit! :number;
+
+    @Column({default: 'unknown'})
+    character:string
 
     @OneToMany(() => Diary, (diary) => diary.author)
     diaries! : Diary[];
@@ -55,6 +60,12 @@ export class Member {
 
     @OneToMany(() => Routine, (routine) => routine.member)
     routines!: Routine[];
+
+    @OneToMany(() => PushSubscription, (p) => p.author)
+    pushSubscriptions!: PushSubscription[];
+
+    @OneToMany(() => NotificationEntity, (n) => n.author)
+    notifications!: NotificationEntity[];
 
     @Column({ type:'date', transformer: new LocalDateTransformer(), nullable: true })
     stress_test_date? : LocalDate;

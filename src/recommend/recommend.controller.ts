@@ -112,6 +112,6 @@ export class RecommendController {
   @Get('activity/weekday/:date')
   async getRecommendedActivityDate(@CurrentUser() user: any, @Param('date') date: string) {
     const memberId: string = user.id;
-    return this.recommendService.getCommentByWeekday(memberId, LocalDate.parse(date));
+    return "곧 없어질 API입니다";
   }
 }

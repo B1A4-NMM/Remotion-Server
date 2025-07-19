@@ -10,6 +10,7 @@ import { ActivityClusterModule } from '../activity-cluster/activity-cluster.modu
 import { ActivityModule } from '../activity/activity.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Activity } from '../entities/Activity.entity';
+import { Member } from '../entities/Member.entity';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { Activity } from '../entities/Activity.entity';
     ClaudeModule,
     ActivityClusterModule,
     ActivityModule,
-    TypeOrmModule.forFeature([Activity])
+    TypeOrmModule.forFeature([Activity, Member])
   ],
   controllers: [RecommendController],
   providers: [RecommendService],

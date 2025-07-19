@@ -140,6 +140,7 @@ export class AnalysisDiaryService {
       await this.saveRoutine(member, response.depression, RoutineEnum.DEPRESSION);
     }
 
+    return response.anger != 'None' || response.nervous != 'None' || response.depression != 'None';
   }
 
   /**

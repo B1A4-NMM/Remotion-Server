@@ -13,6 +13,7 @@ import { SentenceParserModule } from '../sentence-parser/sentence-parser.module'
 import { TargetModule } from '../target/target.module';
 import { ActivityModule } from '../activity/activity.module';
 import { RoutineModule } from '../routine/routine.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { RoutineModule } from '../routine/routine.module';
     SentenceParserModule,
     TargetModule,
     ActivityModule,
-    RoutineModule
+    RoutineModule,
+    NotificationModule
   ],
   controllers: [DiaryController],
   providers: [DiaryService],

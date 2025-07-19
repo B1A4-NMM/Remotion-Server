@@ -20,6 +20,8 @@ import { ActivityEmotion } from './src/entities/activity-emotion.entity';
 import { YoutubeApi } from './src/entities/YoutubeApi.entity';
 import { Routine } from './src/entities/rotine.entity';
 import { TodoCalendar } from './src/entities/todo-calendar.entity';
+import { PushSubscription } from './src/entities/push-subscription.entity';
+import { NotificationEntity } from './src/entities/notification.entity';
 
 //__dirname + '/**/*.entity{.ts,.js}'
 
@@ -51,7 +53,9 @@ const config: TypeOrmModuleOptions = {
     ActivityEmotion,
     YoutubeApi,
     Routine,
-    TodoCalendar
+    TodoCalendar,
+    PushSubscription,
+    NotificationEntity
   ],
   synchronize: true, // 한번 true한 뒤로는 무조건 false
   autoLoadEntities: true,

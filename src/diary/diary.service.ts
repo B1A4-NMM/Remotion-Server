@@ -1,5 +1,13 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Between, Equal, In, LessThan, LessThanOrEqual, Like, Repository } from 'typeorm';
+import {
+  Between,
+  Equal,
+  In,
+  LessThan,
+  LessThanOrEqual,
+  Like,
+  Repository,
+} from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AnalysisDiaryService } from '../analysis/analysis-diary.service';
 import { MemberService } from '../member/member.service';
@@ -36,6 +44,14 @@ import { MemberSummaryService } from '../member/member-summary.service';
 import { EmotionScoreDto } from './dto/emotion-score.dto';
 import { EmotionScoresResDto } from './dto/emotion-scores-res.dto';
 import { RoutineService } from '../routine/routine.service';
+import { MemberCharacterService } from '../member/member-character.service';
+import { Cron } from '@nestjs/schedule';
+import { NotificationService } from '../notification/notification.service';
+import {
+  recapMessage,
+  ROUTINE_MESSAGE,
+} from '../constants/noti-message.constants';
+import { NotificationType } from '../enums/notification-type.enum';
 
 @Injectable()
 export class DiaryService {
@@ -55,6 +71,8 @@ export class DiaryService {
     private readonly memberSummaryService: MemberSummaryService,
     private readonly configService: ConfigService,
     private readonly routineService: RoutineService,
+    private readonly memberCharacterService: MemberCharacterService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -80,11 +98,12 @@ export class DiaryService {
       select: ['written_date'],
     });
 
-    const writtenDays = [...new Set(diaries.map((diary) => diary.written_date.dayOfMonth()))];
+    const writtenDays = [
+      ...new Set(diaries.map((diary) => diary.written_date.dayOfMonth())),
+    ];
 
     return { writtenDays };
   }
-
 
   /**
    * 다이어리 생성 함수
@@ -99,7 +118,9 @@ export class DiaryService {
   ) {
     this.logger.log('다이어리 생성');
 
-    const taggingPromise = this.analysisDiaryService.getTaggingContent(dto.content); // 시작만 하고 기다리진 않음
+    const taggingPromise = this.analysisDiaryService.getTaggingContent(
+      dto.content,
+    ); // 시작만 하고 기다리진 않음
 
     const [result, routine] = await Promise.all([
       this.analysisDiaryService.analysisAndSaveDiary(
@@ -115,20 +136,29 @@ export class DiaryService {
     ]);
 
     taggingPromise
-      .then((tagging) => this.sentenceParserService.createByDiary(result, tagging))
+      .then((tagging) =>
+        this.sentenceParserService.createByDiary(result, tagging),
+      )
       .catch((e) =>
         this.logger.error(`Tagging 백그라운드 처리 중 오류 발생: ${e.message}`),
       );
+
+    if (routine) {
+      await this.notificationService.createRoutineNotification(memberId);
+    }
 
     this.logger.log(
       `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
     );
 
     this.logger.log(`일기의 주인 : ${result.author.id}, 글쓴이 : ${memberId}`);
+    // 멤버 캐릭터 재계산
+    let newCharacter =
+      await this.memberCharacterService.calculateMemberCharacter(memberId);
+    await this.memberService.saveCharacter(memberId, newCharacter);
 
     return result.id;
   }
-
 
   /**
    * 날짜와 기간을 받아 해당 날짜부터 그 이전의 기간까지의 멤버 요약을 가져옵니다
@@ -302,8 +332,9 @@ export class DiaryService {
    * @returns 일기 상세 정보 DTO
    */
   async getDiaryDetail(memberId: string, id: number, beforeDiaryCount: number) {
-
-    this.logger.log(`memberId = ${memberId}, 일기 디테일 뷰 조회중 - 일기 id : ${id}`)
+    this.logger.log(
+      `memberId = ${memberId}, 일기 디테일 뷰 조회중 - 일기 id : ${id}`,
+    );
 
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
@@ -335,22 +366,43 @@ export class DiaryService {
 
     // 스트레스 테스트 날짜 기반 경고 플래그 업데이트
     // STRESS_WARNING_PERIOD_DAYS 환경 변수에서 기간을 가져오고, 없으면 기본값 30일 사용
-    const stressPeriod = this.configService.get<number>('WARNING_PERIOD_DAYS', 30);
-    if (member.stress_test_date && (member.stress_test_date.plusDays(stressPeriod).isAfter(today) || member.stress_test_date.plusDays(stressPeriod).isEqual(today))) {
+    const stressPeriod = this.configService.get<number>(
+      'WARNING_PERIOD_DAYS',
+      30,
+    );
+    if (
+      member.stress_test_date &&
+      (member.stress_test_date.plusDays(stressPeriod).isAfter(today) ||
+        member.stress_test_date.plusDays(stressPeriod).isEqual(today))
+    ) {
       diaryDetailRes.stressWarning = false;
     }
 
     // 불안 테스트 날짜 기반 경고 플래그 업데이트
     // ANXIETY_WARNING_PERIOD_DAYS 환경 변수에서 기간을 가져오고, 없으면 기본값 30일 사용
-    const anxietyPeriod = this.configService.get<number>('WARNING_PERIOD_DAYS', 30);
-    if (member.anxiety_test_date && (member.anxiety_test_date.plusDays(anxietyPeriod).isAfter(today) || member.anxiety_test_date.plusDays(anxietyPeriod).isEqual(today))) {
+    const anxietyPeriod = this.configService.get<number>(
+      'WARNING_PERIOD_DAYS',
+      30,
+    );
+    if (
+      member.anxiety_test_date &&
+      (member.anxiety_test_date.plusDays(anxietyPeriod).isAfter(today) ||
+        member.anxiety_test_date.plusDays(anxietyPeriod).isEqual(today))
+    ) {
       diaryDetailRes.anxietyWarning = false;
     }
 
     // 우울 테스트 날짜 기반 경고 플래그 업데이트
     // DEPRESSION_WARNING_PERIOD_DAYS 환경 변수에서 기간을 가져오고, 없으면 기본값 30일 사용
-    const depressionPeriod = this.configService.get<number>('WARNING_PERIOD_DAYS', 30);
-    if (member.depression_test_date && (member.depression_test_date.plusDays(depressionPeriod).isAfter(today) || member.depression_test_date.plusDays(depressionPeriod).isEqual(today))) {
+    const depressionPeriod = this.configService.get<number>(
+      'WARNING_PERIOD_DAYS',
+      30,
+    );
+    if (
+      member.depression_test_date &&
+      (member.depression_test_date.plusDays(depressionPeriod).isAfter(today) ||
+        member.depression_test_date.plusDays(depressionPeriod).isEqual(today))
+    ) {
       diaryDetailRes.depressionWarning = false;
     }
 
@@ -361,13 +413,8 @@ export class DiaryService {
       memberId,
     );
 
-    diaryDetailRes.beforeDiaryScores.scores.sort((a, b) => {
-      if (a.writtenDate.isBefore(b.writtenDate)) return 1;
-      if (a.writtenDate.isAfter(b.writtenDate)) return -1;
-      return b.diaryId - a.diaryId;
-    });
-
-    diaryDetailRes.recommendRoutine = await this.routineService.getRecommendRoutine(memberId, diary.id)
+    diaryDetailRes.recommendRoutine =
+      await this.routineService.getRecommendRoutine(memberId, diary.id);
 
     return diaryDetailRes;
   }
@@ -827,7 +874,7 @@ export class DiaryService {
           written_date: LessThan(date),
         },
         {
-          author: {id : memberId},
+          author: { id: memberId },
           written_date: Equal(date),
           id: LessThanOrEqual(filterId),
         },
@@ -855,5 +902,42 @@ export class DiaryService {
     });
 
     return new EmotionScoresResDto(scores);
+  }
+
+  @Cron('0 11 * * *') // 매 자정마다 실행
+  async handleCronCreateRecapNotification() {
+    this.logger.log('Calling recapDiary() via cron job.');
+    const env = this.configService.get<string>('ENVIRONMENT')!;
+    if (env === 'develop' || env === 'production') {
+      const result = await this.findLastYearDiaries();
+      result.forEach((diary) => {
+        this.notificationService.createRecapNotification(
+          diary.author.id,
+          diary.id,
+        );
+      });
+    }
+  }
+
+  /**
+   * 1년전 오늘 만들어진 일기를 모두 가져옵니다
+   */
+  private async findLastYearDiaries() {
+    const today = LocalDate.now();
+    const lastYear = today.minusYears(1);
+    const diaries = await this.diaryRepository
+      .createQueryBuilder('diary')
+      .select('MAX(diary.id)', 'id') // 조건에 맞는 diary 중 가장 최신 id
+      .addSelect('diary.author_id', 'authorId')
+      .where('diary.written_date = :targetDate', {
+        targetDate: lastYear.toString(),
+      })
+      .groupBy('diary.author_id')
+      .getRawMany(); // 여기서 id만 가져옴
+
+    // 해당 id로 다시 diary 전체 조회
+    const ids = diaries.map((d) => d.id);
+    const result = await this.diaryRepository.findBy({ id: In(ids) });
+    return result;
   }
 }

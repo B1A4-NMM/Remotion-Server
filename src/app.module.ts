@@ -34,6 +34,9 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { NoCacheInterceptor } from './no-cache.interceptor';
 import { SentenceParserModule } from './sentence-parser/sentence-parser.module';
 import { RoutineModule } from './routine/routine.module';
+import { WebpushModule } from './webpush/webpush.module';
+import { NotificationEntity } from './entities/notification.entity';
+import { NotificationModule } from './notification/notification.module';
 
 
 @Module({
@@ -65,7 +68,9 @@ import { RoutineModule } from './routine/routine.module';
     YoutubeModule,
     RecommendModule,
     SentenceParserModule,
-    RoutineModule, // RecommendModule 추가
+    RoutineModule,
+    WebpushModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [
