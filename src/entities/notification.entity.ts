@@ -28,8 +28,11 @@ export class NotificationEntity {
   @Column({default: false})
   isRead: boolean
 
-  @Column({default: null})
-  diaryId?: number
+  @Column({type: 'int', default: null})
+  diaryId?: number | null
+
+  @Column({type:'date', transformer: new LocalDateTransformer() ,default: null})
+  targetDate?: LocalDate | null
 
   @ManyToOne(() => Member, (member) => member.notifications, {onDelete: 'CASCADE'})
   @JoinColumn({name:'author_id'})

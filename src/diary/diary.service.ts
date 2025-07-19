@@ -47,7 +47,10 @@ import { RoutineService } from '../routine/routine.service';
 import { MemberCharacterService } from '../member/member-character.service';
 import { Cron } from '@nestjs/schedule';
 import { NotificationService } from '../notification/notification.service';
-import { recapMessage } from '../constants/noti-message.constants';
+import {
+  recapMessage,
+  ROUTINE_MESSAGE,
+} from '../constants/noti-message.constants';
 import { NotificationType } from '../enums/notification-type.enum';
 
 @Injectable()
@@ -102,7 +105,6 @@ export class DiaryService {
     return { writtenDays };
   }
 
-
   /**
    * 다이어리 생성 함수
    * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장
@@ -141,17 +143,22 @@ export class DiaryService {
         this.logger.error(`Tagging 백그라운드 처리 중 오류 발생: ${e.message}`),
       );
 
+    if (routine) {
+      await this.notificationService.createRoutineNotification(memberId);
+    }
+
     this.logger.log(
       `생성 다이어리 { id : ${result.id}, author : ${result.author.nickname} }`,
     );
 
     this.logger.log(`일기의 주인 : ${result.author.id}, 글쓴이 : ${memberId}`);
     // 멤버 캐릭터 재계산
-    await this.memberCharacterService.calculateMemberCharacter(memberId);
+    let newCharacter =
+      await this.memberCharacterService.calculateMemberCharacter(memberId);
+    await this.memberService.saveCharacter(memberId, newCharacter);
 
     return result.id;
   }
-
 
   /**
    * 날짜와 기간을 받아 해당 날짜부터 그 이전의 기간까지의 멤버 요약을 가져옵니다
@@ -325,8 +332,9 @@ export class DiaryService {
    * @returns 일기 상세 정보 DTO
    */
   async getDiaryDetail(memberId: string, id: number, beforeDiaryCount: number) {
-
-    this.logger.log(`memberId = ${memberId}, 일기 디테일 뷰 조회중 - 일기 id : ${id}`)
+    this.logger.log(
+      `memberId = ${memberId}, 일기 디테일 뷰 조회중 - 일기 id : ${id}`,
+    );
 
     const diary = await this.diaryRepository.findOne({
       where: { id: id },
@@ -405,7 +413,8 @@ export class DiaryService {
       memberId,
     );
 
-    diaryDetailRes.recommendRoutine = await this.routineService.getRecommendRoutine(memberId, diary.id)
+    diaryDetailRes.recommendRoutine =
+      await this.routineService.getRecommendRoutine(memberId, diary.id);
 
     return diaryDetailRes;
   }
@@ -896,18 +905,15 @@ export class DiaryService {
   }
 
   @Cron('0 11 * * *') // 매 자정마다 실행
-  async handleCron() {
+  async handleCronCreateRecapNotification() {
     this.logger.log('Calling recapDiary() via cron job.');
     const env = this.configService.get<string>('ENVIRONMENT')!;
     if (env === 'develop' || env === 'production') {
       const result = await this.findLastYearDiaries();
       result.forEach((diary) => {
-        this.notificationService.createNotification(
+        this.notificationService.createRecapNotification(
           diary.author.id,
-          recapMessage(),
-          NotificationType.RECAP,
           diary.id,
-          diary.photo_path ? diary.photo_path[0] : null,
         );
       });
     }

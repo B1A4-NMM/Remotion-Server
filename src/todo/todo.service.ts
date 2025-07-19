@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Between, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -14,6 +19,13 @@ import { TodoCalendar } from '../entities/todo-calendar.entity';
 import { CreateCalendarTodoDto } from './dto/create-calendar-todo.dto';
 import { TodoCalendarResDto } from './dto/todo-calendar.dto';
 import { TodoCalendarByMonthRes } from './dto/todo-calendar-by-month.dto';
+import { Cron } from '@nestjs/schedule';
+import { Member } from '../entities/Member.entity';
+import { NotificationService } from '../notification/notification.service';
+import { TODO_MESSAGE } from '../constants/noti-message.constants';
+import { NotificationType } from '../enums/notification-type.enum';
+import * as process from 'node:process';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TodoService {
@@ -27,6 +39,8 @@ export class TodoService {
     private readonly diaryTodoRepository: Repository<DiaryTodo>,
     @InjectRepository(TodoCalendar)
     private readonly todoCalendarRepository: Repository<TodoCalendar>,
+    private readonly notificationService: NotificationService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -57,14 +71,17 @@ export class TodoService {
     });
 
     // 3. 날짜(date)를 기준으로 그룹화
-    const groupedByDate = todoCalendars.reduce((acc, todo) => {
-      const dateKey = todo.date.toString(); // LocalDate 객체를 문자열 키로 사용
-      if (!acc[dateKey]) {
-        acc[dateKey] = [];
-      }
-      acc[dateKey].push(todo);
-      return acc;
-    }, {} as Record<string, TodoCalendar[]>);
+    const groupedByDate = todoCalendars.reduce(
+      (acc, todo) => {
+        const dateKey = todo.date.toString(); // LocalDate 객체를 문자열 키로 사용
+        if (!acc[dateKey]) {
+          acc[dateKey] = [];
+        }
+        acc[dateKey].push(todo);
+        return acc;
+      },
+      {} as Record<string, TodoCalendar[]>,
+    );
 
     // 4. 그룹화된 데이터를 DTO로 변환
     const result = Object.entries(groupedByDate).map(([dateStr, todos]) => {
@@ -93,7 +110,7 @@ export class TodoService {
    */
   async getTodoCalendar(
     memberId: string,
-    date: LocalDate
+    date: LocalDate,
   ): Promise<TodoCalendarResDto[]> {
     const todoCalendars = await this.todoCalendarRepository.find({
       where: {
@@ -114,7 +131,10 @@ export class TodoService {
    * @returns - 업데이트된 TodoCalendar 항목
    */
   async toggleTodoComplete(id: number, memberId: string) {
-    const todo = await this.todoCalendarRepository.findOne({ where: { id }, relations: ['member'] });
+    const todo = await this.todoCalendarRepository.findOne({
+      where: { id },
+      relations: ['member'],
+    });
     if (!todo) {
       throw new NotFoundException('Todo not found');
     }
@@ -123,7 +143,7 @@ export class TodoService {
     }
     todo.isCompleted = !todo.isCompleted;
     let todoCalendar = await this.todoCalendarRepository.save(todo);
-    return {id:todoCalendar.id, isCompleted: todoCalendar.isCompleted}
+    return { id: todoCalendar.id, isCompleted: todoCalendar.isCompleted };
   }
 
   /**
@@ -132,7 +152,10 @@ export class TodoService {
    * @param memberId - 회원 ID
    */
   async deleteTodoCalendar(id: number, memberId: string) {
-    const todo = await this.todoCalendarRepository.findOne({ where: { id }, relations: ['member'] });
+    const todo = await this.todoCalendarRepository.findOne({
+      where: { id },
+      relations: ['member'],
+    });
     if (!todo) {
       throw new NotFoundException('Todo not found');
     }
@@ -157,14 +180,15 @@ export class TodoService {
     const todo = new Todo();
     todo.title = dto.title;
     todo.owner = member;
-    todo.createdAt = LocalDate.now()
-    todo.repeatEndDate = dto.repeatEndDate ? LocalDate.parse(dto.repeatEndDate) : null
+    todo.createdAt = LocalDate.now();
+    todo.repeatEndDate = dto.repeatEndDate
+      ? LocalDate.parse(dto.repeatEndDate)
+      : null;
     todo.isCompleted = false;
-    todo.isRepeat = dto.isRepeat ? dto.isRepeat : false ;
+    todo.isRepeat = dto.isRepeat ? dto.isRepeat : false;
     todo.repeatRule = dto.repeatRule ? dto.repeatRule : null;
-    todo.updatedAt = LocalDate.now()
-    todo.date = dto.date ? LocalDate.parse(dto.date) : null
-
+    todo.updatedAt = LocalDate.now();
+    todo.date = dto.date ? LocalDate.parse(dto.date) : null;
 
     const saved = await this.todoRepository.save(todo);
     this.logger.log(`Todo 저장 완료:${JSON.stringify(saved)}`);
@@ -250,23 +274,57 @@ export class TodoService {
   /**
    * 해당 멤버가 가진 모든 TODO 반환
    */
-  async getAllTodos(memberId:string){
+  async getAllTodos(memberId: string) {
     const todos = await this.todoRepository.find({
       where: { owner: { id: memberId } },
       order: { createdAt: 'DESC' },
-    })
+    });
 
     return todos.map((t) => new TodoRes(t));
   }
 
-  async createCalendarTodo(dto: CreateCalendarTodoDto, memberId:string){
+  async createCalendarTodo(dto: CreateCalendarTodoDto, memberId: string) {
     const member = await this.memberService.findOne(memberId);
     const entity = new TodoCalendar();
     entity.content = dto.content;
-    entity.date = dto.date
-    entity.member = member
+    entity.date = dto.date;
+    entity.member = member;
 
     let todoCalendar = await this.todoCalendarRepository.save(entity);
-    return {id : todoCalendar.id, content : todoCalendar.content, date : todoCalendar.date}
+    return {
+      id: todoCalendar.id,
+      content: todoCalendar.content,
+      date: todoCalendar.date,
+    };
+  }
+
+  /**
+   * 매일 9시에 완료하지 못한 TODO가 있다면 알림을 전달합니다
+   */
+  @Cron('0 21 * * *')
+  async checkTodoMessage() {
+    const env = this.configService.get<string>('ENVIRONMENT')!;
+    // if (env === 'develop' || env === 'production'){
+    const today = LocalDate.now();
+    const todos = await this.todoCalendarRepository.find({
+      where: {
+        date: today,
+        isCompleted: false,
+      },
+      relations: ['member'],
+    });
+
+    const memberMap = new Map<string, Member>();
+    for (const todo of todos) {
+      memberMap.set(todo.member.id, todo.member);
+    }
+    const members = Array.from(memberMap.values());
+
+    members.forEach((m) => {
+      this.notificationService.createTodoNotification(
+        m.id,
+        today
+      );
+    });
   }
 }

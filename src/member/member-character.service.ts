@@ -52,18 +52,18 @@ export class MemberCharacterService {
       this.logger.warn(
         '분석 가능한 감정 데이터가 부족하여 캐릭터를 unknown으로 반환합니다.',
       );
-      return { character: 'unknown' };
+      return 'unknown';
     }
 
     const newCharacter = this.classifyCharacter(emotionBaseResult);
     this.logger.log(`분류된 캐릭터: ${newCharacter}`);
 
-    if (prevCharacter !== newCharacter)
-      await this.notificationService.createNotification(
+    if (prevCharacter !== newCharacter){}
+      await this.notificationService.createCharacterNotification(
         memberId,
-        changeCharacterMessage(newCharacter),
-        NotificationType.CHARACTER
       );
+
+    return newCharacter
   }
 
   /**

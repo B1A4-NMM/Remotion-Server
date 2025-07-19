@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { NotificationType } from '../enums/notification-type.enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -6,6 +6,13 @@ import { NotificationEntity } from '../entities/notification.entity';
 import { MemberService } from '../member/member.service';
 import { WebpushService } from '../webpush/webpush.service';
 import { LocalDate } from 'js-joda';
+import { NotificationRes } from './dto/notification.res';
+import {
+  changeCharacterMessage,
+  recapMessage,
+  ROUTINE_MESSAGE,
+  TODO_MESSAGE,
+} from '../constants/noti-message.constants';
 
 @Injectable()
 export class NotificationService {
@@ -16,29 +23,195 @@ export class NotificationService {
     private readonly webpushService: WebpushService,
   ) {}
 
+  /**
+   * 알림을 읽음 처리합니다
+   * @param memberId
+   * @param notificationId
+   */
+  async readNotification(memberId: string, notificationId: number) {
+    const entity = await this.notificationRepo.findOne({
+      where: {
+        author: { id: memberId },
+        id: notificationId,
+      },
+    });
+
+    if (entity === null) {
+      throw new NotFoundException('해당 알림이 없습니다');
+    }
+
+    entity.isRead = true;
+    await this.notificationRepo.save(entity);
+  }
+
+  /**
+   * 회원이 읽지 않은 알림을 조회합니다
+   * @param memberId
+   */
+  async getNotificationNoRead(memberId: string) {
+    const result = await this.notificationRepo.find({
+      where: {
+        author: { id: memberId },
+        isRead: false,
+      },
+      order: {
+        createDate: 'DESC',
+      },
+    });
+
+    return result.map((n) => {
+      return new NotificationRes(n);
+    });
+  }
+
+  /**
+   * 회원의 모든 알림을 조회합니다
+   * @param memberId
+   */
+  async getNotificationAll(memberId: string) {
+    const result = await this.notificationRepo.find({
+      where: {
+        author: { id: memberId },
+      },
+      order: {
+        createDate: 'DESC',
+      },
+    });
+
+    return result.map((n) => {
+      return new NotificationRes(n);
+    });
+  }
+
+  /**
+   * 오늘의 추천 코멘트를 제작합니다
+   * @param memberId
+   * @param comment
+   * @param diaryId
+   */
+  async createRecommendNotification(
+    memberId: string,
+    comment: string,
+    diaryId: number,
+  ) {
+    return this.createNotification(
+      memberId,
+      comment,
+      NotificationType.TODAY_COMMENT,
+      diaryId,
+      null,
+      null,
+    );
+  }
+
+  /**
+   * 루틴 알림을 제작합니다
+   * @param memberId
+   */
+  async createRoutineNotification(memberId: string) {
+    return this.createNotification(
+      memberId,
+      ROUTINE_MESSAGE,
+      NotificationType.ROUTINE,
+      null,
+      null,
+      null,
+    );
+  }
+
+  /**
+   * 리캡 알림을 제작합니다
+   * @param memberId
+   * @param diaryId
+   */
+  async createRecapNotification(memberId: string, diaryId: number) {
+    return this.createNotification(
+      memberId,
+      recapMessage(),
+      NotificationType.RECAP,
+      diaryId,
+      null,
+      null,
+    );
+  }
+
+  /**
+   * 캐릭터 변경 알림을 제작합니다
+   * @param memberId
+   */
+  async createCharacterNotification(memberId: string) {
+    return this.createNotification(
+      memberId,
+      changeCharacterMessage(),
+      NotificationType.CHARACTER,
+      null,
+      null,
+      null,
+    );
+  }
+
+  /**
+   * todo 알림을 제작합니다
+   * @param memberId
+   * @param targetDate
+   */
+  async createTodoNotification(memberId: string, targetDate: LocalDate) {
+    return this.createNotification(
+      memberId,
+      TODO_MESSAGE,
+      NotificationType.TODO,
+      null,
+      null,
+      targetDate,
+    );
+  }
+
+  /**
+   * 알림을 만듭니다. webPush 또한 같이 전달합니다
+   * @param memberId
+   * @param content
+   * @param type
+   * @param diaryId
+   * @param photoPath
+   * @param targetDate
+   */
   async createNotification(
     memberId: string,
     content: string,
     type: NotificationType,
-    diaryId?:number,
+    diaryId?: number | null,
     photoPath?: string | null,
+    targetDate?: LocalDate | null,
   ) {
     let entity = new NotificationEntity();
     entity.author = await this.memberService.findOne(memberId);
     entity.photoPath = photoPath;
     entity.content = content;
     entity.type = type;
-    entity.createDate = LocalDate.now()
+    entity.createDate = LocalDate.now();
     entity.isRead = false;
     entity.diaryId = diaryId;
+    entity.targetDate = targetDate;
 
     await this.sendWebPush(memberId, content, type, photoPath);
     await this.notificationRepo.save(entity);
   }
 
-  private async sendWebPush(memberId:string, content:string, type:NotificationType, photoPath?:string | null) {
-
-    let title = ''
+  /**
+   * webPush 알람을 전달합니다
+   * @param memberId
+   * @param content
+   * @param type
+   * @param photoPath
+   * @private
+   */
+  private async sendWebPush(
+    memberId: string,
+    content: string,
+    type: NotificationType,
+    photoPath?: string | null,
+  ) {
+    let title = '';
     switch (type) {
       case NotificationType.CHARACTER:
         title = '캐릭터 변경!!';
@@ -50,8 +223,8 @@ export class NotificationService {
         title = '나의 기분전환 루틴 추가';
         break;
       case NotificationType.TODO:
-        title = "TODO 완료 하셨나요?"
-        break
+        title = 'TODO 완료 하셨나요?';
+        break;
     }
 
     if (photoPath === null) {
@@ -59,19 +232,16 @@ export class NotificationService {
         memberId,
         title,
         content,
-        './static/harudew_logo.png'
-      )
-    }else{
+        'https://remotion-photo.s3.ap-northeast-2.amazonaws.com/harudew_logo.png',
+      );
+    } else {
       await this.webpushService.sendNotification(
         memberId,
         title,
         content,
-        './static/harudew_logo.png',
-        photoPath
-      )
+        'https://remotion-photo.s3.ap-northeast-2.amazonaws.com/harudew_logo.png',
+        photoPath,
+      );
     }
-
   }
-
-
 }

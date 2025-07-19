@@ -45,6 +45,12 @@ export class MemberService {
     return member;
   }
 
+  async saveCharacter(memberId: string, character: string) {
+    const member = await this.findOne(memberId);
+    member.character = character;
+    await this.repo.save(member);
+  }
+
   findSocialMember(id: string, type: SocialType) {
     return this.repo.findOneBy({ id: id, social_type: type });
   }

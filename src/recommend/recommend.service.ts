@@ -20,6 +20,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RecommendCommentRes } from './dto/recommend-comment.res';
 import { numericPatterns } from 'date-fns/parse/_lib/constants';
+import { Cron } from '@nestjs/schedule';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class RecommendService {
@@ -35,6 +37,9 @@ export class RecommendService {
     private readonly utilService: CommonUtilService,
     @InjectRepository(Activity)
     private readonly activityRepo: Repository<Activity>,
+    @InjectRepository(Member)
+    private readonly memberRepo: Repository<Member>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -123,20 +128,27 @@ export class RecommendService {
     return this.getCommentByWeekday(memberId, date);
   }
 
+  @Cron('0 9 * * *')
+  async handleCronGetRecommendComment() {
+    const today = LocalDate.now();
+    const members = await this.memberRepo.find();
+    members.forEach((member) => {
+      this.getCommentByWeekday(member.id, today)
+    })
+  }
+
   /**
    * 각 요일마다 알맞은 추천 멘트를 줍니다
    */
-  async getCommentByWeekday(memberId: string, date:LocalDate) {
-    const emotionGroup =
-      await this.getMostFrequentEmotionGroupByWeekday(memberId, date);
+  async getCommentByWeekday(memberId: string, date: LocalDate) {
+    console.log("getCommentByWeekday: ", date.toString())
+    const emotionGroup = await this.getMostFrequentEmotionGroupByWeekday(
+      memberId,
+      date,
+    );
     let comment = '';
     if (emotionGroup === null) {
-      comment = '추천해드릴 감정 데이터가 쌓이질 않았어요. 일기를 써보세요';
-      return {
-        diaryId : null,
-        activity: null,
-        comment: comment
-      }
+      return;
     }
     let recommendEmotion = EmotionGroup.안정;
     const dayOfWeek = date.dayOfWeek().toString().toLowerCase();
@@ -151,24 +163,18 @@ export class RecommendService {
         recommendEmotion = EmotionGroup.활력;
         break;
       default:
-        comment = getRandomComment()
-        return {
-          diaryId : null,
-          activity: null,
-          comment: comment
-        }
+        return;
     }
-    const clusters =
-      await this.activityService.getActivitiesByEmotionGroup(
-        memberId,
-        recommendEmotion,
-        0
-      );
+    const clusters = await this.activityService.getActivitiesByEmotionGroup(
+      memberId,
+      recommendEmotion,
+      10,
+    );
     const activities = clusters.map((c) => {
       return { content: c.content, id: c.id };
     });
 
-    const randomActivity = this.utilService.pickRandomUnique(activities,1)
+    const randomActivity = this.utilService.pickRandomUnique(activities, 1);
     comment = await this.LLMService.getRecommendComment(
       randomActivity[0].content,
       emotionGroup,
@@ -177,24 +183,21 @@ export class RecommendService {
 
     const selectActivity = await this.activityRepo.findOne({
       where: { id: randomActivity[0].id },
-      relations: ['diary']
-    })
+      relations: ['diary'],
+    });
 
     if (!selectActivity) {
-      this.logger.warn(`No activity found for id: ${randomActivity[0].id}`)
-      return {
-        diaryId : null,
-        activity: null,
-        comment: comment
-      }
+      // this.logger.warn(`No activity found for id: ${randomActivity[0].id}`);
+      return;
     }
 
-    let res = new RecommendCommentRes(selectActivity, comment);
-
-    return res
+    await this.notificationService.createRecommendNotification(memberId, comment, selectActivity.diary.id);
   }
 
-  private async getMostFrequentEmotionGroupByWeekday(memberId: string, date:LocalDate) {
+  private async getMostFrequentEmotionGroupByWeekday(
+    memberId: string,
+    date: LocalDate,
+  ) {
     const emotionByWeekday =
       await this.emotionService.getAllEmotionsGroupByWeekday(memberId);
     const dayOfWeek = date.dayOfWeek().toString().toLowerCase();

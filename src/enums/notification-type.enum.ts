@@ -3,4 +3,5 @@ export enum NotificationType {
   TODO = 'TODO',
   CHARACTER = 'CHARACTER',
   ROUTINE = 'ROUTINE',
+  TODAY_COMMENT = 'TODAY_COMMENT'
 }
