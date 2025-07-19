@@ -6,10 +6,8 @@ import { winstonLogger } from './logger/winston-logger.service';
 import * as session from 'express-session';
 import * as cookieParser from 'cookie-parser';
 
-
-
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, );
+  const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -54,9 +52,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
 
-  app.enableCors({
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  });
+  app.enableCors();
   await app.listen(process.env.PORT ?? 3000);
 }
 
