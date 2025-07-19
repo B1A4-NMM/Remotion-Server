@@ -53,13 +53,13 @@ export class TodoService {
     memberId: string,
     todoId: number,
     date: LocalDate,
-  ){
+  ) {
     const todoCalendar = await this.todoCalendarRepository.findOne({
       where: {
-        member: {id : memberId},
-        id : todoId
-      }
-    })
+        member: { id: memberId },
+        id: todoId,
+      },
+    });
 
     if (!todoCalendar) throw new NotFoundException('TodoCalendar not found');
 
@@ -350,10 +350,36 @@ export class TodoService {
     const members = Array.from(memberMap.values());
 
     members.forEach((m) => {
-      this.notificationService.createTodoNotification(
-        m.id,
-        today
-      );
+      this.notificationService.createTodoNotification(m.id, today);
     });
+  }
+
+  /**
+   * todocalendar의 content를 수정합니다
+   * @param memberId
+   * @param todoId
+   * @param content
+   */
+  async changeTodoCalendarContent(
+    memberId: string,
+    todoId: number,
+    content: string,
+  ) {
+    const result = await this.todoCalendarRepository.findOne({
+      where: {
+        member: { id: memberId },
+        id: todoId,
+      },
+    });
+
+    if (!result) throw new NotFoundException('해당 todo를 찾지 못했습니다')
+
+    result.content = content;
+    await this.todoCalendarRepository.save(result);
+    return {
+      id: result.id,
+      content: result.content,
+      date: result.date,
+    };
   }
 }

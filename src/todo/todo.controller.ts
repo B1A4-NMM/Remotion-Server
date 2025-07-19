@@ -138,6 +138,34 @@ export class TodoController {
     return this.todoService.changeTodoCalendarDate(user.id, id, date);
   }
 
+  @Patch('calendar/content/:id')
+  @ApiOperation({ summary: 'Todo-Calendar 날짜 변경' })
+  @ApiParam({
+    name: 'id',
+    description: '날짜를 변경할 Todo-Calendar의 ID',
+    type: Number,
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        content: {
+          type: 'string',
+          description: '변경할 Todo 내용',
+          example: '미팅 준비하기',
+        },
+      },
+    },
+  })
+  async changeTodoCalendarContent(
+    @CurrentUser() user: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body('content')
+    content: string,
+  ) {
+    return this.todoService.changeTodoCalendarContent(user.id, id, content);
+  }
+
   @Patch('calendar/:id')
   @ApiOperation({ summary: 'Todo-Calendar 완료/미완료 토글' })
   @ApiParam({
