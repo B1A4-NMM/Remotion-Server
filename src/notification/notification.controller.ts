@@ -21,7 +21,14 @@ export class NotificationController {
   }
 
   @Patch(':id')
-  async readNotification(@CurrentUser() user: any, @Param('id', ParseIntPipe) id: number) {
+  @ApiOperation({ summary: '알림 읽음 처리' })
+  @ApiOkResponse({
+    description: '알림 읽음 처리 완료',
+  })
+  async readNotification(
+    @CurrentUser() user: any,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     return this.notificationService.readNotification(user.id, id);
   }
 
@@ -34,5 +41,4 @@ export class NotificationController {
   async getNotificationAll(@CurrentUser() user: any) {
     return this.notificationService.getNotificationAll(user.id);
   }
-
 }
