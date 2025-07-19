@@ -76,6 +76,7 @@ export class RecommendController {
     return res;
   }
 
+  @ApiExcludeEndpoint()
   @ApiOperation({
     summary: '요일별 감정 분석 후 행동 추천',
     description: '각 요일별로 어떤 감정이 크게 들었고, 감정에 따른 행동을 추천하는 멘트를 반환합니다'
@@ -87,9 +88,10 @@ export class RecommendController {
   @Get('activity/weekday/today')
   async getRecommendedActivity(@CurrentUser() user: any) {
     const memberId: string = user.id;
-    return this.recommendService.getCommentByWeekdayOfToday(memberId);
+    return "곧 없어질 API입니다";
   }
 
+  @ApiExcludeEndpoint()
   @ApiOperation({
     summary: '요일별 감정 분석 후 행동 추천',
     description: '각 요일별로 어떤 감정이 크게 들었고, 감정에 따른 행동을 추천하는 멘트를 반환합니다'
@@ -101,9 +103,10 @@ export class RecommendController {
   @Get('activity/weekday/tomorrow')
   async getRecommendedActivityTomorrow(@CurrentUser() user: any) {
     const memberId: string = user.id;
-    return this.recommendService.getCommentByWeekdayOfTomorrow(memberId);
+    return "곧 없어질 API입니다";
   }
 
+  @ApiExcludeEndpoint()
   @ApiOperation({
     summary: '요일별 감정 분석 후 행동 추천',
     description: '각 요일별로 어떤 감정이 크게 들었고, 감정에 따른 행동을 추천하는 멘트를 반환합니다'

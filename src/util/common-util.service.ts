@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { LocalDate } from 'js-joda';
 import { DayOfWeek } from '@js-joda/core';
@@ -7,6 +7,9 @@ import { CombinedEmotion, EmotionInteraction } from './json.parser';
 
 @Injectable()
 export class CommonUtilService {
+  
+  private readonly logger = new Logger(CommonUtilService.name);
+  
   generateUUID() {
     return uuidv4();
   }
@@ -50,7 +53,8 @@ export class CommonUtilService {
 
   pickRandomUnique<T>(arr: T[], count: number): T[] {
     if (count > arr.length) {
-      throw new Error('요청한 개수가 배열 길이보다 큽니다.');
+      count = arr.length;
+      this.logger.warn("배열의 길이보다 요청한 갯수가 큽니다")
     }
 
     const result: T[] = [];
