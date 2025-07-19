@@ -8,6 +8,8 @@ import { EmotionAnalysisPeriodRes } from './dto/emotion-analysis-period.res';
 
 import { EmotionSummaryByTargetResponseDto } from './dto/emotion-summary-by-target.res.dto';
 import { ActivityEmotionSummaryRes } from './dto/activity-emotion-summary.res';
+import { TargetEmotionSummaryRes } from './dto/target-emotion-summary.res';
+import { EmotionSummaryPeriodRes } from './dto/emotion-summary-period.res';
 
 @Controller('emotion')
 @ApiTags('감정')
@@ -155,27 +157,27 @@ export class EmotionController {
       properties: {
         stressTarget: {
           type: 'array',
-          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+          items: { $ref: getSchemaPath(TargetEmotionSummaryRes) },
         },
         depressionTarget: {
           type: 'array',
-          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+          items: { $ref: getSchemaPath(TargetEmotionSummaryRes) },
         },
         anxietyTarget: {
           type: 'array',
-          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+          items: { $ref: getSchemaPath(TargetEmotionSummaryRes) },
         },
         stressDate: {
           type: 'array',
-          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+          items: { $ref: getSchemaPath(EmotionSummaryPeriodRes) },
         },
         depressionDate: {
           type: 'array',
-          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+          items: { $ref: getSchemaPath(EmotionSummaryPeriodRes) },
         },
         anxietyDate: {
           type: 'array',
-          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+          items: { $ref: getSchemaPath(EmotionSummaryPeriodRes) },
         },
       }
     }
@@ -195,27 +197,27 @@ export class EmotionController {
       properties: {
         stabilityTarget: {
           type: 'array',
-          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+          items: { $ref: getSchemaPath(TargetEmotionSummaryRes) },
         },
         bondTarget: {
           type: 'array',
-          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+          items: { $ref: getSchemaPath(TargetEmotionSummaryRes) },
         },
         vitalityTarget: {
           type: 'array',
-          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+          items: { $ref: getSchemaPath(TargetEmotionSummaryRes) },
         },
         stabilityDate: {
           type: 'array',
-          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+          items: { $ref: getSchemaPath(EmotionSummaryPeriodRes) },
         },
         bondDate: {
           type: 'array',
-          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+          items: { $ref: getSchemaPath(EmotionSummaryPeriodRes) },
         },
         vitalityDate: {
           type: 'array',
-          items: { $ref: getSchemaPath(ActivityEmotionSummaryRes) },
+          items: { $ref: getSchemaPath(EmotionSummaryPeriodRes) },
         },
       }
     }
