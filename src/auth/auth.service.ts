@@ -47,7 +47,7 @@ export class AuthService {
     // Access Token으로 Kakao 사용자 정보 요청
     const kakaoUserInfo = await this.getKakaoUserInfo(accessToken);
 
-    const id = kakaoUserInfo.id
+    const id:string = kakaoUserInfo.id.toString()
     const nickname = kakaoUserInfo.properties.nickname
     const email = kakaoUserInfo.kakao_account.email
     // 카카오 사용자 정보를 기반으로 회원가입 또는 로그인 처리
