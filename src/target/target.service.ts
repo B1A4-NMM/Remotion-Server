@@ -2,24 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Target } from '../entities/Target.entity';
 import { Repository } from 'typeorm';
-import {
-  DiaryAnalysisDto,
-  EmotionAnalysisDto,
-} from '../diary/dto/diary-analysis.dto';
 import { Diary } from '../entities/Diary.entity';
 import { MemberService } from '../member/member.service';
 import { CommonUtilService } from '../util/common-util.service';
 import { TargetRelation } from '../enums/target.enum';
 import { DiaryTarget } from '../entities/diary-target.entity';
-import * as process from 'node:process';
 import { EmotionService } from '../emotion/emotion.service';
 import { EmotionType } from '../enums/emotion-type.enum';
-import { MemberSummaryService } from '../member/member-summary.service';
-import { DiaryEmotionGroupingDto } from '../member/dto/diary-emotion-grouping.dto';
 import { LocalDate, ChronoUnit } from 'js-joda';
 import { CombinedEmotion, EmotionInteraction, Person } from '../util/json.parser';
 import { Member } from '../entities/Member.entity';
-import { Activity } from '../entities/Activity.entity';
 import { ActivityTarget } from '../entities/ActivityTarget.entity';
 
 @Injectable()
