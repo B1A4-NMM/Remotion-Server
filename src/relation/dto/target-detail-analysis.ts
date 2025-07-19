@@ -15,6 +15,9 @@ export class TargetDetailAnalysis {
   @ApiProperty({ description: '대상 이름' })
   targetName: string;
 
+  @ApiProperty({ description: '친밀도 점수, 기본은 30점', example: 30 })
+  closenessScore: number
+
   @ApiProperty({
     type: [EmotionSummaryByTargetResponseDto],
     description: '대상별 감정 요약 목록',
@@ -38,5 +41,6 @@ export class TargetDetailAnalysis {
     this.emotions = emotions;
     this.diaries = diaries;
     this.activities = activities;
+    this.closenessScore = target.closenessScore;
   }
 }

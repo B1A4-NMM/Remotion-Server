@@ -93,7 +93,7 @@ export class TargetService {
     // 1. targetId를 통해 모든 ActivityTarget을 조회합니다.
     const activityTargets = await this.activityTargetRepository.find({
       where: { target: { id: targetId } },
-      relations: ['activity', 'activity.activityCluster'], // Activity와 ActivityCluster를 함께 로드합니다.
+      relations: ['activity', 'activity.cluster'], // Activity와 ActivityCluster를 함께 로드합니다.
     });
 
     if (!activityTargets || activityTargets.length === 0) {
