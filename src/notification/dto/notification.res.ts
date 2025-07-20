@@ -1,4 +1,4 @@
-import { LocalDate } from 'js-joda';
+import { LocalDate, LocalDateTime } from 'js-joda';
 import { NotificationType } from '../../enums/notification-type.enum';
 import { NotificationEntity } from '../../entities/notification.entity';
 import { ApiProperty } from '@nestjs/swagger';
@@ -14,7 +14,7 @@ export class NotificationRes {
   read: boolean;
 
   @ApiProperty({ description: '생성 날짜' })
-  createdAt: LocalDate;
+  createdAt: LocalDateTime;
 
   @ApiProperty({ description: '알림 타입', enum: NotificationType })
   type: NotificationType;

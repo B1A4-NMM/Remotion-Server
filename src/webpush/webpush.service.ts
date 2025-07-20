@@ -173,8 +173,8 @@ export class WebpushService {
   ) {
     const payload = JSON.stringify({
       title: title,
+      body: body,
       options: {
-        body: body,
         icon: icon,
         image: image,
         actions: actions,

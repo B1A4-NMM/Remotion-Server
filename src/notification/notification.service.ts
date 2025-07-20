@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { NotificationEntity } from '../entities/notification.entity';
 import { MemberService } from '../member/member.service';
 import { WebpushService } from '../webpush/webpush.service';
-import { LocalDate } from 'js-joda';
+import { LocalDate, LocalDateTime } from 'js-joda';
 import { NotificationRes } from './dto/notification.res';
 import {
   changeCharacterMessage,
@@ -167,6 +167,26 @@ export class NotificationService {
     );
   }
 
+  async createTestNotification(
+    memberId: string,
+    content: string,
+    type: NotificationType,
+    diaryId?: number | null,
+    photoPath?: string | null,
+    targetDate?: LocalDate | null,
+  ) {
+    let entity = new NotificationEntity();
+    entity.author = await this.memberService.findOne(memberId);
+    entity.photoPath = photoPath;
+    entity.content = content;
+    entity.type = type;
+    entity.createDate = LocalDateTime.now();
+    entity.isRead = false;
+    entity.diaryId = diaryId;
+    entity.targetDate = targetDate;
+    await this.notificationRepo.save(entity);
+  }
+
   /**
    * 알림을 만듭니다. webPush 또한 같이 전달합니다
    * @param memberId
@@ -189,7 +209,7 @@ export class NotificationService {
     entity.photoPath = photoPath;
     entity.content = content;
     entity.type = type;
-    entity.createDate = LocalDate.now();
+    entity.createDate = LocalDateTime.now();
     entity.isRead = false;
     entity.diaryId = diaryId;
     entity.targetDate = targetDate;
