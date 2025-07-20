@@ -32,7 +32,7 @@ export class WebpushService {
    * 멤버 ID와 pushSubscription 정보를 받아 데이터베이스에 저장
    */
   async subscribe(memberId: string, subscription: PushSubscriptionInterface) {
-    this.logger.log(`subscribe memberId:${memberId}, endpoint:${subscription.endpoint}`);
+    this.logger.log(`subscribe memberId:${memberId}`);
     await this.saveOrFlagOnPushSubscription(memberId, subscription);
 
     return 'Subscription successful';
@@ -42,7 +42,7 @@ export class WebpushService {
    * 멤버의 브라우저의 알림 정보를 해제합니다
    */
   async unsubscribe(memberId: string, endpoint: string) {
-    this.logger.log(`unsubscribe memberId:${memberId}, endpoint:${endpoint}`);
+    this.logger.log(`unsubscribe memberId:${memberId}`);
     const subscribe = await this.pushRepo.findOne({
       where: {
         author: { id: memberId },
@@ -82,16 +82,11 @@ export class WebpushService {
       },
     ];
 
-    const all = await this.pushRepo.find({
-      where: {
-        isSubscribed: true,
-      },
-      relations: ['author'],
-    });
+    const members = await this.memberService.findAll();
 
-    for (const push of all) {
+    for (const member of members) {
       await this.sendNotification(
-        push.author.id,
+        member.id,
         '테스트 메세지 제목',
         '테스트 메세지 body',
         options.icon,
@@ -132,6 +127,7 @@ export class WebpushService {
         this.logger.error('Error sending notification:', error);
         // If the subscription is no longer valid, you might want to remove it from the database
         // For example: if (error.statusCode === 410) { await this.unsubscribe(memberId, sub.endpoint); }
+        if (error.statusCode === 410) { await this.unsubscribe(memberId, sub.endpoint); }
         throw error;
       }
     }
