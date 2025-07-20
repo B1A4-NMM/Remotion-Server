@@ -227,8 +227,6 @@ export class WebpushService {
     endpoint: string,
   ): Promise<{ isSubscribed: boolean }> {
 
-    this.logger.log(`getSubscriptionStatus memberId:${memberId}, endpoint:${endpoint}`);
-
     const subscription = await this.pushRepo.findOne({
       where: {
         author: { id: memberId },

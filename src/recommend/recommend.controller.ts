@@ -53,9 +53,6 @@ export class RecommendController {
     @CurrentUser() member: Member,
     @Query('period',  new DefaultValuePipe(10), ParseIntPipe) period: number, // ParseIntPipe 추가
   ): Promise<{ videoId: string[]; message: string }> {
-    this.logger.log(
-      `User ${member.id} requested recommended video for period: ${period} days`,
-    );
     const result = await this.recommendService.getRecommendedVideoId(
       member,
       period,
