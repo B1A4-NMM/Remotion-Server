@@ -261,7 +261,7 @@ export class NotificationService {
     return result.length;
   }
 
-  @Cron('41 0 0 * * *')
+  @Cron('0 16 0 * * *')
   async testNotification() {
     const members = await this.memberService.findAll();
     members.map((m) => {
