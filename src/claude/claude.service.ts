@@ -306,7 +306,7 @@ ${prompt}
     try {
       const processedPrompt = this.ActionAnalysis(prompt);
 
-      let responseText = await this.getResponseToNovaPro(processedPrompt, 0.9, 0.7);
+      let responseText = await this.getResponseToSonnet4(processedPrompt);
 
       if (!responseText) {
         throw new Error('No response text received');
