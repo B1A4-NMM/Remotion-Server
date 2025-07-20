@@ -64,7 +64,7 @@ export class WebpushService {
   /**
    * 테스트해보기 
    */
-  async testSendNotification(memberId) {
+  async testSendNotification() { // memberId 파라미터 제거
     let options: PushNotificationOptions = {};
     options.icon =
       'https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png';
@@ -82,18 +82,46 @@ export class WebpushService {
       },
     ];
 
-    const members = await this.memberService.findAll();
+    const allActiveSubscriptions = await this.pushRepo.find({
+      where: {
+        isSubscribed: true,
+      },
+      relations: ['author'], // author 정보를 로드하여 unsubscribe 시 사용
+    });
 
-    for (const member of members) {
-      await this.sendNotification(
-        member.id,
-        '테스트 메세지 제목',
-        '테스트 메세지 body',
-        options.icon,
-        options.image
-      );
+    const payload = this.createPayload(
+      '테스트 메세지 제목',
+      '테스트 메세지 body',
+      options.icon,
+      options.image,
+      // options.actions // actions도 payload에 포함
+    );
+
+    for (const sub of allActiveSubscriptions) {
+      const webpushSubscription = {
+        endpoint: sub.endpoint,
+        expirationTime: null,
+        keys: {
+          p256dh: sub.p256dh,
+          auth: sub.auth,
+        },
+      };
+      try {
+        await webpush.sendNotification(webpushSubscription, payload);
+        this.logger.log('Notification sent successfully to endpoint:', sub.endpoint);
+      } catch (error) {
+        this.logger.error('Error sending notification to endpoint:', sub.endpoint, error);
+        // 구독이 더 이상 유효하지 않은 경우 (예: 410 Gone) 구독 해제
+        if (error.statusCode === 410) {
+          this.logger.warn(`Subscription for endpoint ${sub.endpoint} is no longer valid. Unsubscribing.`);
+          if (sub.author && sub.author.id) {
+            await this.unsubscribe(sub.author.id, sub.endpoint);
+          } else {
+            this.logger.error(`Could not unsubscribe for endpoint ${sub.endpoint}: author information missing.`);
+          }
+        }
+      }
     }
-
   }
 
   /**

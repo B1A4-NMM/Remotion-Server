@@ -66,7 +66,7 @@ export class WebpushController {
     },
   ): Promise<void> {
     console.log('send-noti');
-    return this.webpushService.testSendNotification(user.id);
+    return this.webpushService.testSendNotification();
   }
 
   @Post('unsubscribe')
