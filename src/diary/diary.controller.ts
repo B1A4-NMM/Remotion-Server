@@ -29,7 +29,7 @@ import { DiaryService } from './diary.service';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
 import { CreateDiaryDto } from './dto/create-diary.dto';
-import { DiaryHomeListRes } from './dto/diary-home-list.res';
+import { DiaryHomeListRes, DiaryRes } from './dto/diary-home-list.res';
 import { DiaryHomeRes } from './dto/diary-home.res';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { S3Service } from '../upload/s3.service';
@@ -148,7 +148,7 @@ export class DiaryController {
     return await this.diaryService.getDiaryList(memberId);
   }
 
-  @ApiOperation({ summary: '자신이 특정 날짜에 작성한 일기 받기' })
+  @ApiOperation({ summary: '자신이 특정 날짜에 작성한 일기들 받기' })
   @ApiQuery({
     name: 'date',
     required: true,
@@ -156,14 +156,14 @@ export class DiaryController {
     description: '조회할 날짜',
     example: '2021-01-01',
   })
-  @ApiResponse({ type: DiaryHomeRes })
+  @ApiResponse({ type: [DiaryRes] })
   @Get('date')
   async getDiaryByDate(
     @CurrentUser() user: any,
     @Query('date', ParseLocalDatePipe) date: LocalDate,
   ) {
     const memberId = user.id;
-    return await this.diaryService.getDiaryInfoByDate(memberId, date);
+    return await this.diaryService.getDiaryResByDate(memberId, date);
   }
 
   @ApiOperation({

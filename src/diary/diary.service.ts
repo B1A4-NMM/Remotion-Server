@@ -557,21 +557,17 @@ export class DiaryService {
   /**
    * 커서를 통해 일기를 가져옴
    */
-  async getDiariesInfiniteByDate(memberId: string, limit: number, cursor?: number) {
-    const skip = cursor ? cursor * limit : 0;
-    const take = limit + 1; // Check for more items
-
+  async getDiaryResByDate(memberId: string, findDate: LocalDate) {
     const qb = this.diaryRepository
       .createQueryBuilder('d')
       .where('d.author_id = :memberId', { memberId })
+      .andWhere('d.written_date = :findDate', { findDate: findDate.toString() })
       .orderBy('d.written_date', 'DESC')
-      .addOrderBy('d.id', 'DESC')
-      .skip(skip)
-      .take(take);
+      .addOrderBy('d.id', 'DESC');
 
     const rows = await qb.getMany();
 
-    return await this.makeScroll(rows, take, cursor, memberId);
+    return await Promise.all(rows.map((d) => this.createDiaryRes(d)));
   }
 
   /**
@@ -649,9 +645,6 @@ export class DiaryService {
 
   /**
    * 키워드를 통해 가장 유사한 문장을 가진 일기들을 반환합니다
-   */
-  /**
-   * 키워드를 통해 가장 유사한 문장을 가진 일기들을 반환합니다
    * @param memberId 멤버 ID
    * @param keyword 검색 키워드
    */
@@ -671,11 +664,10 @@ export class DiaryService {
     // 키워드 길이가 최소 길이보다 길면, 의미 기반의 벡터 검색을 수행합니다.
     if (keyword.length > minLength) {
       this.logger.log(`'${keyword}'에 대한 벡터 검색을 수행합니다.`);
-      const searchResult =
-        await this.sentenceParserService.searchDiaryViaRAG(
-          keyword,
-          memberId,
-        );
+      const searchResult = await this.sentenceParserService.searchDiaryViaRAG(
+        keyword,
+        memberId,
+      );
 
       // 중복된 diaryId를 제거하기 위해 Set을 사용하고, 여러 ID를 한번에 조회합니다.
       const diaryIds = [...new Set(searchResult.map((v) => v.diary_id))];
@@ -813,11 +805,11 @@ export class DiaryService {
     }
 
     let todayExist = await this.diaryRepository.findOne({
-      where : {
-        author : {id : memberId},
-        written_date: today
-      }
-    })
+      where: {
+        author: { id: memberId },
+        written_date: today,
+      },
+    });
 
     if (todayExist) {
       count++;
