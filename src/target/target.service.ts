@@ -145,22 +145,24 @@ export class TargetService {
 
       target = await this.targetRepository.save(target);
       await this.createDiaryTarget(target, diary, calcClosenessScore);
-      const feelToTargetAll: CombinedEmotion[] = people.flatMap((p) => [
-        ...this.util.toCombinedEmotionTyped(p.interactions),
-      ]);
 
       const feelToTarget = this.util.toCombinedEmotionTyped(person.interactions);
-
-      await this.emotionService.createDiaryEmotionForTarget(
-        feelToTargetAll,
-        diary,
-      );
       await this.emotionService.createOrUpdateEmotionTarget(
         target,
         feelToTarget,
         diary.written_date,
       );
     }
+
+    const feelToTargetAll: CombinedEmotion[] = people.flatMap((p) => [
+      ...this.util.toCombinedEmotionTyped(p.interactions),
+    ]);
+
+    await this.emotionService.createDiaryEmotionForTarget(
+      feelToTargetAll,
+      diary,
+    );
+
   }
 
   /**

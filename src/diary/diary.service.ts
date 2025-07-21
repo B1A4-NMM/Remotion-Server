@@ -76,36 +76,6 @@ export class DiaryService {
   ) {}
 
   /**
-   * 특정 연월에 작성된 일기의 날짜(day)들을 반환합니다.
-   * @param memberId - 회원 ID
-   * @param year - 연도
-   * @param month - 월
-   * @returns - 일기가 작성된 날짜(day) 배열
-   */
-  async getWrittenDays(
-    memberId: string,
-    year: number,
-    month: number,
-  ): Promise<WrittenDaysDto> {
-    const startDate = LocalDate.of(year, month, 1);
-    const endDate = startDate.plusMonths(1).minusDays(1);
-
-    const diaries = await this.diaryRepository.find({
-      where: {
-        author: { id: memberId },
-        written_date: Between(startDate, endDate),
-      },
-      select: ['written_date'],
-    });
-
-    const writtenDays = [
-      ...new Set(diaries.map((diary) => diary.written_date.dayOfMonth())),
-    ];
-
-    return { writtenDays };
-  }
-
-  /**
    * 다이어리 생성 함수
    * 다이어리를 생성하면서 일기를 분석하고, 분석한 결과를 dto에 저장
    * 연관된 엔티티 : [ Activity, Target, DiaryTarget, DiaryEmotion ]
@@ -158,6 +128,36 @@ export class DiaryService {
     await this.memberService.saveCharacter(memberId, newCharacter);
 
     return result.id;
+  }
+
+  /**
+   * 특정 연월에 작성된 일기의 날짜(day)들을 반환합니다.
+   * @param memberId - 회원 ID
+   * @param year - 연도
+   * @param month - 월
+   * @returns - 일기가 작성된 날짜(day) 배열
+   */
+  async getWrittenDays(
+    memberId: string,
+    year: number,
+    month: number,
+  ): Promise<WrittenDaysDto> {
+    const startDate = LocalDate.of(year, month, 1);
+    const endDate = startDate.plusMonths(1).minusDays(1);
+
+    const diaries = await this.diaryRepository.find({
+      where: {
+        author: { id: memberId },
+        written_date: Between(startDate, endDate),
+      },
+      select: ['written_date'],
+    });
+
+    const writtenDays = [
+      ...new Set(diaries.map((diary) => diary.written_date.dayOfMonth())),
+    ];
+
+    return { writtenDays };
   }
 
   /**
@@ -783,6 +783,17 @@ export class DiaryService {
         },
         select: ['id'],
       });
+    }
+
+    let todayExist = await this.diaryRepository.findOne({
+      where : {
+        author : {id : memberId},
+        written_date: today
+      }
+    })
+
+    if (todayExist) {
+      count++;
     }
 
     return count;
