@@ -1,1 +1,1 @@
-const WEBPUSH_ICON_PATH = 'https://remotion-photo.s3.ap-northeast-2.amazonaws.com/harudew.svg'
+export const WEBPUSH_ICON_PATH = 'https://remotion-photo.s3.ap-northeast-2.amazonaws.com/harudew.svg'
