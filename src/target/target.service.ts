@@ -179,13 +179,14 @@ export class TargetService {
   async createDiaryTarget(target: Target, diary: Diary, changeScore:number) {
     let diaryTarget = await this.diaryTargetRepository.findOneBy({
       diary: {id : diary.id},
-      target: target,
+      target: {id : target.id},
     });
     if (diaryTarget === null) {
       diaryTarget = new DiaryTarget(diary, target);
       diaryTarget.changeScore = changeScore
-      await this.diaryTargetRepository.save(diaryTarget);
-    }
+    } else
+      diaryTarget.changeScore += changeScore
+    await this.diaryTargetRepository.save(diaryTarget);
   }
 
   async findOne(memberId:string, targetName: string) {
