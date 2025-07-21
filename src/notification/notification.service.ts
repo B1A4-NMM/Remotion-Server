@@ -253,14 +253,14 @@ export class NotificationService {
         memberId,
         title,
         content,
-        'https://remotion-photo.s3.ap-northeast-2.amazonaws.com/harudew_logo.png',
+        WEBPUSH_ICON_PATH,
       );
     } else {
       await this.webpushService.sendNotification(
         memberId,
         title,
         content,
-        'https://remotion-photo.s3.ap-northeast-2.amazonaws.com/harudew_logo.png',
+        WEBPUSH_ICON_PATH,
         photoPath,
       );
     }
