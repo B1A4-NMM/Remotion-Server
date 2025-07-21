@@ -75,8 +75,8 @@ export class WebpushController {
     description: '사용자의 웹 푸시 구독을 해제합니다.',
   })
   @ApiBody({
-    type:'string',
-    description:'웹푸시 엔드포인트',
+    type: 'string',
+    description: '웹푸시 엔드포인트',
   })
   @ApiResponse({ status: 200, description: '구독 해제 성공' })
   async unsubscribe(
@@ -90,7 +90,27 @@ export class WebpushController {
   }
 
   @Get('status')
-  async getStatus(@CurrentUser() user: any, @Query('endpoint') endpoint: string) {
+  @ApiOperation({
+    summary: '웹 푸시 구독 상태 조회',
+    description: '사용자의 웹 푸시 구독 상태를 조회합니다.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '구독 상태 조회 성공',
+    type: Object,
+    schema: {
+      properties: {
+        isSubscribed: {
+          type: 'boolean',
+          description: '구독 여부',
+        },
+      },
+    },
+  })
+  async getStatus(
+    @CurrentUser() user: any,
+    @Query('endpoint') endpoint: string,
+  ) {
     return await this.webpushService.getSubscriptionStatus(user.id, endpoint);
   }
 }
