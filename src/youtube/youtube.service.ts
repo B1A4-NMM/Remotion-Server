@@ -26,7 +26,6 @@ export class YoutubeService {
     }
   }
 
-  @Cron('0 0 * * *') // 매 자정마다 실행
   async handleCron() {
     this.logger.log('Calling searchAndStoreVideos() via cron job.');
     const env = this.configService.get<string>('ENVIRONMENT')!;
