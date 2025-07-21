@@ -279,7 +279,7 @@ export class NotificationService {
       select: ['id'],
     });
 
-    return result.length;
+    return {count : result.length};
   }
 
   @Cron('3 16 * * *')
