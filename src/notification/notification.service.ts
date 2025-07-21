@@ -14,6 +14,7 @@ import {
   TODO_MESSAGE,
 } from '../constants/noti-message.constants';
 import { Cron } from '@nestjs/schedule';
+import { WEBPUSH_ICON_PATH } from '../constants/image-path.constants';
 
 @Injectable()
 export class NotificationService {
