@@ -365,6 +365,13 @@ export class DiaryService {
     diaryDetailRes.stressWarning = warnings.stressWarning;
     diaryDetailRes.depressionWarning = warnings.depressionWarning;
 
+    const emotions = await this.emotionService.findAllDiaryEmotions(diary);
+    if (emotions.length > 0)
+      diaryDetailRes.emotions = emotions.map(
+        (emotion) => new EmotionRes(emotion.emotion, emotion.intensity),
+      );
+    else diaryDetailRes.emotions = [];
+
     // 스트레스 테스트 날짜 기반 경고 플래그 업데이트
     // STRESS_WARNING_PERIOD_DAYS 환경 변수에서 기간을 가져오고, 없으면 기본값 30일 사용
     const stressPeriod = this.configService.get<number>(
@@ -545,6 +552,26 @@ export class DiaryService {
     const rows = await qb.getMany();
 
     return await this.makeBookmarkScroll(rows, take, cursor);
+  }
+
+  /**
+   * 커서를 통해 일기를 가져옴
+   */
+  async getDiariesInfiniteByDate(memberId: string, limit: number, cursor?: number) {
+    const skip = cursor ? cursor * limit : 0;
+    const take = limit + 1; // Check for more items
+
+    const qb = this.diaryRepository
+      .createQueryBuilder('d')
+      .where('d.author_id = :memberId', { memberId })
+      .orderBy('d.written_date', 'DESC')
+      .addOrderBy('d.id', 'DESC')
+      .skip(skip)
+      .take(take);
+
+    const rows = await qb.getMany();
+
+    return await this.makeScroll(rows, take, cursor, memberId);
   }
 
   /**

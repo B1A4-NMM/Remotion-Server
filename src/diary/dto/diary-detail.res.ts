@@ -5,6 +5,7 @@ import { EmotionScoresResDto } from './emotion-scores-res.dto';
 import { Type } from 'class-transformer';
 import { RecommendRoutineRes } from '../../routine/dto/recommend-routine.res';
 import { DiaryAnalysisJson } from './diary-json.res';
+import { EmotionRes } from './diary-home-list.res';
 
 export class DiaryDetailRes {
   @ApiProperty({ description: '다이어리 ID' })
@@ -33,6 +34,12 @@ export class DiaryDetailRes {
 
   @ApiProperty({ description: '다이어리 내용' })
   content: string;
+
+  @ApiProperty({
+    type: [EmotionRes],
+    description: '일기에 포함된 감정들, 감정의 강도와 같이 보냅니다',
+  })
+  emotions: EmotionRes[] = [];
 
   @ApiProperty({ description: '위도', required: false, nullable: true })
   latitude?: number | null;
