@@ -12,7 +12,12 @@ import {
   Person,
 } from '../util/json.parser';
 import { CommonUtilService } from '../util/common-util.service';
-import { EmotionType } from '../enums/emotion-type.enum';
+import {
+  EmotionType,
+  RelationEmotions,
+  SelfEmotions,
+  StateEmotions,
+} from '../enums/emotion-type.enum';
 import { MemberService } from '../member/member.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Diary } from '../entities/Diary.entity';
@@ -243,7 +248,8 @@ export class AnalysisDiaryService {
         const validSelfEmotions: string[] = [];
         const validSelfIntensities: number[] = [];
         activity.self_emotions.emotion.forEach((emotionStr, index) => {
-          if (this.util.parseEnumValue(EmotionType, emotionStr) !== null) {
+          const emotion = this.util.parseEnumValue(EmotionType, emotionStr);
+          if (emotion && SelfEmotions.includes(emotion)) {
             validSelfEmotions.push(emotionStr);
             validSelfIntensities.push(
               activity.self_emotions.emotion_intensity[index],
@@ -259,7 +265,8 @@ export class AnalysisDiaryService {
         const validStateEmotions: string[] = [];
         const validStateIntensities: number[] = [];
         activity.state_emotions.emotion.forEach((emotionStr, index) => {
-          if (this.util.parseEnumValue(EmotionType, emotionStr) !== null) {
+          const emotion = this.util.parseEnumValue(EmotionType, emotionStr);
+          if (emotion && StateEmotions.includes(emotion)) {
             validStateEmotions.push(emotionStr);
             validStateIntensities.push(
               activity.state_emotions.emotion_intensity[index],
@@ -277,7 +284,11 @@ export class AnalysisDiaryService {
             const validPersonEmotions: string[] = [];
             const validPersonIntensities: number[] = [];
             person.interactions.emotion.forEach((emotionStr, index) => {
-              if (this.util.parseEnumValue(EmotionType, emotionStr) !== null) {
+              const emotion = this.util.parseEnumValue(
+                EmotionType,
+                emotionStr,
+              );
+              if (emotion && RelationEmotions.includes(emotion)) {
                 validPersonEmotions.push(emotionStr);
                 validPersonIntensities.push(
                   person.interactions.emotion_intensity[index],
