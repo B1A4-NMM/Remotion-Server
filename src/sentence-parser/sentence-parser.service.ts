@@ -57,7 +57,7 @@ export class SentenceParserService {
   /**
    * 멤버 아이디와 문장을 받아 유사한 문장을 조회합니다, SEARCH_TOP_K개의 문장을 반환합니다
    */
-  async searchSentenceByMember(query: string, memberId: string) {
+  async searchDiaryViaRAG(query: string, memberId: string) {
     const vector = await this.embedService.embed_query(query);
     const hits = await this.qdrantService.searchVectorByMember(
       this.collection,
@@ -114,8 +114,10 @@ export class SentenceParserService {
       };
     });
 
+    const search_threshold = this.configService.get<number>('SEARCH_THRESHOLD') ?? 0.4;
+    console.log(`search_threshold = ${search_threshold}`)
     // 🔽 필터 추가: rerankScore가 0.7 이상인 것만
-    const filtered = final.filter((item) => item.rerankScore >= SEARCH_THRESHOLD);
+    const filtered = final.filter((item) => item.rerankScore >= search_threshold);
 
     const payloads: {diary_id:number, memberId:string, sentence:string, date:string}[] = filtered.map((item) => item.payload);
     let ragResult = await this.LLMService.getSearchDiary(query, payloads);

@@ -645,7 +645,7 @@ export class DiaryService {
     if (keyword.length > minLength) {
       this.logger.log(`'${keyword}'에 대한 벡터 검색을 수행합니다.`);
       const searchResult =
-        await this.sentenceParserService.searchSentenceByMember(
+        await this.sentenceParserService.searchDiaryViaRAG(
           keyword,
           memberId,
         );

@@ -38,6 +38,6 @@ export class SentenceParserController {
   @UseGuards(AuthGuard('jwt'))
   async searchSentence(@Query('q') q: string, @CurrentUser() user: any) {
     const userID = user.id;
-    return this.sentenceParserService.searchSentenceByMember(q, userID);
+    return this.sentenceParserService.searchDiaryViaRAG(q, userID);
   }
 }
