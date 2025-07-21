@@ -23,6 +23,11 @@ export class DiaryDetailRes {
   })
   audioPath?: string | null;
 
+  @ApiProperty({
+    description: '북마크 여부'
+  })
+  isBookmarked:boolean = false;
+
   @ApiProperty({description: '일기에 나타난 사람들'})
   people:{name:string, changeScore:number}[] = []
 
@@ -57,6 +62,7 @@ export class DiaryDetailRes {
   constructor(diary: Diary) {
     this.id = diary.id;
     this.writtenDate = diary.written_date;
+    this.isBookmarked = diary.is_bookmarked;
     this.photoPath = diary.photo_path ?? [];
     this.audioPath = diary.audio_path;
     this.content = diary.content;
