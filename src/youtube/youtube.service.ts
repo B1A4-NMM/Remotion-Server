@@ -2,12 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { YoutubeApi } from '../entities/YoutubeApi.entity';
-import { Cron } from '@nestjs/schedule';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { EMOTION_YOUTUBE_KEYWORDS } from '../constants/emotion-youtube.constant';
 import { firstValueFrom } from 'rxjs';
-import { EmotionType } from '../enums/emotion-type.enum'; // EmotionType 임포트
+import { EmotionType } from '../enums/emotion-type.enum';
+import { CommonUtilService } from '../util/common-util.service'; // EmotionType 임포트
 
 @Injectable()
 export class YoutubeService {
@@ -19,6 +19,7 @@ export class YoutubeService {
     private readonly youtubeApiRepository: Repository<YoutubeApi>,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly utilService: CommonUtilService
   ) {
     this.YOUTUBE_API_KEY = this.configService.get<string>('YOUTUBE_API_KEY')!;
     if (!this.YOUTUBE_API_KEY) {
@@ -140,13 +141,6 @@ export class YoutubeService {
       return null;
     }
 
-    const result: string[] = [];
-
-    for (let i = 0; i < 3; i++) {
-      const randomIndex = Math.floor(Math.random() * videos.length);
-      result.push(videos[randomIndex].videoId);
-    }
-
-    return result;
+    return this.utilService.pickRandomUnique(videos, 3).map((y) => y.videoId);
   }
 }
