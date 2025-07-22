@@ -96,9 +96,14 @@ export class AuthService {
   }
 
   async demoLoginTemplate(id:string) {
+    let nickname = '하루뒤'
+    if (id === 'lee') nickname = '이순신'
+    else if (id === 'harry') nickname = '해리포터'
+    else if (id === 'traveler') nickname = '여행자'
+
     const demoUser = {
       id: id,
-      nickname: `하루뒤 ${id}`,
+      nickname: nickname,
       email: `${id}@example.com`,
       type: SocialType.DEMO,
     };
