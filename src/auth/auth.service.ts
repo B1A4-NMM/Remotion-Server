@@ -100,6 +100,7 @@ export class AuthService {
     if (id === 'lee') nickname = '이순신'
     else if (id === 'harry') nickname = '해리포터'
     else if (id === 'traveler') nickname = '여행자'
+    else if (id === 'anne') nickname = '안네'
 
     const demoUser = {
       id: id,
