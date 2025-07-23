@@ -49,7 +49,7 @@ export class RelationService {
 
     // affection과 count를 합산한 점수 생성
     const combinedScores = topTargets.map(
-      (target) => target.affection + target.count,
+      (target) => target.affection + target.count / 10,
     );
     const minScore = Math.min(...combinedScores);
     const maxScore = Math.max(...combinedScores);
@@ -58,7 +58,7 @@ export class RelationService {
       let emotion = await this.emotionService.topEmotionsToTargetSecond(target);
       if (!emotion || emotion.length === 0) continue;
 
-      const combinedScore = target.affection + target.count;
+      const combinedScore = target.affection + target.count / 10;
       const normalizedAffection = this.normalize(
         combinedScore,
         minScore,
