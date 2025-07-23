@@ -1,12 +1,13 @@
 
 import { ApiProperty } from '@nestjs/swagger';
+import { PhotoDetailDto } from './photo-detail.dto';
 
 export class InfinitePhotosResDto {
   @ApiProperty({
-    description: '사진 URL 목록',
-    type: [String],
+    description: '사진 상세 정보 목록',
+    type: [PhotoDetailDto],
   })
-  photos: string[];
+  photos: PhotoDetailDto[];
 
   @ApiProperty({
     description: '다음 페이지 존재 여부',
@@ -21,7 +22,7 @@ export class InfinitePhotosResDto {
   })
   nextCursor: number | null;
 
-  constructor(photos: string[], hasMore: boolean, nextCursor: number | null) {
+  constructor(photos: PhotoDetailDto[], hasMore: boolean, nextCursor: number | null) {
     this.photos = photos;
     this.hasMore = hasMore;
     this.nextCursor = nextCursor;

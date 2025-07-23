@@ -54,6 +54,7 @@ import {
 } from '../constants/noti-message.constants';
 import { NotificationType } from '../enums/notification-type.enum';
 import { InfinitePhotosResDto } from './dto/infinite-photos.res.dto';
+import { PhotoDetailDto } from './dto/photo-detail.dto';
 
 @Injectable()
 export class DiaryService {
@@ -1006,7 +1007,11 @@ export class DiaryService {
     const actualDiaries = hasMore ? diaries.slice(0, -1) : diaries;
     const nextCursor = hasMore ? (cursor || 0) + 1 : null;
 
-    const photos = actualDiaries.flatMap((diary) => diary.photo_path);
+    const photos = actualDiaries.flatMap((diary) =>
+      diary.photo_path.map(
+        (url) => new PhotoDetailDto(diary.id, diary.written_date, url),
+      ),
+    );
 
     return new InfinitePhotosResDto(photos, hasMore, nextCursor);
   }
