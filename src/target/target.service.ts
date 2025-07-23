@@ -30,43 +30,43 @@ export class TargetService {
 
   /**
    * 대상이 최근에 언급된 빈도를 기반으로 점수를 반환하는 함수 (성능 개선 버전)
-   * @param targetId 점수를 계산할 대상의 ID
-   * @returns 최근 언급 빈도에 따른 점수 (10, 6, 4, 2, 0)
    */
   async getRecentMentionsScore(targetId: number): Promise<number> {
     const today = LocalDate.now();
-    const oneMonthAgo = today.minusMonths(1);
+    const oneWeekAgo = today.minusWeeks(1);
+    const twoWeeksAgo = today.minusWeeks(2);
+    const threeWeeksAgo = today.minusWeeks(3);
 
-    // QueryBuilder를 사용하여 가장 최근의 관련 기록 하나만 효율적으로 조회
-    const mostRecentDiaryTarget = await this.diaryTargetRepository
+    // 최근 3주 동안의 모든 관련 기록을 날짜와 함께 조회
+    const diaryTargets = await this.diaryTargetRepository
       .createQueryBuilder('diaryTarget')
-      .innerJoinAndSelect('diaryTarget.diary', 'diary') // diary 정보를 함께 선택
+      .innerJoin('diaryTarget.diary', 'diary')
+      .addSelect('diary.written_date') // select에 written_date 추가
       .where('diaryTarget.target_id = :targetId', { targetId })
-      .andWhere('diary.written_date >= :oneMonthAgo', {
-        oneMonthAgo: oneMonthAgo.toString(),
+      .andWhere('diary.written_date >= :threeWeeksAgo', {
+        threeWeeksAgo: threeWeeksAgo.toString(),
       })
-      // DB가 written_date를 문자열이 아닌 날짜로 확실히 인지하고 정렬하도록 CAST 사용
-      .orderBy('CAST(diary.written_date AS DATE)', 'DESC')
-      .getOne(); // 가장 최근 기록 하나만 가져옴
+      .getMany();
 
-    if (!mostRecentDiaryTarget) {
-      return 0; // 최근 한 달 내 기록이 없으면 0점
+    if (diaryTargets.length === 0) {
+      return 0; // 최근 3주 내 기록이 없으면 0점
     }
 
-    // 가장 최근 날짜를 기준으로 점수 계산
-    const mostRecentDate = mostRecentDiaryTarget.diary.written_date;
-    const daysDiff = ChronoUnit.DAYS.between(mostRecentDate, today);
+    let score = 0;
+    for (const record of diaryTargets) {
+      const writtenDate = record.diary.written_date;
 
-    if (daysDiff <= 7) {
-      return 10; // 일주일 이내
+      if (writtenDate.isAfter(oneWeekAgo) || writtenDate.isEqual(oneWeekAgo)) {
+        score += 1; // 1주일 이내
+      } else if (writtenDate.isAfter(twoWeeksAgo) || writtenDate.isEqual(twoWeeksAgo)) {
+        score += 0.5; // 2주일 이내
+      } else {
+        score += 0.2; // 3주일 이내
+      }
     }
-    if (daysDiff <= 14) {
-      return 6; // 2주일 이내
-    }
-    if (daysDiff <= 21) {
-      return 4; // 3주일 이내
-    }
-    return 2; // 한 달 이내
+
+    // 최대 점수는 5점으로 제한
+    return Math.min(score, 5);
   }
 
   /**
