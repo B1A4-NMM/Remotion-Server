@@ -43,6 +43,7 @@ import { InfiniteScrollRes } from './dto/infinite-scroll.res';
 import { SearchDiaryRes } from './dto/search-diary.res';
 import { DiaryDetailRes } from './dto/diary-detail.res';
 import { WrittenDaysDto } from './dto/written-days.dto';
+import { InfinitePhotosResDto } from './dto/infinite-photos.res.dto';
 
 // import { Member } from '../entities/Member.entity';
 
@@ -321,6 +322,28 @@ export class DiaryController {
     @Query('month', ParseIntPipe) month: number,
   ): Promise<WrittenDaysDto> {
     return this.diaryService.getWrittenDays(member.id, year, month);
+  }
+
+  @Get('/photos')
+  @ApiOperation({ summary: '모든 사진 모아보기 (무한 스크롤)' })
+  @ApiQuery({ name: 'limit', required: false, description: '한 번에 가져올 사진 개수, default 30' })
+  @ApiQuery({ name: 'cursor', required: false, description: '페이지 커서, default 0' })
+  @ApiResponse({ 
+    status: 200, 
+    description: '사진 목록 조회 성공', 
+    type: InfinitePhotosResDto 
+  })
+  async getAllDiaryPhotosInfinite(
+    @CurrentUser() user: any,
+    @Query('limit', new DefaultValuePipe(30), ParseIntPipe) limit: number,
+    @Query('cursor') cursor?: string,
+  ) {
+    const cursorNum = cursor ? parseInt(cursor, 10) : undefined;
+    return this.diaryService.getAllDiaryPhotosInfinite(
+      user.id,
+      limit,
+      cursorNum,
+    );
   }
 
   @ApiOperation({ summary: '특정 일기 가공 데이터 조회' })

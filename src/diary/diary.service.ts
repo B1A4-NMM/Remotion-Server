@@ -6,6 +6,7 @@ import {
   LessThan,
   LessThanOrEqual,
   Like,
+  Raw,
   Repository,
 } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -52,6 +53,7 @@ import {
   ROUTINE_MESSAGE,
 } from '../constants/noti-message.constants';
 import { NotificationType } from '../enums/notification-type.enum';
+import { InfinitePhotosResDto } from './dto/infinite-photos.res.dto';
 
 @Injectable()
 export class DiaryService {
@@ -970,5 +972,42 @@ export class DiaryService {
     const ids = diaries.map((d) => d.id);
     const result = await this.diaryRepository.findBy({ id: In(ids) });
     return result;
+  }
+
+  /**
+   * 사용자가 첨부한 모든 사진을 작성 날짜 순으로 가져옵니다
+   * @param memberId
+   */
+  async getAllDiaryPhotosInfinite(
+    memberId: string,
+    limit: number,
+    cursor?: number,
+  ): Promise<InfinitePhotosResDto> {
+    const skip = cursor ? cursor * limit : 0;
+    const take = limit + 1; // 다음 페이지가 있는지 확인하기 위해 1개 더 가져옴
+
+    const diaries = await this.diaryRepository.find({
+      where: {
+        author: { id: memberId },
+        photo_path: Raw(
+          (alias) => `${alias} IS NOT NULL AND JSON_LENGTH(${alias}) > 0`,
+        ),
+      },
+      select: ['id', 'written_date', 'photo_path'], // 정렬을 위해 written_date와 id 포함
+      order: {
+        written_date: 'DESC', // 최신순으로 정렬
+        id: 'DESC', // 날짜가 같을 경우 id로 정렬하여 일관성 유지
+      },
+      skip: skip,
+      take: take,
+    });
+
+    const hasMore = diaries.length === take;
+    const actualDiaries = hasMore ? diaries.slice(0, -1) : diaries;
+    const nextCursor = hasMore ? (cursor || 0) + 1 : null;
+
+    const photos = actualDiaries.flatMap((diary) => diary.photo_path);
+
+    return new InfinitePhotosResDto(photos, hasMore, nextCursor);
   }
 }
