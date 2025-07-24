@@ -472,7 +472,7 @@ export class EmotionService {
 
     const results = await this.diaryEmotionRepository
       .createQueryBuilder('diaryEmotion')
-      .select('diary.written_date', 'date')
+      .select("DATE_FORMAT(diary.written_date, '%Y-%m-%d')", 'date')
       .addSelect('diaryEmotion.emotion', 'emotionType') // 감정 타입을 가져와서 그룹을 식별
       .addSelect('SUM(diaryEmotion.intensity)', 'intensity')
       .addSelect('COUNT(diaryEmotion.id)', 'count')
@@ -498,8 +498,10 @@ export class EmotionService {
         const key = `${row.date}-${emotionGroup}`;
 
         if (!summaryMap.has(key)) {
-            summaryMap.set(key, {
-                date: LocalDate.parse(new Date(row.date).toISOString().slice(0, 10)),
+          const date = LocalDate.parse(new Date(row.date).toISOString().slice(0, 10));
+          console.log(`date = ${date}, row.date = ${row.date}`)
+          summaryMap.set(key, {
+                date: LocalDate.parse(row.date),
                 intensity: 0,
                 count: 0,
                 emotionGroup: emotionGroup,
