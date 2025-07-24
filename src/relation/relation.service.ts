@@ -69,8 +69,7 @@ export class RelationService {
         id: target.id,
         name: target.name,
         affection: normalizedAffection,
-        highestEmotion: emotion[0].emotion,
-        secondEmotion: emotion[1]?.emotion ?? null,
+        emotions: await this.emotionService.summarizeEmotionsByTarget(target.id),
         count: target.count,
       });
     }
@@ -108,7 +107,7 @@ export class RelationService {
   async getTargetDetailAnalysis(memberId: string, targetId: number) {
     const target = await this.targetService.findOneById(memberId, targetId);
     const remotionDetails =
-      await this.emotionService.getEmotionSummaryByTarget(targetId);
+      await this.emotionService.summarizeEmotionsByTarget(targetId);
     const diaries = await this.targetService.getDiariesByTarget(targetId);
     const diaryRes: DiaryRes[] = [];
     const bonusScore = await this.targetService.getRecentMentionsScore(targetId)

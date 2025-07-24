@@ -152,6 +152,37 @@ export class EmotionService {
   }
 
   /**
+   * 특정 대상과 관련된 모든 감정을 집계하여 반환합니다.
+   * 날짜에 관계없이 각 감정 유형별로 총 강도와 발생 횟수를 합산합니다.
+   * @param targetId - 대상의 ID
+   * @returns 감정별 집계 결과 배열
+   */
+  async summarizeEmotionsByTarget(
+    targetId: number,
+  ): Promise<{ emotion: EmotionType; totalIntensity: number; totalCount: number }[]> {
+    const results = await this.emotionTargetRepository
+      .createQueryBuilder('et')
+      .select('et.emotion', 'emotion')
+      .addSelect('SUM(et.emotion_intensity)', 'totalIntensity')
+      .addSelect('SUM(et.count)', 'totalCount')
+      .innerJoin('et.target', 't')
+      .where('t.id = :targetId', { targetId })
+      .groupBy('et.emotion')
+      .orderBy('totalIntensity', 'DESC')
+      .getRawMany<{
+        emotion: EmotionType;
+        totalIntensity: string;
+        totalCount: string;
+      }>();
+
+    return results.map((row) => ({
+      emotion: row.emotion,
+      totalIntensity: parseFloat(row.totalIntensity),
+      totalCount: parseInt(row.totalCount, 10),
+    }));
+  }
+
+  /**
    * 기간을 인자로 받아 해당 기간 내에 받았던 대상별, 날짜별 긍정적인 감정들을 가져옵니다
    * @param memberId
    * @param period

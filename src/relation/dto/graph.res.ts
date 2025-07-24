@@ -2,6 +2,7 @@ import { RelationGraphDto } from './relation-graph.dto';
 import { EmotionType } from '../../enums/emotion-type.enum';
 import { ApiProperty } from '@nestjs/swagger';
 
+
 class GraphEmotionRes {
   @ApiProperty({
     enum: EmotionType,

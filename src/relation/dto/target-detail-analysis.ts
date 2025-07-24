@@ -2,10 +2,23 @@ import { EmotionSummaryByTargetResponseDto } from '../../emotion/dto/emotion-sum
 import { DiaryRes } from '../../diary/dto/diary-home-list.res';
 import { Target } from '../../entities/Target.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import { EmotionType } from '../../enums/emotion-type.enum';
 
 export class TargetActivityRes {
   content:string
   count:number
+}
+
+class EmotionDetailDto {
+  @ApiProperty({ enum: EmotionType, description: '감정 종류' })
+  emotion: EmotionType;
+
+  @ApiProperty({ description: '감정 강도 합' })
+  totalIntensity: number;
+
+  @ApiProperty({ description: '감정 횟수' })
+  totalCount: number;
+
 }
 
 export class TargetDetailAnalysis {
@@ -19,10 +32,10 @@ export class TargetDetailAnalysis {
   closenessScore: number
 
   @ApiProperty({
-    type: [EmotionSummaryByTargetResponseDto],
+    type: [EmotionDetailDto],
     description: '대상별 감정 요약 목록',
   })
-  emotions: EmotionSummaryByTargetResponseDto[] = [];
+  emotions: EmotionDetailDto[] = [];
 
   @ApiProperty({ type: [DiaryRes], description: '대상이 포함된 일기 목록' })
   diaries: DiaryRes[] = [];
@@ -32,7 +45,7 @@ export class TargetDetailAnalysis {
 
   constructor(
     target: Target,
-    emotions: EmotionSummaryByTargetResponseDto[],
+    emotions: EmotionDetailDto[],
     diaries: DiaryRes[],
     activities: TargetActivityRes[],
     bonusScore: number,
