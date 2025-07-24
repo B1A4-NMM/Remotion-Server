@@ -36,7 +36,7 @@ import { MemberSummary } from '../entities/member-summary.entity';
 import { SentenceParserService } from '../sentence-parser/sentence-parser.service';
 import { TargetService } from '../target/target.service';
 import { InfiniteScrollRes } from './dto/infinite-scroll.res';
-import { SearchDiaryRes } from './dto/search-diary.res';
+import { searchDiaryInfo, SearchDiaryRes } from './dto/search-diary.res';
 import { ActivityService } from '../activity/activity.service';
 import { DiaryBookmarkListRes } from './dto/DiaryBookmarkListRes';
 import { InfiniteBookmarkScrollRes } from './dto/infinite-bookmark-scroll.res';
@@ -55,6 +55,7 @@ import {
 import { NotificationType } from '../enums/notification-type.enum';
 import { InfinitePhotosResDto } from './dto/infinite-photos.res.dto';
 import { PhotoDetailDto } from './dto/photo-detail.dto';
+import { SimilarSentence } from '../claude/claude.service';
 
 @Injectable()
 export class DiaryService {
@@ -216,17 +217,17 @@ export class DiaryService {
   /**
    * 멤버 아이디와 날짜를 받아 해당되는 다이어리 하나를 반환합니다
    */
-  async getDiaryByDate(memberId: string, date: LocalDate) {
-    const member = await this.memberService.findOne(memberId);
-
-    const diaries = await this.diaryRepository.find({
-      where: { author: member, written_date: date },
-      relations: ['diaryTargets', 'diaryTargets.target', 'diaryEmotions'],
-    });
-
-    const res = this.buildDiaryList(diaries);
-    return res;
-  }
+  // async getDiaryByDate(memberId: string, date: LocalDate) {
+  //   const member = await this.memberService.findOne(memberId);
+  //
+  //   const diaries = await this.diaryRepository.find({
+  //     where: { author: member, written_date: date },
+  //     relations: ['diaryTargets', 'diaryTargets.target', 'diaryEmotions'],
+  //   });
+  //
+  //   const res = this.buildDiaryList(diaries);
+  //   return res;
+  // }
 
   /**
    * 사용자가 작성한 모든 일기들을 목록으로 보여줌
@@ -250,49 +251,49 @@ export class DiaryService {
   /**
    * 날짜와 멤버 정보를 받아 다른 날짜의 일기 정보 출력
    */
-  async getDiaryInfoByDate(memberId: string, date: LocalDate) {
-    const diaries = await this.getDiaryByDate(memberId, date);
-    const emotions = await this.emotionService.getEmotionsByDate(
-      memberId,
-      date,
-    );
-    const result = new DiaryHomeRes();
-    result.todayDiaries = diaries.diaries;
-    result.todayEmotions = emotions;
-    return result;
-  }
+  // async getDiaryInfoByDate(memberId: string, date: LocalDate) {
+  //   const diaries = await this.getDiaryByDate(memberId, date);
+  //   const emotions = await this.emotionService.getEmotionsByDate(
+  //     memberId,
+  //     date,
+  //   );
+  //   const result = new DiaryHomeRes();
+  //   result.todayDiaries = diaries.diaries;
+  //   result.todayEmotions = emotions;
+  //   return result;
+  // }
 
   /**
    *  홈 화면에서 보여질 정보들을 추출
    *  RETURN [ 오늘의 감정 , 오늘 작성한 일기 (감정, 대상) ]
    */
-  async getTodayDiariesRes(memberId: string): Promise<DiaryHomeRes> {
-    const diaries = await this.getTodayDiaries(memberId);
-    const todayEmotions = await this.emotionService.getTodayEmotions(memberId);
-    const result = new DiaryHomeRes();
-    result.todayDiaries = diaries.diaries;
-    result.todayEmotions = todayEmotions;
-    return result;
-  }
+  // async getTodayDiariesRes(memberId: string): Promise<DiaryHomeRes> {
+  //   const diaries = await this.getTodayDiaries(memberId);
+  //   const todayEmotions = await this.emotionService.getTodayEmotions(memberId);
+  //   const result = new DiaryHomeRes();
+  //   result.todayDiaries = diaries.diaries;
+  //   result.todayEmotions = todayEmotions;
+  //   return result;
+  // }
 
   /**
    * 오늘 작성한 일기 가져오기
    */
-  private async getTodayDiaries(memberId: string) {
-    const date = LocalDate.now();
-    return this.getDiariesByDate(memberId, date);
-  }
+  // private async getTodayDiaries(memberId: string) {
+  //   const date = LocalDate.now();
+  //   return this.getDiariesByDate(memberId, date);
+  // }
 
-  async getDiariesByDate(memberId: string, date: LocalDate) {
-    const member = await this.memberService.findOne(memberId);
-    const diaries = await this.diaryRepository.find({
-      where: { author: member, written_date: date },
-      relations: ['diaryTargets', 'diaryTargets.target', 'diaryEmotions'],
-    });
-
-    const res = this.buildDiaryList(diaries);
-    return res;
-  }
+  // async getDiariesByDate(memberId: string, date: LocalDate) {
+  //   const member = await this.memberService.findOne(memberId);
+  //   const diaries = await this.diaryRepository.find({
+  //     where: { author: member, written_date: date },
+  //     relations: ['diaryTargets', 'diaryTargets.target', 'diaryEmotions'],
+  //   });
+  //
+  //   const res = this.buildDiaryList(diaries);
+  //   return res;
+  // }
 
   /**
    * 다이어리 엔티티 배열을 인자로 받아 DTO로 변환합니다
@@ -302,7 +303,7 @@ export class DiaryService {
   private buildDiaryList(diaries: Diary[]) {
     const res: DiaryHomeListRes = new DiaryHomeListRes();
     for (const diary of diaries) {
-      let diaryRes = new DiaryRes();
+      let diaryRes = new DiaryRes(diary, [], [], []);
       diaryRes.diaryId = diary.id;
       diaryRes.title = diary.title;
       diaryRes.writtenDate = diary.written_date;
@@ -655,7 +656,7 @@ export class DiaryService {
     memberId: string,
     keyword: string,
   ): Promise<SearchDiaryRes> {
-    // 환경 변수에서 최소 검색어 길이를 가져오거나, 없으면 기본값 6을 사용합니다.
+    // 환경 변수에서 최소 검색어 길이를 가져오거나, 없으면 기본값 5를 사용합니다.
     const minLength = this.configService.get<number>(
       'SEARCH_KEYWORD_MIN_LENGTH',
       5,
@@ -673,7 +674,8 @@ export class DiaryService {
       );
 
       // 중복된 diaryId를 제거하기 위해 Set을 사용하고, 여러 ID를 한번에 조회합니다.
-      const diaryIds = [...new Set(searchResult.map((v) => v.diary_id))];
+      let duplicateSearchResult = this.deduplicateByDiaryId(searchResult);
+      const diaryIds = duplicateSearchResult.map((d) => d.diary_id);
 
       if (diaryIds.length > 0) {
         diaries = await this.diaryRepository.find({
@@ -687,6 +689,9 @@ export class DiaryService {
 
         // RDB에 존재하는 diary ID만 필터링합니다.
         const existingDiaryIds = new Set(diaries.map((d) => d.id));
+        duplicateSearchResult = duplicateSearchResult.filter((d) =>
+          existingDiaryIds.has(d.diary_id),
+        );
         const deletedDiaryIds = diaryIds.filter(
           (id) => !existingDiaryIds.has(id),
         );
@@ -702,6 +707,13 @@ export class DiaryService {
           );
         }
       }
+      res.diaries = await Promise.all(
+        diaries.map((diary) => {
+          const relateSentence = duplicateSearchResult
+            .find(item => item.diary_id === diary.id)?.sentence!
+          return  this.createFindDiaryRes(diary, keyword, relateSentence);
+        }),
+      );
     } else {
       // 키워드 길이가 짧으면, 내용에 키워드가 포함된 일기를 직접 검색합니다.
       this.logger.log(`'${keyword}'에 대한 내용 기반 검색을 수행합니다.`);
@@ -715,15 +727,25 @@ export class DiaryService {
           written_date: 'DESC', // 최신순으로 정렬합니다.
         },
       });
+      res.diaries = await Promise.all(
+        diaries.map((diary) => this.createFindDiaryRes(diary, keyword, keyword)),
+      );
     }
 
-    // 조회된 일기들을 DTO로 변환합니다.
-    res.diaries = await Promise.all(
-      diaries.map((diary) => this.createDiaryRes(diary)),
-    );
     res.totalCount = res.diaries.length;
 
     return res;
+  }
+
+  private deduplicateByDiaryId(arr: SimilarSentence[]): SimilarSentence[] {
+    const map = new Map<number, SimilarSentence>();
+    for (const item of arr) {
+      if (!map.has(item.diary_id)) {
+        map.set(item.diary_id, item);
+      }
+      // 중복일 경우 가장 먼저 나온 것만 유지 (필요 시 덮어쓰도록 변경 가능)
+    }
+    return Array.from(map.values());
   }
 
   /**
@@ -752,32 +774,67 @@ export class DiaryService {
    * DiaryRes 객체를 만들어서 정보를 넣고 반환합니다
    */
   async createDiaryRes(diary: Diary) {
-    let diaryRes = new DiaryRes();
-    diaryRes.diaryId = diary.id;
-    diaryRes.title = diary.title;
-    diaryRes.writtenDate = diary.written_date;
-    diaryRes.content = diary.content;
-    diaryRes.audioPath = diary.audio_path;
-    diaryRes.photoPath = diary.photo_path;
-    diaryRes.isBookmarked = diary.is_bookmarked;
-    diaryRes.latitude = diary.latitude;
-    diaryRes.longitude = diary.longitude;
-    diaryRes.activities =
+    const activities =
       await this.activityService.getActivityContentsByDiary(diary);
 
     const emotions = await this.emotionService.findAllDiaryEmotions(diary);
+    let emotionResult: EmotionRes[] = [];
     if (emotions.length > 0)
-      diaryRes.emotions = emotions.map(
+      emotionResult = emotions.map(
         (emotion) => new EmotionRes(emotion.emotion, emotion.intensity),
       );
-    else diaryRes.emotions = [];
+    else emotionResult = [];
 
-    const targets = await this.targetService.getTargetByDiary(diary);
-    if (targets.length > 0)
-      diaryRes.targets = targets.map((target) => target.name);
-    else diaryRes.targets = [];
+    let targets = await this.targetService.getTargetByDiary(diary);
+    let targetResult: string[] = [];
+    if (targets.length > 0) targetResult = targets.map((target) => target.name);
+    else targetResult = [];
+    const diaryRes = new DiaryRes(
+      diary,
+      activities,
+      emotionResult,
+      targetResult,
+    );
 
     return diaryRes;
+  }
+
+  async createFindDiaryRes(
+    diary: Diary,
+    searchSentence: string,
+    relateSentence: string,
+  ) {
+    const activities =
+      await this.activityService.getActivityContentsByDiary(diary);
+
+    const emotions = await this.emotionService.findAllDiaryEmotions(diary);
+    let emotionResult: EmotionRes[] = [];
+    if (emotions.length > 0)
+      emotionResult = emotions.map(
+        (emotion) => new EmotionRes(emotion.emotion, emotion.intensity),
+      );
+    else emotionResult = [];
+
+    let targets = await this.targetService.getTargetByDiary(diary);
+    let targetResult: string[] = [];
+    if (targets.length > 0) targetResult = targets.map((target) => target.name);
+    else targetResult = [];
+
+    const relate = await this.parseContent(relateSentence);
+    const diaryRes = new searchDiaryInfo(
+      diary,
+      activities,
+      emotionResult,
+      targetResult,
+      searchSentence,
+      relate,
+    );
+
+    return diaryRes;
+  }
+
+  private async parseContent(content: string) {
+    return content.replace(/^\[[^\]]*\]\s*/, '');
   }
 
   /**

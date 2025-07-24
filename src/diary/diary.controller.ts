@@ -167,16 +167,16 @@ export class DiaryController {
     return await this.diaryService.getDiaryResByDate(memberId, date);
   }
 
-  @ApiOperation({
-    summary: '오늘의 일기',
-    description: '오늘 작성한 일기와 그에 나타난 감정들을 보여줍니다',
-  })
-  @ApiResponse({ type: DiaryHomeRes })
-  @Get('/today')
-  async getTodayDiary(@CurrentUser() user): Promise<DiaryHomeRes> {
-    const memberId = user.id;
-    return this.diaryService.getTodayDiariesRes(memberId);
-  }
+  // @ApiOperation({
+  //   summary: '오늘의 일기',
+  //   description: '오늘 작성한 일기와 그에 나타난 감정들을 보여줍니다',
+  // })
+  // @ApiResponse({ type: DiaryHomeRes })
+  // @Get('/today')
+  // async getTodayDiary(@CurrentUser() user): Promise<DiaryHomeRes> {
+  //   const memberId = user.id;
+  //   return this.diaryService.getTodayDiariesRes(memberId);
+  // }
 
   @ApiOperation({ summary: '특정 일기 json 데이터 조회' })
   @ApiResponse({
