@@ -93,6 +93,7 @@ export class DiaryRes {
     this.activities = activities
     this.emotions = emotions
     this.targets = targets
+    this.isBookmarked = diary.is_bookmarked
   }
 }
 
