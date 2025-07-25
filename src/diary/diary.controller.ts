@@ -44,6 +44,7 @@ import { SearchDiaryRes } from './dto/search-diary.res';
 import { DiaryDetailRes } from './dto/diary-detail.res';
 import { WrittenDaysDto } from './dto/written-days.dto';
 import { InfinitePhotosResDto } from './dto/infinite-photos.res.dto';
+import { ConfigService } from '@nestjs/config';
 
 // import { Member } from '../entities/Member.entity';
 
@@ -56,6 +57,7 @@ export class DiaryController {
     private readonly diaryService: DiaryService,
     private readonly s3Service: S3Service,
     private readonly uploadService: UploadService,
+    private readonly configService: ConfigService
   ) {}
 
   @Post()
@@ -85,6 +87,11 @@ export class DiaryController {
       audios?: Express.Multer.File[];
     },
   ) {
+    const env = this.configService.get<string>('MAKE_ENV')
+    if (env === 'NO' && (user.id === 'lee' || user.id === 'anne')){
+      return
+    }
+
     let imageUrl: string[] | null = null;
     let audioUrl: string | null = null;
     if (files.photo) {
@@ -218,6 +225,10 @@ export class DiaryController {
   @Delete(':id')
   async deleteDiary(@CurrentUser() user: any, @Param('id') id: string) {
     const memberId: string = user.id;
+    const env = this.configService.get<string>('MAKE_ENV')
+    if (env === 'NO' && (user.id === 'lee' || user.id === 'anne')){
+      return
+    }
     return await this.diaryService.deleteDiary(memberId, +id);
   }
 
