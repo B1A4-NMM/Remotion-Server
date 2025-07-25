@@ -125,7 +125,7 @@ RETURN **ONLY valid JSON** that fits the schema above.
 • Self-check before output: enum match, array length sync.
 
 ==============  1. ACTIVITY  ==============
-Definition = Actions performed by the author (including intentions and plans).
+Definition = Actions performed by the author (including intentions and plans). + 작성자가 겪은 사건
 Extract ALL regardless of importance.  
 예: 일하다·회의하다·수영·요리·대화 등.
 Without specific actions, activity_analysis = []
