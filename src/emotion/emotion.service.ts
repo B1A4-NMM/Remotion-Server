@@ -529,8 +529,6 @@ export class EmotionService {
         const key = `${row.date}-${emotionGroup}`;
 
         if (!summaryMap.has(key)) {
-          const date = LocalDate.parse(new Date(row.date).toISOString().slice(0, 10));
-          console.log(`date = ${date}, row.date = ${row.date}`)
           summaryMap.set(key, {
                 date: LocalDate.parse(row.date),
                 intensity: 0,

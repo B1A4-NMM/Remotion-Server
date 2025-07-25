@@ -65,7 +65,6 @@ export class AnalysisDiaryService {
     audioUrl?: string | null,
   ) {
     let result = await this.promptService.serializeAnalysis(dto.content);
-    console.log("일기 분석 완료")
     result = this.filterInvalidEmotionsFromResult(result); // 유효하지 않은 감정 필터링
 
     let author = await this.memberService.findOne(memberId);
