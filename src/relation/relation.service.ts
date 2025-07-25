@@ -55,8 +55,8 @@ export class RelationService {
     const maxScore = Math.max(...combinedScores);
 
     for (const target of topTargets) {
-      let emotion = await this.emotionService.topEmotionsToTargetSecond(target);
-      if (!emotion || emotion.length === 0) continue;
+      // let emotion = await this.emotionService.topEmotionsToTargetSecond(target);
+      // if (!emotion || emotion.length === 0) continue;
 
       const combinedScore = target.affection + target.count / 10;
       const normalizedAffection = this.normalize(

@@ -184,6 +184,7 @@ Choose ONE per activity from 24 enum, else "None".
   • remove 호칭·애칭(“민수형”→“민수”, “도영이”→“도영”)    
   • Remove person p if
         p.name matches /(친구|팀원|동료|코치)$/ AND p.interactions.relation_emotion == [].
+  • 정확한 호칭이 나타나지 않는 대상에 대해서는 "익명의 누군가"를 반환하라
 
   • For every person p:
       - Keep only RELATION_EMOTION in p.interactions.relation_emotion
