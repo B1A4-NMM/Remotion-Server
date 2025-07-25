@@ -283,12 +283,16 @@ export class AnalysisDiaryService {
             const validPersonEmotions: string[] = [];
             const validPersonIntensities: number[] = [];
             person.interactions.emotion.forEach((emotionStr, index) => {
+              let currentEmotionStr = emotionStr;
+              if (currentEmotionStr === '안타까움' || currentEmotionStr === '걱정') {
+                currentEmotionStr = '유대';
+              }
               const emotion = this.util.parseEnumValue(
                 EmotionType,
-                emotionStr,
+                currentEmotionStr,
               );
               if (emotion && RelationEmotions.includes(emotion)) {
-                validPersonEmotions.push(emotionStr);
+                validPersonEmotions.push(currentEmotionStr);
                 validPersonIntensities.push(
                   person.interactions.emotion_intensity[index],
                 );
