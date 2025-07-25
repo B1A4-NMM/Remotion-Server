@@ -55,6 +55,17 @@ export class EmotionService {
     private readonly configService: ConfigService,
   ) {}
 
+  async isDiaryEmpty(memberId:string) {
+    const result = await this.diaryRepository.count(
+      {
+        where: {
+          author: {id : memberId}
+        }
+      }
+    );
+    return {isEmpty : result === 0};
+  }
+
   /**
    * Target ID를 기반으로 EmotionTarget 엔티티를 조회합니다.
    * @param targetId - 조회할 대상의 ID
@@ -159,7 +170,9 @@ export class EmotionService {
    */
   async summarizeEmotionsByTarget(
     targetId: number,
-  ): Promise<{ emotion: EmotionType; totalIntensity: number; totalCount: number }[]> {
+  ): Promise<
+    { emotion: EmotionType; totalIntensity: number; totalCount: number }[]
+  > {
     const results = await this.emotionTargetRepository
       .createQueryBuilder('et')
       .select('et.emotion', 'emotion')
@@ -188,19 +201,43 @@ export class EmotionService {
    * @param period
    */
   async getPositiveEmotionsTargetAndSummary(memberId: string, period: number) {
-    const positiveGroups = [EmotionGroup.안정, EmotionGroup.유대, EmotionGroup.활력];
+    const positiveGroups = [
+      EmotionGroup.안정,
+      EmotionGroup.유대,
+      EmotionGroup.활력,
+    ];
     const [targetSummaries, dateSummaries] = await Promise.all([
-      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(memberId, period, positiveGroups),
-      this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, positiveGroups),
+      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        positiveGroups,
+      ),
+      this.getEmotionSummaryPeriodByEmotionGroup(
+        memberId,
+        period,
+        positiveGroups,
+      ),
     ]);
 
     return {
-      stabilityTarget: targetSummaries.filter(t => t.emotion === EmotionGroup.안정),
-      bondTarget: targetSummaries.filter(t => t.emotion === EmotionGroup.유대),
-      vitalityTarget: targetSummaries.filter(t => t.emotion === EmotionGroup.활력),
-      stabilityDate: dateSummaries.filter(s => s.emotionGroup === EmotionGroup.안정),
-      bondDate: dateSummaries.filter(s => s.emotionGroup === EmotionGroup.유대),
-      vitalityDate: dateSummaries.filter(s => s.emotionGroup === EmotionGroup.활력),
+      stabilityTarget: targetSummaries.filter(
+        (t) => t.emotion === EmotionGroup.안정,
+      ),
+      bondTarget: targetSummaries.filter(
+        (t) => t.emotion === EmotionGroup.유대,
+      ),
+      vitalityTarget: targetSummaries.filter(
+        (t) => t.emotion === EmotionGroup.활력,
+      ),
+      stabilityDate: dateSummaries.filter(
+        (s) => s.emotionGroup === EmotionGroup.안정,
+      ),
+      bondDate: dateSummaries.filter(
+        (s) => s.emotionGroup === EmotionGroup.유대,
+      ),
+      vitalityDate: dateSummaries.filter(
+        (s) => s.emotionGroup === EmotionGroup.활력,
+      ),
     };
   }
 
@@ -210,19 +247,43 @@ export class EmotionService {
    * @param period
    */
   async getNegativeEmotionsTargetAndSummary(memberId: string, period: number) {
-    const negativeGroups = [EmotionGroup.우울, EmotionGroup.불안, EmotionGroup.스트레스];
+    const negativeGroups = [
+      EmotionGroup.우울,
+      EmotionGroup.불안,
+      EmotionGroup.스트레스,
+    ];
     const [targetSummaries, dateSummaries] = await Promise.all([
-        this.getTargetEmotionSummaryByPeriodAndEmotionGroup(memberId, period, negativeGroups),
-        this.getEmotionSummaryPeriodByEmotionGroup(memberId, period, negativeGroups),
+      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
+        memberId,
+        period,
+        negativeGroups,
+      ),
+      this.getEmotionSummaryPeriodByEmotionGroup(
+        memberId,
+        period,
+        negativeGroups,
+      ),
     ]);
 
     return {
-        depressionTarget: targetSummaries.filter(t => t.emotion === EmotionGroup.우울),
-        anxietyTarget: targetSummaries.filter(t => t.emotion === EmotionGroup.불안),
-        stressTarget: targetSummaries.filter(t => t.emotion === EmotionGroup.스트레스),
-        depressionDate: dateSummaries.filter(s => s.emotionGroup === EmotionGroup.우울),
-        anxietyDate: dateSummaries.filter(s => s.emotionGroup === EmotionGroup.불안),
-        stressDate: dateSummaries.filter(s => s.emotionGroup === EmotionGroup.스트레스),
+      depressionTarget: targetSummaries.filter(
+        (t) => t.emotion === EmotionGroup.우울,
+      ),
+      anxietyTarget: targetSummaries.filter(
+        (t) => t.emotion === EmotionGroup.불안,
+      ),
+      stressTarget: targetSummaries.filter(
+        (t) => t.emotion === EmotionGroup.스트레스,
+      ),
+      depressionDate: dateSummaries.filter(
+        (s) => s.emotionGroup === EmotionGroup.우울,
+      ),
+      anxietyDate: dateSummaries.filter(
+        (s) => s.emotionGroup === EmotionGroup.불안,
+      ),
+      stressDate: dateSummaries.filter(
+        (s) => s.emotionGroup === EmotionGroup.스트레스,
+      ),
     };
   }
 
@@ -305,11 +366,9 @@ export class EmotionService {
         period,
         emotion,
       ),
-      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(
-        memberId,
-        period,
-        [emotion],
-      ),
+      this.getTargetEmotionSummaryByPeriodAndEmotionGroup(memberId, period, [
+        emotion,
+      ]),
     ]);
 
     res.date = date;
@@ -442,24 +501,24 @@ export class EmotionService {
     const summaryMap = new Map<string, TargetEmotionSummaryRes>();
 
     for (const row of results) {
-        const emotionGroup = EmotionGroupMap[row.emotionType as EmotionType];
-        if (!emotionGroup) continue;
+      const emotionGroup = EmotionGroupMap[row.emotionType as EmotionType];
+      if (!emotionGroup) continue;
 
-        const key = `${row.targetId}-${emotionGroup}`;
+      const key = `${row.targetId}-${emotionGroup}`;
 
-        if (!summaryMap.has(key)) {
-            summaryMap.set(key, {
-                targetId: row.targetId,
-                targetName: row.targetName,
-                totalIntensity: 0,
-                count: 0,
-                emotion: emotionGroup,
-            });
-        }
+      if (!summaryMap.has(key)) {
+        summaryMap.set(key, {
+          targetId: row.targetId,
+          targetName: row.targetName,
+          totalIntensity: 0,
+          count: 0,
+          emotion: emotionGroup,
+        });
+      }
 
-        const summary = summaryMap.get(key)!;
-        summary.totalIntensity += parseFloat(row.totalIntensity);
-        summary.count += parseInt(row.count, 10);
+      const summary = summaryMap.get(key)!;
+      summary.totalIntensity += parseFloat(row.totalIntensity);
+      summary.count += parseInt(row.count, 10);
     }
 
     const allSummaries = Array.from(summaryMap.values());
@@ -467,12 +526,12 @@ export class EmotionService {
     // 각 그룹별로 상위 3개 필터링
     const finalResult: TargetEmotionSummaryRes[] = [];
     for (const group of emotionGroups) {
-        const groupSummaries = allSummaries
-            .filter(s => s.emotion === group)
-            .filter(s => s.totalIntensity > threshold)
-            .sort((a, b) => b.totalIntensity - a.totalIntensity)
-            .slice(0, 3);
-        finalResult.push(...groupSummaries);
+      const groupSummaries = allSummaries
+        .filter((s) => s.emotion === group)
+        .filter((s) => s.totalIntensity > threshold)
+        .sort((a, b) => b.totalIntensity - a.totalIntensity)
+        .slice(0, 3);
+      finalResult.push(...groupSummaries);
     }
 
     return finalResult;
@@ -523,22 +582,22 @@ export class EmotionService {
     const summaryMap = new Map<string, EmotionSummaryPeriodRes>();
 
     for (const row of results) {
-        const emotionGroup = EmotionGroupMap[row.emotionType as EmotionType];
-        if (!emotionGroup) continue;
+      const emotionGroup = EmotionGroupMap[row.emotionType as EmotionType];
+      if (!emotionGroup) continue;
 
-        const key = `${row.date}-${emotionGroup}`;
+      const key = `${row.date}-${emotionGroup}`;
 
-        if (!summaryMap.has(key)) {
-          summaryMap.set(key, {
-                date: LocalDate.parse(row.date),
-                intensity: 0,
-                count: 0,
-                emotionGroup: emotionGroup,
-            });
-        }
-        const summary = summaryMap.get(key)!;
-        summary.intensity += parseFloat(row.intensity);
-        summary.count += parseInt(row.count, 10);
+      if (!summaryMap.has(key)) {
+        summaryMap.set(key, {
+          date: LocalDate.parse(row.date),
+          intensity: 0,
+          count: 0,
+          emotionGroup: emotionGroup,
+        });
+      }
+      const summary = summaryMap.get(key)!;
+      summary.intensity += parseFloat(row.intensity);
+      summary.count += parseInt(row.count, 10);
     }
 
     return Array.from(summaryMap.values());

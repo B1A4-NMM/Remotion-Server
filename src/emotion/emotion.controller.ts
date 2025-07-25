@@ -31,6 +31,29 @@ import { EmotionSummaryPeriodRes } from './dto/emotion-summary-period.res';
 export class EmotionController {
   constructor(private readonly service: EmotionService) {}
 
+  @Get('empty-check')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({
+    summary: '일기 작성 여부 확인',
+    description: '사용자가 작성한 일기가 있는지 확인합니다.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '성공',
+    schema: {
+      type: 'object',
+      properties: {
+        isEmpty: {
+          type: 'boolean',
+          description: '일기 작성 여부',
+        },
+      },
+    },
+  })
+  async getCheck(@CurrentUser() user: any) {
+    return this.service.isDiaryEmpty(user.id);
+  }
+
   @Get('target/:targetId')
   @ApiOperation({
     summary: '대상별 감정 요약 조회',
