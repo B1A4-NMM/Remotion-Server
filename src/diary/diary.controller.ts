@@ -364,6 +364,7 @@ export class DiaryController {
 
   @ApiOperation({ summary: '특정 일기 가공 데이터 조회' })
   @ApiResponse({ type: DiaryAnalysisDto })
+  @UseInterceptors(DecryptionInterceptor)
   @Get(':id')
   async getDiary(@CurrentUser() user, @Param('id', ParseIntPipe) id: number) {
     const memberId: string = user.id;
