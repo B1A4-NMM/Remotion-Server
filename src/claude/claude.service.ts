@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { DiaryAnalysis } from '../util/json.parser';
 import {
+  parsingKeywordPrompt,
   PROMPT_ANALYZE,
   PROMPT_ROUTINE,
   PROMPT_VALIDATE,
@@ -392,6 +393,14 @@ ${prompt}
     const response = await this.getResponseToSonnet4(prompt);
 
     return response;
+  }
+
+  async getParsingKeywordDiary(content:string){
+    const prompt = parsingKeywordPrompt(content)
+    const response = await this.getResponseToSonnet4(prompt);
+    const keywordArray: string[] = JSON.parse(response);
+
+    return keywordArray;
   }
 
   private async getResponseToSonnet4(processedPrompt: string) {

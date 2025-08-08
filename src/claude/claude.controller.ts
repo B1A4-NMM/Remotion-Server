@@ -59,4 +59,14 @@ export class ClaudeController {
     }
   }
 
+  @Post('keyword')
+  async getKeyword(@Body('prompt')prompt: string) {
+    try {
+      const response = await this.claudeService.getParsingKeywordDiary(prompt);
+      return { response };
+    } catch (error) {
+      throw new Error(`Routine analysis failed: ${error.message}`);
+    }
+  }
+
 }
