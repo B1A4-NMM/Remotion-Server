@@ -2,6 +2,7 @@ import { EmotionType } from '../../enums/emotion-type.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { LocalDate } from 'js-joda';
 import { Diary } from '../../entities/Diary.entity';
+import { IsEncrypted } from '../../pipe/is-encrypted.decorator';
 
 export class EmotionRes {
   @ApiProperty({
@@ -37,6 +38,7 @@ export class DiaryRes {
   writtenDate: LocalDate;
 
   @ApiProperty({ example: '아 코딩하기 귀찮다', description: '일기 내용' })
+  @IsEncrypted()
   content: string;
 
   @ApiProperty({

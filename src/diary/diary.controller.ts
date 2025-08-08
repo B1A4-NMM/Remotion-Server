@@ -45,6 +45,7 @@ import { DiaryDetailRes } from './dto/diary-detail.res';
 import { WrittenDaysDto } from './dto/written-days.dto';
 import { InfinitePhotosResDto } from './dto/infinite-photos.res.dto';
 import { ConfigService } from '@nestjs/config';
+import { DecryptionInterceptor } from '../pipe/decryption.interceptor';
 
 // import { Member } from '../entities/Member.entity';
 
@@ -52,6 +53,7 @@ import { ConfigService } from '@nestjs/config';
 @ApiBearerAuth('access-token')
 @ApiTags('일기')
 @UseGuards(AuthGuard('jwt'))
+// @UseInterceptors(DecryptionInterceptor)
 export class DiaryController {
   constructor(
     private readonly diaryService: DiaryService,
@@ -151,6 +153,7 @@ export class DiaryController {
   @ApiOperation({ summary: '자신이 작성한 모든 일기 받기, 무한스크롤 아님 !!' })
   @ApiBody({ type: DiaryHomeListRes })
   @Get()
+  @UseInterceptors(DecryptionInterceptor)
   async allDiaries(@CurrentUser() user) {
     const memberId = user.id;
     return await this.diaryService.getDiaryList(memberId);
@@ -166,6 +169,7 @@ export class DiaryController {
   })
   @ApiResponse({ type: [DiaryRes] })
   @Get('date')
+  @UseInterceptors(DecryptionInterceptor)
   async getDiaryByDate(
     @CurrentUser() user: any,
     @Query('date', ParseLocalDatePipe) date: LocalDate,
@@ -185,6 +189,7 @@ export class DiaryController {
   //   return this.diaryService.getTodayDiariesRes(memberId);
   // }
 
+  @UseInterceptors(DecryptionInterceptor)
   @ApiOperation({ summary: '특정 일기 json 데이터 조회' })
   @ApiResponse({
     status: 200,
