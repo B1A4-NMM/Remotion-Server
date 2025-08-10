@@ -91,6 +91,28 @@ export class QdrantService {
     });
   }
 
+  async searchByMemberAndScore(
+    collection: string,
+    vector: number[],
+    memberId: string,
+    threshold: number,
+  ) {
+    return this.client.search(collection, {
+      vector,
+      score_threshold: threshold,
+      filter: {
+        must: [
+          {
+            key: 'memberId',
+            match: {
+              value: memberId,
+            },
+          },
+        ],
+      },
+    });
+  }
+
   async searchVectorByMember(
     collection: string,
     vector: number[],
@@ -172,6 +194,13 @@ export class QdrantService {
   async deletePointById(collectionName: string, pointId: string): Promise<void> {
     await this.client.delete(collectionName, {
       points: [pointId]
+    });
+  }
+
+  async upsertPoints(collectionName: string, points: any[]): Promise<void> {
+    await this.client.upsert(collectionName, {
+      wait: false,
+      points: points
     });
   }
 

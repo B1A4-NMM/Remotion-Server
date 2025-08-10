@@ -36,6 +36,8 @@ import { SentenceParserModule } from './sentence-parser/sentence-parser.module';
 import { RoutineModule } from './routine/routine.module';
 import { WebpushModule } from './webpush/webpush.module';
 import { NotificationModule } from './notification/notification.module';
+import { KeywordService } from './keyword/keyword.service';
+import { KeywordModule } from './keyword/keyword.module';
 
 
 @Module({
@@ -70,6 +72,7 @@ import { NotificationModule } from './notification/notification.module';
     RoutineModule,
     WebpushModule,
     NotificationModule,
+    KeywordModule,
   ],
   controllers: [AppController],
   providers: [
@@ -78,6 +81,7 @@ import { NotificationModule } from './notification/notification.module';
       provide:APP_INTERCEPTOR,
       useClass:NoCacheInterceptor,
     },
+    KeywordService,
   ],
 })
 export class AppModule {}

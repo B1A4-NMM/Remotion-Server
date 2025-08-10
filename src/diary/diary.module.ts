@@ -15,6 +15,7 @@ import { ActivityModule } from '../activity/activity.module';
 import { RoutineModule } from '../routine/routine.module';
 import { NotificationModule } from '../notification/notification.module';
 import { UtilModule } from '../util/util.module';
+import { KeywordModule } from '../keyword/keyword.module';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { UtilModule } from '../util/util.module';
     ActivityModule,
     RoutineModule,
     NotificationModule,
-    UtilModule
+    UtilModule,
+    KeywordModule
   ],
   controllers: [DiaryController],
   providers: [DiaryService],
