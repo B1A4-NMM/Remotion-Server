@@ -260,6 +260,7 @@ export class DiaryController {
     return await this.diaryService.getSearchDiary(memberId, q);
   }
 
+  @UseInterceptors(DecryptionInterceptor)
   @ApiOperation({
     summary: '일기 전체 무한스크롤 조회',
     description: '무한스크롤을 통해 일기를 조회할 수 있습니다',
@@ -290,6 +291,7 @@ export class DiaryController {
     return this.diaryService.getDiariesInfinite(memberId, limit, cursor);
   }
 
+  @UseInterceptors(DecryptionInterceptor)
   @ApiOperation({
     summary: '북마크된 일기 무한스크롤 조회',
     description: '무한스크롤을 통해 북마크된 일기를 조회할 수 있습니다',
