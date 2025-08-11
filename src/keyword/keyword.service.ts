@@ -17,14 +17,20 @@ export class KeywordService {
     private readonly configService: ConfigService,
     private readonly embedService: SimsceEmbedderService,
     private readonly LLMService: ClaudeService,
-  ) {}
+  ) {
+    this.createCollection();
+  }
 
   async createCollection() {
-    await this.qdrantService.createCollectionIfNotExist(this.collection, 1024);
+    await this.qdrantService.createCollectionIfNotExist(this.collection, 768);
   }
 
   async deleteAllVector() {
     await this.qdrantService.deleteAllVector(this.collection);
+  }
+
+  async deleteAllByDiaryId(id:number) {
+    await this.qdrantService.deleteAllByCondition(this.collection, 'diaryId', id)
   }
 
   async createByDiary(diary:Diary, content:string) {

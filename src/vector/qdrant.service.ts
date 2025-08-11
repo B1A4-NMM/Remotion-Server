@@ -49,12 +49,21 @@ export class QdrantService {
     try {
       await this.client.getCollection(name);
     } catch {
-      await this.client.createCollection(name, {
-        vectors: { size: vector_size, distance: 'Cosine' },
-      });
-      this.logger.log('Qdrant collection created');
+      try {
+        await this.client.createCollection(name, {
+          vectors: { size: vector_size, distance: 'Cosine' },
+        });
+        this.logger.log(`Qdrant collection '${name}' created`);
+      } catch (err: any) {
+        if (err.status === 409) {
+          this.logger.warn(`Collection '${name}' already exists, skipping`);
+        } else {
+          throw err;
+        }
+      }
     }
   }
+
 
   async upsertVector(
     collection: string,
