@@ -123,7 +123,7 @@ export class SentenceParserService {
     let ragResult = await this.LLMService.getSearchDiary(query, payloads);
     ragResult = ragResult.filter(rag => rag.is_similar == true)
 
-// 🔽 Top-K 제한
+    // 🔽 Top-K 제한
     return ragResult.slice(0, SEARCH_TOP_K); // Top-K 개수 제한
   }
 

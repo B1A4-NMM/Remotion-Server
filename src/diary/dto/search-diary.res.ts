@@ -2,6 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { DiaryRes } from './diary-home-list.res';
 import { Diary } from '../../entities/Diary.entity';
 import { EmotionRes } from './diary-home.res';
+import { decrypt } from '../../util/crypto.util';
+import * as process from 'node:process';
 
 export class searchDiaryInfo extends DiaryRes {
   @ApiProperty({
@@ -28,7 +30,8 @@ export class searchDiaryInfo extends DiaryRes {
     this.search_sentence = search_sentence;
     this.relate_sentence = relate_sentence;
 
-    const originalContent = diary.content;
+    const secret_key = process.env.SECRET_KEY!
+    const originalContent = decrypt(diary.content, secret_key);
     const relateSentenceIndex = originalContent.indexOf(relate_sentence);
 
     if (relateSentenceIndex !== -1) {

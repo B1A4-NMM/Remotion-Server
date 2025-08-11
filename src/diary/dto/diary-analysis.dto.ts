@@ -2,6 +2,7 @@ import { Exclude, Expose, Type } from 'class-transformer';
 import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { EmotionType } from '../../enums/emotion-type.enum';
+import { IsEncrypted } from '../../pipe/is-encrypted.decorator';
 
 export class EmotionAnalysisDto {
   @ApiProperty({example: "기쁨"})
@@ -64,6 +65,7 @@ export class DiaryAnalysisDto {
 
   @ApiProperty({example: '오늘은 출근하고 개발하다가 커피 마셨다'})
   @IsString()
+  @IsEncrypted()
   content: string; 
   
   @ApiProperty({type: [PeopleAnalysisDto]})

@@ -18,6 +18,7 @@ import { UploadModule } from '../upload/upload.module';
 import { AchievementModule } from '../achievement-cluster/achievement.module';
 import { SentenceParserModule } from '../sentence-parser/sentence-parser.module';
 import { Routine } from '../entities/rotine.entity';
+import { KeywordModule } from '../keyword/keyword.module';
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { Routine } from '../entities/rotine.entity';
     DiarytodoModule,
     UploadModule,
     AchievementModule,
-    SentenceParserModule
+    SentenceParserModule,
+    KeywordModule
   ],
   controllers: [],
   providers: [AnalysisService, AnalysisDiaryService],

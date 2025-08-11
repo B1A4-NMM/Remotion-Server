@@ -56,6 +56,7 @@ import { NotificationType } from '../enums/notification-type.enum';
 import { InfinitePhotosResDto } from './dto/infinite-photos.res.dto';
 import { PhotoDetailDto } from './dto/photo-detail.dto';
 import { SimilarSentence } from '../claude/claude.service';
+import { KeywordService } from '../keyword/keyword.service';
 
 @Injectable()
 export class DiaryService {
@@ -77,6 +78,7 @@ export class DiaryService {
     private readonly routineService: RoutineService,
     private readonly memberCharacterService: MemberCharacterService,
     private readonly notificationService: NotificationService,
+    private readonly keywordService: KeywordService,
   ) {}
 
   /**
@@ -715,20 +717,56 @@ export class DiaryService {
         }),
       );
     } else {
-      // 키워드 길이가 짧으면, 내용에 키워드가 포함된 일기를 직접 검색합니다.
-      this.logger.log(`'${keyword}'에 대한 내용 기반 검색을 수행합니다.`);
-      diaries = await this.diaryRepository.find({
-        where: {
-          author: { id: memberId },
-          // content 컬럼에서 키워드를 포함하는 일기를 찾습니다.
-          content: Like(`%${keyword}%`),
-        },
-        order: {
-          written_date: 'DESC', // 최신순으로 정렬합니다.
-        },
+      // 키워드 길이가 짧으면, 키워드 기반의 벡터 검색을 수행합니다.
+      this.logger.log(`'${keyword}'에 대한 키워드 기반 검색을 수행합니다.`);
+      const searchResult = await this.keywordService.getDiaryIdBySearchKeyword(
+        keyword,
+        memberId,
+      );
+
+      // 중복된 diaryId를 제거하기 위해 Set을 사용하고, 여러 ID를 한번에 조회합니다.
+      const uniqueDiaryIds = [...new Set(searchResult.map((r) => r.diaryId as number))];
+
+      if (uniqueDiaryIds.length > 0) {
+        diaries = await this.diaryRepository.find({
+          where: {
+            id: In(uniqueDiaryIds),
+          },
+          order: {
+            written_date: 'DESC',
+          },
+        });
+
+        // RDB에 존재하는 diary ID만 필터링합니다.
+        const existingDiaryIds = new Set(diaries.map((d) => d.id));
+        const deletedDiaryIds = uniqueDiaryIds.filter(
+          (id) => !existingDiaryIds.has(id),
+        );
+
+        // RDB에서 삭제되었지만 Qdrant에 남아있는 벡터 데이터를 비동기적으로 삭제합니다.
+        if (deletedDiaryIds.length > 0) {
+          this.logger.warn(
+            `RDB와 정합성 깨짐!!, Qdrant에서 다음 키워드 데이터를 삭제합니다: ${deletedDiaryIds.join(', ')}`,
+          );
+          // 정합성을 맞추기 위한 작업이므로, 검색 결과 반환을 기다리게 하지 않습니다.
+          deletedDiaryIds.forEach((id) =>
+            this.keywordService.deleteAllByDiaryId(id),
+          );
+        }
+      }
+
+      const diaryKeywordMap = new Map<number, string>();
+      searchResult.forEach(r => {
+        if (!diaryKeywordMap.has(r.diaryId as number)) {
+            diaryKeywordMap.set(r.diaryId as number, r.keyword as string);
+        }
       });
+
       res.diaries = await Promise.all(
-        diaries.map((diary) => this.createFindDiaryRes(diary, keyword, keyword)),
+        diaries.map((diary) => {
+          const relateSentence = diaryKeywordMap.get(diary.id) || keyword;
+          return this.createFindDiaryRes(diary, keyword, relateSentence);
+        }),
       );
     }
 

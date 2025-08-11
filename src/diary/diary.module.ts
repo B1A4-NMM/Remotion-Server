@@ -14,6 +14,8 @@ import { TargetModule } from '../target/target.module';
 import { ActivityModule } from '../activity/activity.module';
 import { RoutineModule } from '../routine/routine.module';
 import { NotificationModule } from '../notification/notification.module';
+import { UtilModule } from '../util/util.module';
+import { KeywordModule } from '../keyword/keyword.module';
 
 @Module({
   imports: [
@@ -26,7 +28,9 @@ import { NotificationModule } from '../notification/notification.module';
     TargetModule,
     ActivityModule,
     RoutineModule,
-    NotificationModule
+    NotificationModule,
+    UtilModule,
+    KeywordModule
   ],
   controllers: [DiaryController],
   providers: [DiaryService],

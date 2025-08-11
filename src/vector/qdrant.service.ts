@@ -49,12 +49,21 @@ export class QdrantService {
     try {
       await this.client.getCollection(name);
     } catch {
-      await this.client.createCollection(name, {
-        vectors: { size: vector_size, distance: 'Cosine' },
-      });
-      this.logger.log('Qdrant collection created');
+      try {
+        await this.client.createCollection(name, {
+          vectors: { size: vector_size, distance: 'Cosine' },
+        });
+        this.logger.log(`Qdrant collection '${name}' created`);
+      } catch (err: any) {
+        if (err.status === 409) {
+          this.logger.warn(`Collection '${name}' already exists, skipping`);
+        } else {
+          throw err;
+        }
+      }
     }
   }
+
 
   async upsertVector(
     collection: string,
@@ -77,6 +86,28 @@ export class QdrantService {
     return this.client.search(collection, {
       vector,
       limit: 1,
+      score_threshold: threshold,
+      filter: {
+        must: [
+          {
+            key: 'memberId',
+            match: {
+              value: memberId,
+            },
+          },
+        ],
+      },
+    });
+  }
+
+  async searchByMemberAndScore(
+    collection: string,
+    vector: number[],
+    memberId: string,
+    threshold: number,
+  ) {
+    return this.client.search(collection, {
+      vector,
       score_threshold: threshold,
       filter: {
         must: [
@@ -172,6 +203,13 @@ export class QdrantService {
   async deletePointById(collectionName: string, pointId: string): Promise<void> {
     await this.client.delete(collectionName, {
       points: [pointId]
+    });
+  }
+
+  async upsertPoints(collectionName: string, points: any[]): Promise<void> {
+    await this.client.upsert(collectionName, {
+      wait: false,
+      points: points
     });
   }
 

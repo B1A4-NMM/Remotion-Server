@@ -34,6 +34,8 @@ import { SentenceParserService } from '../sentence-parser/sentence-parser.servic
 import { Member } from '../entities/Member.entity';
 import { Routine } from 'src/entities/rotine.entity';
 import { RoutineEnum } from '../enums/routine.enum';
+import { CryptoService } from '../util/crypto.service';
+import { KeywordService } from '../keyword/keyword.service';
 
 @Injectable()
 export class AnalysisDiaryService {
@@ -53,6 +55,8 @@ export class AnalysisDiaryService {
     private readonly achievementService: AchievementService,
     @InjectRepository(Routine)
     private readonly routineRepository: Repository<Routine>,
+    private readonly cryptoService: CryptoService,
+    private readonly keywordService: KeywordService
   ) {}
 
   /**
@@ -74,7 +78,7 @@ export class AnalysisDiaryService {
     const diary = new Diary();
     diary.author = author;
     diary.written_date = dto.writtenDate;
-    diary.content = dto.content;
+    diary.content = this.cryptoService.encrypt(dto.content);
     diary.title = 'demo';
     diary.create_date = LocalDate.now();
     diary.metadata = JSON.stringify(result);
@@ -85,6 +89,11 @@ export class AnalysisDiaryService {
     if (audioUrl) diary.audio_path = audioUrl;
 
     const saveDiary = await this.diaryRepository.save(diary);
+    this.keywordService.createByDiary(saveDiary, dto.content).catch(
+      (err) => {
+        this.logger.error(err);
+      }
+    )
     const allPeopleInDiary = activity_analysis.flatMap((a) => a.peoples);
     const selfEmotions: CombinedEmotion[] = activity_analysis.flatMap((a) => [
       ...this.util.toCombinedEmotionTyped(a.self_emotions),

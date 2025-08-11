@@ -6,6 +6,7 @@ import { Type } from 'class-transformer';
 import { RecommendRoutineRes } from '../../routine/dto/recommend-routine.res';
 import { DiaryAnalysisJson } from './diary-json.res';
 import { EmotionRes } from './diary-home-list.res';
+import { IsEncrypted } from '../../pipe/is-encrypted.decorator';
 
 export class DiaryDetailRes {
   @ApiProperty({ description: '다이어리 ID' })
@@ -33,6 +34,7 @@ export class DiaryDetailRes {
   people:{name:string, changeScore:number}[] = []
 
   @ApiProperty({ description: '다이어리 내용' })
+  @IsEncrypted()
   content: string;
 
   @ApiProperty({
