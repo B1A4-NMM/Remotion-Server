@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/user.decorator';
 import { RelationService } from './relation.service';
@@ -11,6 +11,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { TargetDetailAnalysis } from './dto/target-detail-analysis';
+import { DecryptionInterceptor } from '../pipe/decryption.interceptor';
 
 @Controller('relation')
 @ApiTags('관계/대상')
@@ -34,6 +35,7 @@ export class RelationController {
     return await this.relationService.getGraph(memberId);
   }
 
+  @UseInterceptors(DecryptionInterceptor)
   @ApiOperation({
     summary: '대상 상세 분석 조회',
     description: '대상이 등장한 일기와 대상에 대한 날짜별 감정을 반환합니다',
