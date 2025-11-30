@@ -174,7 +174,18 @@ export class RecommendService {
       return { content: c.content, id: c.id };
     });
 
+    if (activities.length === 0) {
+      console.warn(`[getCommentByWeekday] No activities found for recommendEmotion: ${recommendEmotion}`);
+      return;
+    }
+
     const randomActivity = this.utilService.pickRandomUnique(activities, 1);
+
+    if (!randomActivity || randomActivity.length === 0) {
+      console.error("[getCommentByWeekday] Failed to pick random activity.");
+      return;
+    }
+
     comment = await this.LLMService.getRecommendComment(
       randomActivity[0].content,
       emotionGroup,
@@ -187,7 +198,7 @@ export class RecommendService {
     });
 
     if (!selectActivity) {
-      // this.logger.warn(`No activity found for id: ${randomActivity[0].id}`);
+      this.logger.warn(`No activity found for id: ${randomActivity[0].id}`);
       return;
     }
 
