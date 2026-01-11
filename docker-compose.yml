@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # 백엔드 API 서비스
+  api:
+    image: gooch1744/remotion-api:latest
+    container_name: remotion-api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      # Redis 호스트를 'redis' 서비스 이름으로 지정
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # 나머지 환경 변수는 .env 파일에서 주입
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  # Redis 서비스
+  redis:
+    image: redis:alpine
+    container_name: remotion-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  redis-data:
