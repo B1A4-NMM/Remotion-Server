@@ -1,13 +1,18 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
-import { winstonLogger } from './logger/winston-logger.service';
+import { ValidationPipe } from '@nestjs/common';
 import * as session from 'express-session';
 import * as cookieParser from 'cookie-parser';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // 제네릭으로 NestExpressApplication 타입을 명시하여 Express 전용 기능 사용 가능하게 함
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // ✅ 프록시 신뢰 설정 (Cloudflare Tunnel, Nginx 사용 시 필수)
+  // 이걸 안 하면 https 프로토콜을 인식 못해서 secure 쿠키가 안 구워짐
+  app.set('trust proxy', 1);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -26,6 +31,7 @@ async function bootstrap() {
       cookie: {
         secure: process.env.NODE_ENV === 'production', // 프로덕션에서는 true (HTTPS 필요)
         httpOnly: true,
+        // Cloudflare Tunnel 사용 시 프록시 설정이 되어 있어야 secure: true가 먹힘
       },
     }),
   );
@@ -47,10 +53,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
 
-  // CORS 설정 수정 (가장 확실한 방법)
   app.enableCors({
-    // true로 설정하면 요청을 보낸 Origin을 그대로 "Access-Control-Allow-Origin" 헤더에 넣어줍니다.
-    origin: true, 
+    origin: true, // 요청한 Origin을 그대로 반사 (가장 확실한 방법)
     credentials: true, // 쿠키 허용
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Accept, Authorization',
