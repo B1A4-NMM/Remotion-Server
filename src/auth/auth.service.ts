@@ -44,11 +44,11 @@ export class AuthService {
     // Access Token (10분)
     const access_token = this.jwtService.sign(payload, { expiresIn: '10m' });
     
-    // Refresh Token (1시간)
-    const refresh_token = this.jwtService.sign({ ...payload, type: 'refresh' }, { expiresIn: '1h' });
+    // Refresh Token (24시간)
+    const refresh_token = this.jwtService.sign({ ...payload, type: 'refresh' }, { expiresIn: '24h' });
 
-    // Redis에 Refresh Token 저장 (1시간 TTL)
-    await this.redis.set(`refresh:${id}`, refresh_token, 'EX', 3600);
+    // Redis에 Refresh Token 저장 (24시간 TTL = 86400초)
+    await this.redis.set(`refresh:${id}`, refresh_token, 'EX', 86400);
 
     return {
       access_token,
@@ -70,10 +70,10 @@ export class AuthService {
       // 새로운 토큰 발급
       const newPayload = { id: userId, socialType: payload.socialType, nickname: payload.nickname };
       const newAccessToken = this.jwtService.sign(newPayload, { expiresIn: '10m' });
-      const newRefreshToken = this.jwtService.sign({ ...newPayload, type: 'refresh' }, { expiresIn: '1h' });
+      const newRefreshToken = this.jwtService.sign({ ...newPayload, type: 'refresh' }, { expiresIn: '24h' });
 
-      // Redis 업데이트
-      await this.redis.set(`refresh:${userId}`, newRefreshToken, 'EX', 3600);
+      // Redis 업데이트 (24시간 TTL)
+      await this.redis.set(`refresh:${userId}`, newRefreshToken, 'EX', 86400);
 
       return {
         access_token: newAccessToken,

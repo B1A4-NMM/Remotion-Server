@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, Res, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './user.decorator';
@@ -18,11 +18,21 @@ export class AuthController {
     private configService: ConfigService,
     ) {}
 
+  // 쿠키 설정 헬퍼 메서드
+  private setRefreshCookie(res: Response, refreshToken: string) {
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true, // 자바스크립트 접근 불가 (XSS 방지)
+      secure: process.env.NODE_ENV === 'production', // HTTPS에서만 전송 (프로덕션)
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 프로덕션(Cross-Site)에서는 None, 개발(Local)에서는 Lax
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000, // 24시간
+    });
+  }
+
   @ApiOperation({
     summary: "구글 소셜 로그인",
     description: "구글 소셜 로그인을 위해서 이 api에 리다이렉트를 걸어주세요. " +
-      "로그인이 성공하면 /getaccess?access={jwt}&refresh={jwt} 로 리다이렉트 됩니다." +
-      "쿼리스트링을 통해 토큰을 받을 수 있습니다"})
+      "로그인이 성공하면 /getaccess?access={jwt} 로 리다이렉트 됩니다. (Refresh Token은 쿠키로 설정됨)"})
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   async googleLogin() {
@@ -41,11 +51,14 @@ export class AuthController {
       type: SocialType.GOOGLE,
     }); 
 
+    // Refresh Token 쿠키 설정
+    this.setRefreshCookie(res, tokens.refresh_token);
+
     // ✅ 프론트에서 넘긴 state (redirect_uri)가 user.state에 들어있음
     const redirectUri = decodeURIComponent(user.state || this.configService.get('FRONTEND_URL'));
 
-    // ✅ /getaccess 경로 포함해서 리다이렉트
-    const url = `${redirectUri}/getaccess?access=${tokens.access_token}&refresh=${tokens.refresh_token}`;
+    // ✅ /getaccess 경로 포함해서 리다이렉트 (Access Token만 쿼리로 전달)
+    const url = `${redirectUri}/getaccess?access=${tokens.access_token}`;
 
     return res.redirect(url);
   }
@@ -64,8 +77,7 @@ export class AuthController {
   @ApiOperation({
     summary: "카카오 소셜 로그인",
     description: "카카오 소셜 로그인을 위해서 이 api에 리다이렉트를 걸어주세요. " +
-      "로그인이 성공하면 /getaccess?access={jwt}&refresh={jwt} 로 리다이렉트 됩니다." +
-      "쿼리스트링을 통해 토큰을 받을 수 있습니다"})
+      "로그인이 성공하면 /getaccess?access={jwt} 로 리다이렉트 됩니다. (Refresh Token은 쿠키로 설정됨)"})
   @Get('/kakao')
   @UseGuards(KakaoAuthGuard)
   async kakaoLogin(@Req() req: Request) {
@@ -85,11 +97,14 @@ export class AuthController {
     const tokens =
       await this.authService.signInWithKakao(kakaoAuthResCode);
 
+    // Refresh Token 쿠키 설정
+    this.setRefreshCookie(res, tokens.refresh_token);
+
     // ✅ 프론트에서 넘긴 state (redirect_uri)가 user.state에 들어있음
     const redirectUri = decodeURIComponent(req.session.state || this.configService.get('FRONTEND_URL'));
 
-    // ✅ /getaccess 경로 포함해서 리다이렉트
-    const url = `${redirectUri}/getaccess?access=${tokens.access_token}&refresh=${tokens.refresh_token}`;
+    // ✅ /getaccess 경로 포함해서 리다이렉트 (Access Token만 쿼리로 전달)
+    const url = `${redirectUri}/getaccess?access=${tokens.access_token}`;
 
     delete req.session.state; // 세션에 담겨있는 리다이렉트 경로 삭제
     return res.redirect(url);
@@ -102,20 +117,49 @@ export class AuthController {
   @Get('demo')
   async demoLogin(
     @Query('id') id: string,
+    @Res() res: Response
   ) {
-    return this.authService.demoLoginTemplate(id);
+    const tokens = await this.authService.demoLoginTemplate(id);
+    
+    // Refresh Token 쿠키 설정
+    this.setRefreshCookie(res, tokens.refresh_token);
+    
+    return res.json({
+      access_token: tokens.access_token
+    });
   }
 
-  @ApiOperation({ summary: '토큰 갱신', description: 'Refresh Token을 사용하여 새로운 Access Token과 Refresh Token을 발급받습니다.' })
+  @ApiOperation({ summary: '토큰 갱신', description: '쿠키에 저장된 Refresh Token을 사용하여 새로운 Access Token을 발급받습니다.' })
   @Post('refresh')
-  async refresh(@Body('refreshToken') refreshToken: string) {
-    return this.authService.refresh(refreshToken);
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies['refreshToken'];
+    
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found in cookies');
+    }
+
+    const tokens = await this.authService.refresh(refreshToken);
+    
+    // 갱신된 Refresh Token 쿠키 설정 (Rotate)
+    this.setRefreshCookie(res, tokens.refresh_token);
+
+    return { access_token: tokens.access_token };
   }
 
-  @ApiOperation({ summary: '로그아웃', description: 'Refresh Token을 삭제하여 로그아웃 처리합니다.' })
+  @ApiOperation({ summary: '로그아웃', description: 'Refresh Token 쿠키를 삭제하고 로그아웃 처리합니다.' })
   @Post('logout')
   @UseGuards(AuthGuard('jwt'))
-  async logout(@CurrentUser() user) {
-    return this.authService.logout(user.id);
+  async logout(@CurrentUser() user, @Res({ passthrough: true }) res: Response) {
+    await this.authService.logout(user.id);
+    
+    // 쿠키 삭제
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/'
+    });
+    
+    return { success: true };
   }
 }
