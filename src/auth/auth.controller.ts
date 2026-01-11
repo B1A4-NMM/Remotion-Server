@@ -20,12 +20,16 @@ export class AuthController {
 
   // 쿠키 설정 헬퍼 메서드
   private setRefreshCookie(res: Response, refreshToken: string) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true, // 자바스크립트 접근 불가 (XSS 방지)
-      secure: process.env.NODE_ENV === 'production', // HTTPS에서만 전송 (프로덕션)
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 프로덕션(Cross-Site)에서는 None, 개발(Local)에서는 Lax
+      httpOnly: true,
+      secure: isProduction, // 배포 환경에서는 무조건 Secure
+      sameSite: isProduction ? 'none' : 'lax', // 배포 환경에서는 None (서브도메인 간 공유를 위해)
       path: '/',
-      maxAge: 24 * 60 * 60 * 1000, // 24시간
+      // ✅ 핵심 수정: 배포 환경에서는 .harudew.site 도메인 설정 (모든 서브도메인 공유)
+      domain: isProduction ? '.harudew.site' : undefined,
+      maxAge: 24 * 60 * 60 * 1000,
     });
   }
 
@@ -152,12 +156,14 @@ export class AuthController {
   async logout(@CurrentUser() user, @Res({ passthrough: true }) res: Response) {
     await this.authService.logout(user.id);
     
-    // 쿠키 삭제
+    // 쿠키 삭제 (설정할 때와 동일한 옵션 필요)
+    const isProduction = process.env.NODE_ENV === 'production';
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      path: '/'
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      path: '/',
+      domain: isProduction ? '.harudew.site' : undefined, // 도메인도 맞춰줘야 삭제됨
     });
     
     return { success: true };
