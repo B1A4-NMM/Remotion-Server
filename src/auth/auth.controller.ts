@@ -1,5 +1,4 @@
-// auth.controller.ts
-import { Controller, Get, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './user.decorator';
@@ -22,8 +21,8 @@ export class AuthController {
   @ApiOperation({
     summary: "구글 소셜 로그인",
     description: "구글 소셜 로그인을 위해서 이 api에 리다이렉트를 걸어주세요. " +
-      "로그인이 성공하면 /getaccess?access={jwt} 로 리다이렉트 됩니다." +
-      "쿼리스트링을 통해 액세스 토큰을 받을 수 있습니다"})
+      "로그인이 성공하면 /getaccess?access={jwt}&refresh={jwt} 로 리다이렉트 됩니다." +
+      "쿼리스트링을 통해 토큰을 받을 수 있습니다"})
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   async googleLogin() {
@@ -35,18 +34,18 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleCallback(@Req() req:any, @Res() res:Response) {
     const user = req.user;
-    const jwt = await this.authService.validateOAuthLogin({
+    const tokens = await this.authService.validateOAuthLogin({
       id: user.id,
       email: user.email,
       nickname: user.name,
       type: SocialType.GOOGLE,
-    }); // JWT 반환
+    }); 
 
     // ✅ 프론트에서 넘긴 state (redirect_uri)가 user.state에 들어있음
     const redirectUri = decodeURIComponent(user.state || this.configService.get('FRONTEND_URL'));
 
     // ✅ /getaccess 경로 포함해서 리다이렉트
-    const url = `${redirectUri}/getaccess?access=${jwt.access_token}`;
+    const url = `${redirectUri}/getaccess?access=${tokens.access_token}&refresh=${tokens.refresh_token}`;
 
     return res.redirect(url);
   }
@@ -65,8 +64,8 @@ export class AuthController {
   @ApiOperation({
     summary: "카카오 소셜 로그인",
     description: "카카오 소셜 로그인을 위해서 이 api에 리다이렉트를 걸어주세요. " +
-      "로그인이 성공하면 /getaccess?access={jwt} 로 리다이렉트 됩니다." +
-      "쿼리스트링을 통해 액세스 토큰을 받을 수 있습니다"})
+      "로그인이 성공하면 /getaccess?access={jwt}&refresh={jwt} 로 리다이렉트 됩니다." +
+      "쿼리스트링을 통해 토큰을 받을 수 있습니다"})
   @Get('/kakao')
   @UseGuards(KakaoAuthGuard)
   async kakaoLogin(@Req() req: Request) {
@@ -83,14 +82,14 @@ export class AuthController {
     @Req() req: any,
     ) {
     // Authorization Code 받기
-    const { jwtToken } =
+    const tokens =
       await this.authService.signInWithKakao(kakaoAuthResCode);
 
     // ✅ 프론트에서 넘긴 state (redirect_uri)가 user.state에 들어있음
     const redirectUri = decodeURIComponent(req.session.state || this.configService.get('FRONTEND_URL'));
 
     // ✅ /getaccess 경로 포함해서 리다이렉트
-    const url = `${redirectUri}/getaccess?access=${jwtToken.access_token}`;
+    const url = `${redirectUri}/getaccess?access=${tokens.access_token}&refresh=${tokens.refresh_token}`;
 
     delete req.session.state; // 세션에 담겨있는 리다이렉트 경로 삭제
     return res.redirect(url);
@@ -105,5 +104,18 @@ export class AuthController {
     @Query('id') id: string,
   ) {
     return this.authService.demoLoginTemplate(id);
+  }
+
+  @ApiOperation({ summary: '토큰 갱신', description: 'Refresh Token을 사용하여 새로운 Access Token과 Refresh Token을 발급받습니다.' })
+  @Post('refresh')
+  async refresh(@Body('refreshToken') refreshToken: string) {
+    return this.authService.refresh(refreshToken);
+  }
+
+  @ApiOperation({ summary: '로그아웃', description: 'Refresh Token을 삭제하여 로그아웃 처리합니다.' })
+  @Post('logout')
+  @UseGuards(AuthGuard('jwt'))
+  async logout(@CurrentUser() user) {
+    return this.authService.logout(user.id);
   }
 }

@@ -154,7 +154,17 @@ export class ActivityService {
       entity.count += 1;
     }
 
-    await this.activityEmotionRepo.save(entity);
+    try {
+      await this.activityEmotionRepo.save(entity);
+    } catch (e) {
+      if (e.code === 'ER_NO_REFERENCED_ROW_2') {
+        this.logger.warn(
+          `ActivityEmotion 저장 실패: Activity가 존재하지 않습니다. (Activity ID: ${activityEntity.id})`,
+        );
+      } else {
+        throw e;
+      }
+    }
   }
 
   /**

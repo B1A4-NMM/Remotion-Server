@@ -63,7 +63,8 @@ const config: TypeOrmModuleOptions = {
   autoLoadEntities: true,
   charset: 'utf8mb4',
   // logging:true,
-  //keepConnectionAlive:true,
+  // keepConnectionAlive:true,
+  connectTimeout: 60000,
 };
 
 export = config;

@@ -37,6 +37,7 @@ export class MemberService {
     return await this.repo.find();
   }
 
+
   async findOne(id: string): Promise<Member> {
     const member = await this.repo.findOneBy({ id });
     if (!member) {

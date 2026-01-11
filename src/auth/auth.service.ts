@@ -1,24 +1,30 @@
-// auth.service.ts
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { MemberService } from '../member/member.service';
 import { SocialType } from '../enums/social-type.enum';
-import { CreateMemberDto } from '../member/dto/create-member.dto';
+import Redis from 'ioredis';
 
 @Injectable()
 export class AuthService {
 
   private readonly logger = new Logger(AuthService.name);
+  private redis: Redis;
 
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
     private httpService: HttpService,
     private readonly memberService: MemberService
-  ) {}
+  ) {
+    const redisPort = this.configService.get<string>('REDIS_PORT');
+    this.redis = new Redis({
+      host: this.configService.get('REDIS_HOST') || 'localhost',
+      port: redisPort ? parseInt(redisPort) : 6379,
+    });
+  }
 
   async validateOAuthLogin(oauthUser: any) {
     // DB에 유저 있는지 확인하고 없다면 생성
@@ -34,9 +40,53 @@ export class AuthService {
     }
 
     const payload = { id: id, socialType: socialType, nickname: nickname };
+    
+    // Access Token (10분)
+    const access_token = this.jwtService.sign(payload, { expiresIn: '10m' });
+    
+    // Refresh Token (1시간)
+    const refresh_token = this.jwtService.sign({ ...payload, type: 'refresh' }, { expiresIn: '1h' });
+
+    // Redis에 Refresh Token 저장 (1시간 TTL)
+    await this.redis.set(`refresh:${id}`, refresh_token, 'EX', 3600);
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token,
+      refresh_token
     };
+  }
+
+  // Refresh Token으로 Access Token 재발급
+  async refresh(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+      const userId = payload.id;
+
+      const storedToken = await this.redis.get(`refresh:${userId}`);
+      if (!storedToken || storedToken !== refreshToken) {
+        throw new UnauthorizedException('Invalid or expired refresh token');
+      }
+
+      // 새로운 토큰 발급
+      const newPayload = { id: userId, socialType: payload.socialType, nickname: payload.nickname };
+      const newAccessToken = this.jwtService.sign(newPayload, { expiresIn: '10m' });
+      const newRefreshToken = this.jwtService.sign({ ...newPayload, type: 'refresh' }, { expiresIn: '1h' });
+
+      // Redis 업데이트
+      await this.redis.set(`refresh:${userId}`, newRefreshToken, 'EX', 3600);
+
+      return {
+        access_token: newAccessToken,
+        refresh_token: newRefreshToken
+      };
+    } catch (e) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  async logout(userId: string) {
+    await this.redis.del(`refresh:${userId}`);
+    return { success: true };
   }
 
   // 카카오 로그인
@@ -51,7 +101,7 @@ export class AuthService {
     const nickname = kakaoUserInfo.properties.nickname
     const email = kakaoUserInfo.kakao_account.email
     // 카카오 사용자 정보를 기반으로 회원가입 또는 로그인 처리
-    const jwtToken = await this.validateOAuthLogin(
+    const tokens = await this.validateOAuthLogin(
       {
         id,
         nickname,
@@ -61,7 +111,7 @@ export class AuthService {
     );
 
     // [2] 사용자 정보 반환
-    return { jwtToken };
+    return { ...tokens };
   }
 
   // Kakao Authorization Code로 Access Token 요청
@@ -111,8 +161,6 @@ export class AuthService {
     };
 
     let res = await this.validateOAuthLogin(demoUser);
-    return {
-      accessToken : res.access_token,
-    };
+    return res;
   }
 }
