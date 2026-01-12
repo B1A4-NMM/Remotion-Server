@@ -29,8 +29,10 @@ async function bootstrap() {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: process.env.NODE_ENV === 'production', // 프로덕션에서는 true (HTTPS 필요)
+        secure: true, // 프로덕션에서는 true (HTTPS 필요)
         httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+        sameSite: 'none'
         // Cloudflare Tunnel 사용 시 프록시 설정이 되어 있어야 secure: true가 먹힘
       },
     }),
