@@ -28,7 +28,7 @@ export class AuthController {
       sameSite: isProduction ? 'none' : 'lax', // 배포 환경에서는 None (서브도메인 간 공유를 위해)
       path: '/',
       // ✅ 핵심 수정: 배포 환경에서는 .harudew.site 도메인 설정 (모든 서브도메인 공유)
-      domain: isProduction ? '.harudew.site' : undefined,
+      // domain: isProduction ? '.harudew.site' : undefined,
       maxAge: 24 * 60 * 60 * 1000,
     });
   }
@@ -157,13 +157,13 @@ export class AuthController {
     await this.authService.logout(user.id);
     
     // 쿠키 삭제 (설정할 때와 동일한 옵션 필요)
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = process.env.ENVIRONMENT === 'develop';
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? 'none' : 'lax',
       path: '/',
-      domain: isProduction ? '.harudew.site' : undefined, // 도메인도 맞춰줘야 삭제됨
+      // domain: isProduction ? '.harudew.site' : undefined, // 도메인도 맞춰줘야 삭제됨
     });
     
     return { success: true };
