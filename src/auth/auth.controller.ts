@@ -20,7 +20,7 @@ export class AuthController {
 
   // 쿠키 설정 헬퍼 메서드
   private setRefreshCookie(res: Response, refreshToken: string) {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = process.env.ENVIRONMENT === 'develop';
     
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
